@@ -1,0 +1,26 @@
+{
+  "name": "planit",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "frontend": "cd frontend && npm start",
+    "backend": "cd backend && npm start",
+    "install:all": "cd frontend && npm install && cd ../backend && npm install",
+    "start": "concurrently \"npm run backend\" \"npm run frontend\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ritikb17/PlanItV.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Ritikb17/PlanItV/issues"
+  },
+  "homepage": "https://github.com/Ritikb17/PlanItV#readme",
+  "dependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
