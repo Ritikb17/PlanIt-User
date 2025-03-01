@@ -1,0 +1,38 @@
+.sidebar {
+    width: 20%;
+    padding: 20px;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .profile-info h3 {
+    margin: 0;
+    color: #333333;
+  }
+  
+  .profile-info p {
+    margin: 5px 0;
+    color: #555555;
+  }
+  
+  .suggestions h4 {
+    margin: 10px 0;
+    color: #333333;
+  }
+  
+  .suggestions ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .suggestions li {
+    margin: 5px 0;
+    color: #8A2BE2;
+    cursor: pointer;
+    transition: color 0.3s ease;
+  }
+  
+  .suggestions li:hover {
+    color: #6A1B9A;
+  }

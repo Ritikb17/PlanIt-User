@@ -1,0 +1,35 @@
+.post {
+    background-color: white;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .post-header h3 {
+    margin: 0;
+    color: #333333;
+  }
+  
+  .post-content {
+    margin: 10px 0;
+    color: #555555;
+  }
+  
+  .post-actions {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .post-button {
+    background: none;
+    border: none;
+    color: #8A2BE2;
+    font-size: 14px;
+    cursor: pointer;
+    transition: color 0.3s ease;
+  }
+  
+  .post-button:hover {
+    color: #6A1B9A;
+  }
