@@ -1,31 +1,102 @@
+/* General Navbar Styles */
 .navbar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background-color: #8A2BE2;
-    color: white;
-    padding: 10px 20px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #f8f9fa; /* Light grey */
+  padding: 10px 20px;
+  color: #333; /* Dark text color */
+  position: fixed; /* Fix the Navbar at the top */
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000; /* Ensure it stays above other content */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
+}
+
+/* Left Section (App Name) */
+.navbar-left .navbar-brand {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #333; /* Dark text color */
+  text-decoration: none;
+}
+
+/* Right Section (Icons and Profile) */
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 20px; /* Space between icons */
+}
+
+/* Icons */
+.navbar-icon {
+  color: #333; /* Dark text color */
+  font-size: 1.2rem;
+  text-decoration: none;
+}
+
+.navbar-icon:hover {
+  color: #6a1b9a; /* Dark purple on hover */
+}
+
+/* Profile Image */
+.profile-image {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* Dropdown Menu */
+.profile-dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: 50px;
+  background-color: white;
+  border-radius: 5px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  min-width: 150px;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 15px;
+  color: #333;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.dropdown-item i {
+  margin-right: 10px; /* Space between icon and text */
+}
+
+.dropdown-item:hover {
+  background-color: #f8f9fa;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 10px;
   }
-  
-  .logo {
-    font-size: 24px;
-    font-weight: bold;
+
+  .navbar-brand {
+    font-size: 1.2rem;
   }
-  
-  .nav-links {
-    display: flex;
-    gap: 20px;
+
+  .navbar-icon {
+    font-size: 1rem;
   }
-  
-  .nav-link {
-    color: white;
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.3s ease;
+
+  .profile-image {
+    width: 30px;
+    height: 30px;
   }
-  
-  .nav-link:hover {
-    color: #F5F5F5;
-    text-decoration: underline;
-  }
+} 

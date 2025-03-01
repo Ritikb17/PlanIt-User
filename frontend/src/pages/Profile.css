@@ -1,0 +1,146 @@
+/* General Styles */
+.profile-page {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  margin-top: 60px; /* Add margin to account for the Navbar height */
+}
+
+/* User Information */
+.user-info {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.user-info h1 {
+  font-size: 2rem;
+  margin-bottom: 5px;
+}
+
+.user-info .pronouns {
+  font-size: 1rem;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.user-info .bio {
+  font-size: 1.2rem;
+  color: #333;
+}
+
+/* Edit Profile Button */
+.edit-profile-btn {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  font-size: 1rem;
+  color: #fff;
+  background-color: #6a1b9a; /* Dark purple */
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-bottom: 20px;
+}
+
+.edit-profile-btn:hover {
+  background-color: #4a148c; /* Darker purple on hover */
+}
+
+/* Discover People Section */
+.discover-people {
+  margin-bottom: 20px;
+}
+
+.discover-people h2 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+
+.discover-people .see-all {
+  display: block;
+  text-align: right;
+  font-size: 0.9rem;
+  color: #6a1b9a; /* Dark purple */
+  text-decoration: none;
+  margin-bottom: 10px;
+}
+
+.discover-people .see-all:hover {
+  text-decoration: underline;
+}
+
+.discover-people .account {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
+
+.discover-people .account-info h3 {
+  font-size: 1.2rem;
+  margin-bottom: 5px;
+}
+
+.discover-people .account-info p {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.discover-people .follow-btn {
+  padding: 5px 10px;
+  font-size: 0.9rem;
+  color: #fff;
+  background-color: #6a1b9a; /* Dark purple */
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.discover-people .follow-btn:hover {
+  background-color: #4a148c; /* Darker purple on hover */
+}
+
+/* Complete Your Profile Section */
+.complete-profile {
+  padding: 20px;
+  background-color: #f8f9fa; /* Light grey */
+  border-radius: 5px;
+  text-align: center;
+}
+
+.complete-profile h2 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+
+.complete-profile p {
+  font-size: 1rem;
+  color: #666;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .profile-page {
+    padding: 10px;
+  }
+
+  .user-info h1 {
+    font-size: 1.5rem;
+  }
+
+  .user-info .bio {
+    font-size: 1rem;
+  }
+
+  .discover-people h2 {
+    font-size: 1.2rem;
+  }
+
+  .complete-profile h2 {
+    font-size: 1.2rem;
+  }
+}

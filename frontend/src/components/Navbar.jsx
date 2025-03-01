@@ -1,127 +1,69 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import NotificationDropdown from './NotificationDropdown';
+
+import './Navbar.css'; // Import the CSS file
 
 const Navbar = () => {
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+
   return (
-    <>
-      <nav className="navbar navbar-expand-lg bg-body-tertiary">
-        <div className="container-fluid">
-          {/* App Name (aligned to the left) */}
-          <Link className="navbar-brand" to="/">
-            SocialMediaApp
-          </Link>
+    <nav className="navbar">
+      {/* App Name */}
+      <div className="navbar-left">
+        <Link to="/" className="navbar-brand">
+          SocialApp
+        </Link>
+      </div>
 
-          {/* Toggle Button for Mobile */}
-          <button
-            className="navbar-toggler"
-            type="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#navbarSupportedContent"
-            aria-controls="navbarSupportedContent"
-            aria-expanded="false"
-            aria-label="Toggle navigation"
-          >
-            <span className="navbar-toggler-icon"></span>
-          </button>
+      {/* Icons */}
+      <div className="navbar-right">
+        {/* Home Icon */}
+        <Link to="/" className="navbar-icon">
+          <i className="fas fa-home"></i>
+        </Link>
 
-          {/* Navbar Items (aligned to the right) */}
-          <div className="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul className="navbar-nav ms-auto mb-2 mb-lg-0">
-              {/* Home Link */}
-              <li className="nav-item">
-                <Link className="nav-link active" aria-current="page" to="/">
-                  Home
-                </Link>
-              </li>
+        {/* Friends Icon */}
+        <Link to="/friends" className="navbar-icon">
+          <i className="fas fa-user-friends"></i>
+        </Link>
+        <Link to="/events" className="navbar-icon">
+  <i className="fas fa-calendar-alt"></i> {/* Calendar icon */}
+</Link>
 
-              {/* Profile Link */}
-              <li className="nav-item">
-                <Link className="nav-link" to="/profile">
-                  Profile
-                </Link>
-              </li>
+        {/* Message Icon */}
+        <Link to="/chat" className="navbar-icon">
+          <i className="fas fa-calender"></i>
+        </Link>
+        {/* Message Icon */}
+        <Link to="/chat" className="navbar-icon">
+        <i className="fas fa-comment-dots"></i>
+        </Link>
+        
 
-              {/* Chat Link */}
-              <li className="nav-item">
-                <Link className="nav-link" to="/chat">
-                  Chat
-                </Link>
-              </li>
-
-              {/* More Dropdown */}
-              <li className="nav-item dropdown">
-                <a
-                  className="nav-link dropdown-toggle"
-                  href="#"
-                  role="button"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-                >
-                  More
-                </a>
-                <ul className="dropdown-menu">
-                  <li>
-                    <Link className="dropdown-item" to="/login">
-                      Login
-                    </Link>
-                  </li>
-                  <li>
-                    <Link className="dropdown-item" to="/register">
-                      Register
-                    </Link>
-                  </li>
-                  <li>
-                    <hr className="dropdown-divider" />
-                  </li>
-                  <li>
-                    <Link className="dropdown-item" to="/about">
-                      About
-                    </Link>
-                  </li>
-                </ul>
-              </li>
-
-              {/* Notification Dropdown */}
-              <li className="nav-item dropdown">
-                <a
-                  className="nav-link dropdown-toggle"
-                  href="#"
-                  role="button"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false"
-                >
-                  Notifications
-                </a>
-                <ul className="dropdown-menu">
-                  <li>
-                    <p className="dropdown-item">Notification 1</p>
-                  </li>
-                  <li>
-                    <p className="dropdown-item">Notification 2</p>
-                  </li>
-                </ul>
-              </li>
-
-              {/* Search Form */}
-              <li className="nav-item">
-                <form className="d-flex" role="search">
-                  <input
-                    className="form-control me-2"
-                    type="search"
-                    placeholder="Search"
-                    aria-label="Search"
-                  />
-                  <button className="btn btn-outline-success" type="submit">
-                    Search
-                  </button>
-                </form>
-              </li>
-            </ul>
-          </div>
+        {/* Profile Image with Dropdown */}
+        <div className="profile-dropdown">
+          <img
+            src="https://via.placeholder.com/40" // Replace with your profile image URL
+            alt="Profile"
+            className="profile-image"
+            onClick={() => setIsProfileOpen(!isProfileOpen)}
+          />
+          {isProfileOpen && (
+            <div className="dropdown-menu">
+              <Link to="/profile" className="dropdown-item">
+                <i className="fas fa-user"></i> Profile
+              </Link>
+              <Link to="/settings" className="dropdown-item">
+                <i className="fas fa-cog"></i> Settings
+              </Link>
+              <Link to="/logout" className="dropdown-item">
+                <i className="fas fa-sign-out-alt"></i> Logout
+              </Link>
+            </div>
+          )}
         </div>
-      </nav>
-    </>
+      </div>
+    </nav>
   );
 };
 

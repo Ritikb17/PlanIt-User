@@ -1,87 +1,79 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import './Auth.css'; // Import the shared CSS file
 
 const Register = () => {
   return (
-    <div className="container mt-5">
-      <div className="row justify-content-center">
-        <div className="col-md-6 col-lg-4">
-          <div className="card shadow">
-            <div className="card-body">
-              <h2 className="card-title text-center mb-4">Register</h2>
-              <form>
-                {/* Name Input */}
-                <div className="mb-3">
-                  <label htmlFor="name" className="form-label">
-                    Full Name
-                  </label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="name"
-                    placeholder="Enter your full name"
-                  />
-                </div>
+    <div className="auth-page">
+      {/* Welcome Section */}
+      <div className="welcome-section">
+        <h1>Welcome to SocialApp</h1>
+        <p className="tagline">Connect with friends and share your moments</p>
+      </div>
 
-                {/* Email Input */}
-                <div className="mb-3">
-                  <label htmlFor="email" className="form-label">
-                    Email address
-                  </label>
-                  <input
-                    type="email"
-                    className="form-control"
-                    id="email"
-                    placeholder="Enter your email"
-                  />
-                </div>
-
-                {/* Password Input */}
-                <div className="mb-3">
-                  <label htmlFor="password" className="form-label">
-                    Password
-                  </label>
-                  <input
-                    type="password"
-                    className="form-control"
-                    id="password"
-                    placeholder="Enter your password"
-                  />
-                </div>
-
-                {/* Confirm Password Input */}
-                <div className="mb-3">
-                  <label htmlFor="confirmPassword" className="form-label">
-                    Confirm Password
-                  </label>
-                  <input
-                    type="password"
-                    className="form-control"
-                    id="confirmPassword"
-                    placeholder="Confirm your password"
-                  />
-                </div>
-
-                {/* Submit Button */}
-                <div className="d-grid">
-                  <button type="submit" className="btn btn-primary">
-                    Register
-                  </button>
-                </div>
-
-                {/* Login Link */}
-                <div className="mt-3 text-center">
-                  <p className="mb-0">
-                    Already have an account?{' '}
-                    <Link to="/login" className="text-decoration-none">
-                      Login here
-                    </Link>
-                  </p>
-                </div>
-              </form>
-            </div>
+      {/* Register Form */}
+      <div className="auth-form">
+        <h2>Register</h2>
+        <form>
+          {/* Name Input */}
+          <div className="form-group">
+            <label htmlFor="name">Full Name</label>
+            <input
+              type="text"
+              id="name"
+              className="form-control"
+              placeholder="Enter your full name"
+            />
           </div>
-        </div>
+
+          {/* Email Input */}
+          <div className="form-group">
+            <label htmlFor="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              className="form-control"
+              placeholder="Enter your email"
+            />
+          </div>
+
+          {/* Password Input */}
+          <div className="form-group">
+            <label htmlFor="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              className="form-control"
+              placeholder="Enter your password"
+            />
+          </div>
+
+          {/* Confirm Password Input */}
+          <div className="form-group">
+            <label htmlFor="confirmPassword">Confirm Password</label>
+            <input
+              type="password"
+              id="confirmPassword"
+              className="form-control"
+              placeholder="Confirm your password"
+            />
+          </div>
+
+          {/* Submit Button */}
+          <button type="submit" className="btn btn-purple">
+            Register
+          </button>
+        </form>
+
+        {/* Login Link */}
+        <p className="auth-link">
+          Already have an account? <Link to="/login">Login here</Link>
+        </p>
+      </div>
+
+      {/* Call-to-Action Section */}
+      <div className="cta-section">
+        <p>Join our community today and start sharing your stories with the world.</p>
       </div>
     </div>
   );

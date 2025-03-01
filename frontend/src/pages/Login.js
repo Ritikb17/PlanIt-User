@@ -1,61 +1,57 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import './Auth.css'; // Import the shared CSS file
 
 const Login = () => {
   return (
-    <div className="container mt-5">
-      <div className="row justify-content-center">
-        <div className="col-md-6 col-lg-4">
-          <div className="card shadow">
-            <div className="card-body">
-              <h2 className="card-title text-center mb-4">Login</h2>
-              <form>
-                {/* Email Input */}
-                <div className="mb-3">
-                  <label htmlFor="email" className="form-label">
-                    Email address
-                  </label>
-                  <input
-                    type="email"
-                    className="form-control"
-                    id="email"
-                    placeholder="Enter your email"
-                  />
-                </div>
+    <div className="auth-page">
+      {/* Welcome Section */}
+      <div className="welcome-section">
+        <h1>Welcome to SocialApp</h1>
+        <p className="tagline">Connect with friends and share your moments</p>
+      </div>
 
-                {/* Password Input */}
-                <div className="mb-3">
-                  <label htmlFor="password" className="form-label">
-                    Password
-                  </label>
-                  <input
-                    type="password"
-                    className="form-control"
-                    id="password"
-                    placeholder="Enter your password"
-                  />
-                </div>
-
-                {/* Submit Button */}
-                <div className="d-grid">
-                  <button type="submit" className="btn btn-primary">
-                    Login
-                  </button>
-                </div>
-
-                {/* Register Link */}
-                <div className="mt-3 text-center">
-                  <p className="mb-0">
-                    Don't have an account?{' '}
-                    <Link to="/register" className="text-decoration-none">
-                      Register here
-                    </Link>
-                  </p>
-                </div>
-              </form>
-            </div>
+      {/* Login Form */}
+      <div className="auth-form">
+        <h2>Login</h2>
+        <form>
+          {/* Email Input */}
+          <div className="form-group">
+            <label htmlFor="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              className="form-control"
+              placeholder="Enter your email"
+            />
           </div>
-        </div>
+
+          {/* Password Input */}
+          <div className="form-group">
+            <label htmlFor="password">Password</label>
+            <input
+              type="password"
+              id="password"
+              className="form-control"
+              placeholder="Enter your password"
+            />
+          </div>
+
+          {/* Submit Button */}
+          <button type="submit" className="btn btn-purple">
+            Login
+          </button>
+        </form>
+
+        {/* Register Link */}
+        <p className="auth-link">
+          Don't have an account? <Link to="/register">Register here</Link>
+        </p>
+      </div>
+
+      {/* Call-to-Action Section */}
+      <div className="cta-section">
+        <p>Join our community today and start sharing your stories with the world.</p>
       </div>
     </div>
   );
