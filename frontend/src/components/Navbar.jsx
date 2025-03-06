@@ -23,7 +23,7 @@ const Navbar = () => {
         </Link>
 
         {/* Friends Icon */}
-        <Link to="/friends" className="navbar-icon">
+        <Link to="/groups" className="navbar-icon">
           <i className="fas fa-user-friends"></i>
         </Link>
         <Link to="/events" className="navbar-icon">
@@ -34,6 +34,8 @@ const Navbar = () => {
         <Link to="/chat" className="navbar-icon">
           <i className="fas fa-calender"></i>
         </Link>
+      
+        <Link to="/followers">Followers</Link>
         {/* Message Icon */}
         <Link to="/chat" className="navbar-icon">
         <i className="fas fa-comment-dots"></i>

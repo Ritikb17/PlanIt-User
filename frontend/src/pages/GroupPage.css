@@ -1,0 +1,109 @@
+/* General Styles */
+.group-page {
+    padding: 20px;
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa; /* Light grey background */
+    height: calc(100vh - 60px); /* Adjust height to account for Navbar */
+    margin-top: 60px; /* Push content below the Navbar */
+  }
+  
+  /* Search Bar */
+  .search-bar {
+    margin-bottom: 20px;
+  }
+  
+  .search-bar input {
+    width: 100%;
+    padding: 10px;
+    font-size: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Groups Section */
+  .groups-section {
+    margin-bottom: 40px;
+  }
+  
+  .groups-section h2 {
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 10px;
+  }
+  
+  .groups-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .group-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: white;
+    border-radius: 5px;
+    padding: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .group-info p {
+    margin: 0;
+    font-size: 1rem;
+    color: #333;
+  }
+  
+  .group-info .members {
+    font-size: 0.9rem;
+    color: #666;
+  }
+  
+  .group-actions {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .group-actions button {
+    padding: 5px 10px;
+    font-size: 0.9rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .group-actions .join-btn {
+    background-color: #6a1b9a; /* Dark purple */
+    color: white;
+  }
+  
+  .group-actions .join-btn:hover {
+    background-color: #4a148c; /* Darker purple */
+  }
+  
+  .group-actions .leave-btn {
+    background-color: #dc3545; /* Red */
+    color: white;
+  }
+  
+  .group-actions .leave-btn:hover {
+    background-color: #c82333; /* Darker red */
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    .group-page {
+      padding: 10px;
+    }
+  
+    .group-item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 10px;
+    }
+  
+    .group-actions {
+      width: 100%;
+      justify-content: space-between;
+    }
+  }
