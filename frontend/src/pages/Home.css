@@ -1,13 +1,12 @@
 /* General Styles */
 .homepage {
   display: flex;
-
   padding: 20px;
   font-family: Arial, sans-serif;
   background-color: #f8f9fa;
   height: calc(100vh - 60px);
   margin-top: 60px;
-  gap: 20px; /* Space between Chat and Feed */
+  gap: 20px; /* Space between Chat, Feed, and Groups */
 }
 
 /* Chat Section */
@@ -34,6 +33,8 @@
 }
 
 .chat-item {
+  display: flex;
+  align-items: center;
   padding: 10px;
   background-color: #f0f0f0;
   border-radius: 5px;
@@ -42,6 +43,31 @@
 
 .chat-item:hover {
   background-color: #e0e0e0;
+}
+
+/* Profile Picture */
+.profile-picture {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 10px;
+}
+
+/* Groups Section */
+.groups-section {
+  width: 20%;
+  background-color: white;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow-y: auto; /* Make Groups Section scrollable */
+  max-height: calc(100vh - 120px); /* Limit height to prevent overflow */
+}
+
+.groups-section h3 {
+  margin: 0 0 10px;
+  font-size: 1.2rem;
+  color: #333;
 }
 
 /* Feed Section */
@@ -61,6 +87,12 @@
   padding: 15px;
   margin-bottom: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.post-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
 }
 
 .post-header h3 {
@@ -115,6 +147,7 @@
   font-size: 1.2rem;
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  z-index: 1000; /* Ensure it's above other elements */
 }
 
 .events-button:hover {
@@ -132,41 +165,133 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 1000; /* Ensure it's above other elements */
 }
 
 .modal-content {
   background-color: white;
   padding: 20px;
   border-radius: 10px;
-  width: 300px;
-  text-align: center;
+  width: 100%;
+  max-width: 400px;
+  text-align: left;
 }
 
 .modal-content h2 {
-  margin: 0 0 10px;
+  margin: 0 0 20px;
   font-size: 1.5rem;
   color: #333;
 }
 
-.modal-content p {
-  margin: 0 0 20px;
-  font-size: 1rem;
-  color: #666;
+/* Mode Switch */
+.mode-switch {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
 }
 
-.modal-content button {
-  padding: 5px 10px;
+.mode-button {
+  padding: 10px 20px;
   font-size: 1rem;
-  color: white;
-  background-color: #6a1b9a;
   border: none;
   border-radius: 5px;
   cursor: pointer;
+  background-color: #f0f0f0;
+  color: #333;
+  margin: 0 5px;
+  transition: background-color 0.3s, color 0.3s;
 }
 
-.modal-content button:hover {
+.mode-button.active {
+  background-color: #6a1b9a;
+  color: white;
+}
+
+.mode-button:hover {
+  background-color: #e0e0e0;
+}
+
+/* Form Group */
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #333;
+}
+
+.form-group input[type="text"],
+.form-group input[type="datetime-local"],
+.form-group textarea,
+.form-group input[type="file"] {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+
+.form-group textarea {
+  resize: vertical; /* Allow vertical resizing */
+  min-height: 100px;
+}
+
+.form-group input[type="file"] {
+  padding: 5px;
+}
+
+/* Visibility Options */
+.visibility-options {
+  display: flex;
+  gap: 15px;
+  margin-top: 10px;
+}
+
+.visibility-options label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 1rem;
+  color: #333;
+}
+
+/* Modal Actions */
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.submit-button,
+.close-button {
+  padding: 10px 20px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.submit-button {
+  background-color: #6a1b9a;
+  color: white;
+}
+
+.submit-button:hover {
   background-color: #4a148c;
+}
+
+.close-button {
+  background-color: #ccc;
+  color: #333;
+}
+
+.close-button:hover {
+  background-color: #bbb;
 }
 
 /* Responsive Design */
@@ -177,16 +302,29 @@
     gap: 10px;
   }
 
-  .chat-section {
-    width: 100%;
-    margin-right: 0;
-    margin-bottom: 20px;
-    max-height: 200px;
-  }
-
+  .chat-section,
+  .groups-section,
   .feed {
     width: 100%;
     margin-right: 0;
+    margin-bottom: 20px;
     max-height: none;
+  }
+
+  .events-button {
+    bottom: 10px;
+    right: 10px;
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+
+  .modal-content {
+    padding: 15px;
+  }
+
+  .mode-button {
+    padding: 8px 16px;
+    font-size: 0.9rem;
   }
 }

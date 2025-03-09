@@ -14,6 +14,34 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Add a subtle shadow */
 }
 
+.search-form {
+  display: inline-block;
+  align-items: center;
+  width: 100%;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.search-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px 0 0 4px;
+  outline: none;
+}
+
+.search-button {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-left: none;
+  border-radius: 0 4px 4px 0;
+  background-color: #f8f9fa;
+  cursor: pointer;
+}
+.search-button:hover {
+  background-color: #e9ecef;
+}
+
 /* Left Section (App Name) */
 .navbar-left .navbar-brand {
   font-size: 1.5rem;
@@ -53,6 +81,17 @@
   position: relative;
 }
 
+.search-form {
+  margin-left: 15px;
+}
+
+.search-input {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  outline: none;
+  width: 200px;
+}
 .dropdown-menu {
   position: absolute;
   right: 0;
@@ -96,7 +135,7 @@
   }
 
   .profile-image {
-    width: 30px;
+    width: 30px;    
     height: 30px;
   }
 } 
