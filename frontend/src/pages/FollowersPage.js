@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './FollowersPage.css'; // Import the CSS file
+import Navbar from '../components/Navbar';
 
 const FollowersPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -18,6 +19,9 @@ const FollowersPage = () => {
   );
 
   return (
+    <div>
+      <Navbar/>
+  
     <div className="followers-page">
       {/* Search Bar */}
       <div className="search-bar">
@@ -61,6 +65,7 @@ const FollowersPage = () => {
           <p>No followers found.</p>
         )}
       </div>
+    </div>
     </div>
   );
 };

@@ -34,6 +34,14 @@ const Navbar = () => {
     };
   }, []);
 
+ 
+    const handleLogout = () => {
+      localStorage.removeItem("token");
+      window.location.href = "/login"; // Redirect after logout
+    };
+    
+  
+
   return (
     <nav className="navbar">
       {/* App Name */}
@@ -100,7 +108,7 @@ const Navbar = () => {
               <Link to="/settings" className="dropdown-item">
                 <i className="fas fa-cog"></i> Settings
               </Link>
-              <Link to="/logout" className="dropdown-item">
+              <Link to="/logout" className="dropdown-item"onClick={handleLogout} >
                 <i className="fas fa-sign-out-alt"></i> Logout
               </Link>
             </div>

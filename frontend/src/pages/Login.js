@@ -1,8 +1,39 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import './Auth.css'; // Import the shared CSS file
 
 const Login = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const handleEmailChange = (event) => {
+    setEmail(event.target.value);
+  };
+
+  const handlePasswordChange = (event) => {
+    setPassword(event.target.value);
+  };
+
+  const handleLogin = async (event) => {
+    event.preventDefault(); // Prevent the default form submission behavior
+
+    const response = await fetch("http://localhost:5000/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      localStorage.setItem("token", data.token);
+      window.location.href = "/"; // Redirect after login
+    } else {
+      setError(data.message || "Login failed. Please check your credentials."); // Set error message
+    }
+  };
+
   return (
     <div className="auth-page">
       {/* Welcome Section */}
@@ -14,7 +45,7 @@ const Login = () => {
       {/* Login Form */}
       <div className="auth-form">
         <h2>Login</h2>
-        <form>
+        <form onSubmit={handleLogin}> {/* Attach handleLogin to form's onSubmit */}
           {/* Email Input */}
           <div className="form-group">
             <label htmlFor="email">Email</label>
@@ -23,6 +54,8 @@ const Login = () => {
               id="email"
               className="form-control"
               placeholder="Enter your email"
+              value={email}
+              onChange={handleEmailChange}
             />
           </div>
 
@@ -34,8 +67,13 @@ const Login = () => {
               id="password"
               className="form-control"
               placeholder="Enter your password"
+              value={password}
+              onChange={handlePasswordChange}
             />
           </div>
+
+          {/* Error Message */}
+          {error && <p style={{ color: 'red' }}>{error}</p>}
 
           {/* Submit Button */}
           <button type="submit" className="btn btn-purple">

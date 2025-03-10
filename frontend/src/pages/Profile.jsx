@@ -1,8 +1,12 @@
 import React from 'react';
 import './Profile.css'; // Import the CSS file
+import Navbar from '../components/Navbar';
 
 const Profile = () => {
   return (
+    <div>
+      <Navbar/>
+ 
     <div className="profile-page">
       {/* User Information */}
       <div className="user-info">
@@ -45,6 +49,7 @@ const Profile = () => {
         <h2>Complete Your Profile</h2>
         <p>Add more details to your profile to help others discover you.</p>
       </div>
+    </div>
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './Home.css'; // Import the CSS file
 import ChatDialog from './ChatDialog'; // Import the ChatDialog component
+import Navbar from '../components/Navbar';
 
 const Home = () => {
   const [isEventsModalOpen, setIsEventsModalOpen] = useState(false);
@@ -99,6 +100,9 @@ const Home = () => {
   }));
 
   return (
+    <div>
+<Navbar/>
+    
     <div className="homepage">
       {/* Chat Section */}
       <div className="chat-section">
@@ -320,6 +324,7 @@ const Home = () => {
       {isChatDialogOpen && (
         <ChatDialog chat={selectedChat} onClose={closeChatDialog} />
       )}
+    </div>
     </div>
   );
 };
