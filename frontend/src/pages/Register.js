@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import './Auth.css'; // Import the shared CSS file
+import './auth.css'; // Import the shared CSS file
 
 const Register = () => {
   return (

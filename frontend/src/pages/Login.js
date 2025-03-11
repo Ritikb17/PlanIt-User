@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import './Auth.css'; // Import the shared CSS file
+import './auth.css'; // Import the shared CSS file
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -16,23 +16,33 @@ const Login = () => {
   };
 
   const handleLogin = async (event) => {
-    event.preventDefault(); // Prevent the default form submission behavior
-
-    const response = await fetch("http://localhost:5000/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-
-    const data = await response.json();
-
-    if (response.ok) {
+    event.preventDefault(); // Prevent default form submission
+  
+    try {
+      const response = await fetch("http://localhost:5000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+  
+      const data = await response.json();
+  
+      if (!response.ok) {
+        throw new Error(data.message || "Login failed. Please check your credentials.");
+      }
+  
+      // Store token securely
       localStorage.setItem("token", data.token);
-      window.location.href = "/"; // Redirect after login
-    } else {
-      setError(data.message || "Login failed. Please check your credentials."); // Set error message
+  
+      // Redirect after login
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Login error:", error);
+      setError(error.message); // Set error message in UI
     }
   };
+  
+  
 
   return (
     <div className="auth-page">
