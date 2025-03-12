@@ -122,6 +122,95 @@
   color: #666;
 }
 
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Ensure it's above other content */
+}
+
+/* Modal Content */
+.modal {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.modal h2 {
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  color: #6a1b9a; /* Dark purple */
+}
+
+/* Form Group */
+.modal .form-group {
+  margin-bottom: 15px;
+}
+
+.modal .form-group label {
+  display: block;
+  font-size: 1rem;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+.modal .form-group input,
+.modal .form-group textarea {
+  width: 100%;
+  padding: 8px;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.modal .form-group textarea {
+  resize: vertical; /* Allow vertical resizing */
+  min-height: 100px;
+}
+
+/* Modal Buttons */
+.modal-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.modal-buttons button {
+  padding: 10px 20px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.modal-buttons button[type="button"] {
+  background-color: #ddd; /* Light grey for cancel button */
+  color: #333;
+}
+
+.modal-buttons button[type="button"]:hover {
+  background-color: #ccc; /* Darker grey on hover */
+}
+
+.modal-buttons button[type="submit"] {
+  background-color: #6a1b9a; /* Dark purple for save button */
+  color: #fff;
+}
+
+.modal-buttons button[type="submit"]:hover {
+  background-color: #4a148c; /* Darker purple on hover */
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .profile-page {
@@ -142,5 +231,19 @@
 
   .complete-profile h2 {
     font-size: 1.2rem;
+  }
+
+  .modal {
+    width: 95%;
+    padding: 15px;
+  }
+
+  .modal h2 {
+    font-size: 1.3rem;
+  }
+
+  .modal-buttons button {
+    padding: 8px 15px;
+    font-size: 0.9rem;
   }
 }

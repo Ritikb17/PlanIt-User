@@ -2,6 +2,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const { GiToken } = require("react-icons/gi");
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -9,10 +10,12 @@ const JWT_SECRET = process.env.JWT_SECRET;
 // Register
 router.post("/register", async (req, res) => {
     try {
-        const { username, email, password } = req.body;
-        const user = new User({ username, email, password });
+        const { username, email, password ,name} = req.body;
+        const user = new User({ username, email, password ,name});
         await user.save();
-        res.status(201).json({ message: "User registered successfully" });
+        const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "1h" });
+        res.status(201).json({ message: "User registered successfully" , token:token});
+        // res.json({ token });
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
