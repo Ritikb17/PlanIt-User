@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import './auth.css'; // Import the shared CSS file
+import './Auth.css'; // Import the shared CSS file
 
 const Login = () => {
   const [email, setEmail] = useState('');

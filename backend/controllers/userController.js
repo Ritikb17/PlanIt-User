@@ -36,7 +36,7 @@ const editBio = async (req, res) => {
 };
 
 const checkUserName = async (req, res) => {
-    const { username } = req.body;
+  const { username } = req.query;
   
     try {
         if(!username){
@@ -47,7 +47,7 @@ const checkUserName = async (req, res) => {
       const existingUser = await User.findOne({ username }); // ✅ Use findOne instead of find
         console.log("USERNAME",username);
       if (existingUser) {
-        return res.status(400).json({ message: "Username already taken", allowed: false });
+        return res.status(200).json({ message: "Username already taken", allowed: false });
       }
   
       res.status(200).json({ message: "Username is available", allowed: true });
