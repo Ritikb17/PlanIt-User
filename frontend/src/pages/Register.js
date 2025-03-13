@@ -15,7 +15,7 @@ const Register = () => {
  {
   setEmail(event.target.value);
  }
-
+{/*handle password change */}
  const handlePasswordChange=(event)=>
  {
   setPassword(event.target.value);
