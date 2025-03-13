@@ -6,6 +6,7 @@ const connectDB = require("./config/db");
 const cookieParser = require("cookie-parser");
 const authRoutes = require("./routes/authRoutes");
 const profileRoutes = require("./routes/profileRoutes");
+const userRoutes = require("./routes/userRoutes");
 const { verifyToken } = require("./middlewares/authMiddleware");
 
 const app = express();
@@ -19,6 +20,7 @@ app.use(cookieParser());
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", verifyToken, profileRoutes);
+app.use("/api/user", verifyToken, userRoutes);
 connectDB();
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
