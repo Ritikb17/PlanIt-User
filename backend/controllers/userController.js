@@ -1,4 +1,5 @@
 const User = require("../models/User");
+const Chat = require('../models/chat')
 const mongoose = require("mongoose");
 const ObjectId = mongoose.Types.ObjectId; 
 const editBio = async (req, res) => {
@@ -83,9 +84,9 @@ const sendRequest = async (req, res) => {
     if (recipientUser.reciveFollowRequests.includes(self_id)) {
       return res.status(400).json({ message: "Follow request already sent." });
     }
-    if (recipientUser.connections.friends.includes(self_id)) {
-      return res.status(400).json({ message: "Already Connected " });
-    }
+    // if (recipientUser.connections.friends.includes(self_id)) {
+    //   return res.status(400).json({ message: "Already Connected " });
+    // }
 
 
     const selfIdObj = new mongoose.Types.ObjectId(self_id);
@@ -101,6 +102,8 @@ const sendRequest = async (req, res) => {
       { $push: { sendFollowRequest: otherIdObj } }, // Add other_id to sendFollowRequest
       { new: true } // Return the updated document
     );
+    [] 
+
     res.status(200).json({ message: "Request sent successfully." });
 
   } catch (error) {
@@ -137,16 +140,14 @@ const acceptRequest = async (req, res) => {
       return res.status(400).json({ message: "Other user is in your block list." });
     }
 
-    // // Check if the other user is already a friend
-    // if (selfUser.connections.friends.includes(other_id)) {
-    //   return res.status(400).json({ message: "User is already your friend." });
-    // }
+    // Check if the other user is already a friend
+    if (selfUser.connections.friends.includes(other_id)) {
+      return res.status(400).json({ message: "User is already your friend." });
+    }
 
     const selfIdObj = new mongoose.Types.ObjectId(self_id);
 const otherIdObj =   new mongoose.Types.ObjectId(other_id);
-
-console.log("___________>>>>>>>>>>>>>>",selfIdObj,otherIdObj);
-    // Remove self_id from the recipient's reciveFollowRequests array
+  
     await User.findByIdAndUpdate(
       {_id:selfIdObj},
       { $pull: { reciveFollowRequests: otherIdObj } }, // Remove self_id
@@ -159,24 +160,41 @@ console.log("___________>>>>>>>>>>>>>>",selfIdObj,otherIdObj);
       { $pull: { sendFollowRequest: selfIdObj } }, // Remove other_id
       { new: true } // Return the updated document
     );
-     if(check1)
-
-      {
-        console.log("working ",check1);
+    
+      // creating a new chat 
+      const chat =  await Chat.create({
+        members: [otherIdObj, selfIdObj],
+      });
+  //setting new chat id to new variable 
+    let chatId = chat._id;
+// assiging chats to the users 
+    await User.findByIdAndUpdate(self_id, {
+      $push: {
+        connections: {
+          friend: otherIdObj,
+          chat: chat._id
+        }
       }
-    // Add other_id to the current user's friends list
-    await User.findByIdAndUpdate(
-      self_id,
-      { $push: { "connections.friends": other_id } }, // Add other_id
-      { new: true } // Return the updated document
-    );
+    });
+    await User.findByIdAndUpdate(other_id, {
+      $push: {
+        connections: {
+          friend: self_id,
+          chat: chat._id
+        }
+      }
+    });
 
-    // Add self_id to the recipient user's friends list
-    await User.findByIdAndUpdate(
-      other_id,
-      { $push: { "connections.friends": self_id } }, // Add self_id
-      { new: true } // Return the updated document
-    );
+    // await User.findByIdAndUpdate(self_id, {
+    //   $push: { "connections.friends": otherIdObj, "connections.chats": chatId }
+    // });
+
+    // await User.findByIdAndUpdate(other_id, {
+    //   $push: { "connections.friends": self_id, "connections.chats": chatId }
+    // });
+
+
+
 
     // Return success response
     res.status(200).json({ message: "Request accepted successfully." });

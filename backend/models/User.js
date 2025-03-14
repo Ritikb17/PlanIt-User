@@ -10,10 +10,15 @@ const UserSchema = new Schema({
   email: { type: String, require: true },
   password: { type: String, required: true },
   posts: [{ type: Schema.Types.ObjectId, ref: "Post" }],
-  connections: {
-    friends: [{ type: Schema.Types.ObjectId, ref: "User" }],
-    chats: [{ type: Schema.Types.ObjectId, ref: "Chat" }],
-  },
+  connections: [
+    {
+      friend: { type: Schema.Types.ObjectId, ref: "User" },
+      chat: { type: Schema.Types.ObjectId, ref: "Chat" }
+    }
+  ],
+  
+  
+  
 
   reciveFollowRequests: [{ type: Schema.Types.ObjectId, ref: "User" }],
   sendFollowRequest: [{ type: Schema.Types.ObjectId, ref: "User" }],
