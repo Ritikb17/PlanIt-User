@@ -6,11 +6,13 @@ import axios from "axios";
 const Profile = () => {
   const [user, setUser] = useState({});
   const [error, setError] = useState('');
-
-  const [isModalOpen, setIsModalOpen] = useState(false); 
-  const [formData, setFormData] = useState({ username: '', bio: '', email: '', _id: '' }); 
+  const [suggestions, setSuggestions] = useState([]); // State for storing suggestions
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({ username: '', bio: '', email: '', _id: '' });
   const [userNameMessage, setUsernameMessage] = useState('');
-  const [isDisable, setIsDisable] = useState(true);
+  const [isDisable, setIsDisable] = useState(false);
+  const [page, setPage] = useState(1); // Pagination: Current page
+  const [limit, setLimit] = useState(2); // Pagination: Results per page
 
   // Fetch user profile data
   useEffect(() => {
@@ -34,7 +36,7 @@ const Profile = () => {
           throw new Error('Failed to fetch user profile');
         }
         const data = await response.json();
-        console.log("DATA is ", data)
+        console.log("DATA is ", data);
         setUser(data);
         setFormData({ username: data.username, bio: data.bio, email: data.email, _id: data._id }); // Pre-fill form with current data
       } catch (error) {
@@ -44,6 +46,68 @@ const Profile = () => {
 
     fetchUserProfile();
   }, []);
+
+  // Fetch suggestions
+  useEffect(() => {
+    const fetchSuggestions = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("No token found, please log in again.");
+        return;
+      }
+
+      try {
+        const response = await axios.get(
+          `http://localhost:5000/api/user/get-suggestion?page=${page}&limit=${limit}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        setSuggestions(response.data.nonFriends); // Update suggestions state
+      } catch (error) {
+        console.error("Error fetching suggestions:", error);
+        setError("Failed to fetch suggestions.");
+      }
+    };
+
+    fetchSuggestions();
+  }, [page, limit]); // Re-fetch when page or limit changes
+
+  // Handle sending follow request
+  const handleSendRequest = async (userId) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setError("No token found, please log in again.");
+      return;
+    }
+
+    try {
+      const response = await axios.put(
+        "http://localhost:5000/api/user/send-request",
+        { _id: userId },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      // Update suggestions list by removing the user who received the request
+      setSuggestions((prevSuggestions) =>
+        prevSuggestions.filter((user) => user._id !== userId)
+      );
+
+      console.log("Follow request sent successfully:", response.data);
+    } catch (error) {
+      console.error("Error sending follow request:", error);
+      setError("Failed to send follow request.");
+    }
+  };
 
   // Handle opening the modal
   const handleEditProfile = () => {
@@ -57,18 +121,15 @@ const Profile = () => {
 
   const handleUsernameChange = async (event) => {
     const username = event.target.value;
-    setFormData({ ...formData, username }); 
-   
+    setFormData({ ...formData, username });
+
     const token = localStorage.getItem("token");
     if (!token) {
       setError("No token found, please log in again.");
       return;
     }
-    
-    
-  
+
     try {
-      // Use query parameters for GET requests
       const response = await axios.get(
         `http://localhost:5000/api/profile/check-user-name?username=${username}`,
         {
@@ -79,35 +140,31 @@ const Profile = () => {
         }
       );
       console.log("called", response.data);
-  
-    
+
       if (response.data.allowed) {
         setUsernameMessage('Username Available');
-        setIsDisable(false); 
+        setIsDisable(false);
       } else {
         setUsernameMessage('Username Already Taken');
-        setIsDisable(true); 
-        if(username===user.username)
-          {
-            setUsernameMessage('');
-            setIsDisable(false); 
-          }
+        setIsDisable(true);
+        if (username === user.username) {
+          setUsernameMessage('');
+          setIsDisable(false);
+        }
       }
     } catch (error) {
       console.error("Error verifying username profile:", error);
       if (error.response) {
-      
         setUsernameMessage(error.response.data.message || 'Failed to verify username');
       } else if (error.request) {
-      
         setUsernameMessage('Network error. Please try again.');
       } else {
-     
         setUsernameMessage('An unexpected error occurred.');
       }
-      setIsDisable(true); 
+      setIsDisable(true);
     }
   };
+
   // Handle form input changes
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -165,7 +222,8 @@ const Profile = () => {
             <>
               <h1>{user.username}</h1>
               <b>
-                <p className="pronouns">{user.name || 'he/him'}</p></b>
+                <p className="pronouns">{user.name || 'he/him'}</p>
+              </b>
               <p className="pronouns">{user.pronouns || 'he/him'}</p>
               <p className="bio">{user.bio || 'Add bio'}</p>
             </>
@@ -186,21 +244,21 @@ const Profile = () => {
             See all
           </a>
 
-          <div className="account">
-            <div className="account-info">
-              <h3>Instagram</h3>
-              <p>Instagram Official Account</p>
+          {/* Display Suggestions */}
+          {suggestions.map((suggestion) => (
+            <div className="account" key={suggestion._id}>
+              <div className="account-info">
+                <h3>{suggestion.username}</h3>
+                <p>{suggestion.bio || 'No bio available'}</p>
+              </div>
+              <button
+                className="follow-btn"
+                onClick={() => handleSendRequest(suggestion._id)}
+              >
+                Follow
+              </button>
             </div>
-            <button className="follow-btn">Follow</button>
-          </div>
-
-          <div className="account">
-            <div className="account-info">
-              <h3>Anne Hathaway</h3>
-              <p>Instagram recommended</p>
-            </div>
-            <button className="follow-btn">Follow</button>
-          </div>
+          ))}
         </div>
 
         {/* Complete Your Profile Section */}
@@ -212,64 +270,63 @@ const Profile = () => {
 
       {/* Edit Profile Modal */}
       {isModalOpen && (
-  <div className="modal-overlay">
-    <div className="modal">
-      <h2>Edit Profile</h2>
-      {/* Error Message */}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      {userNameMessage && (
-        <p style={{ color: userNameMessage === 'Username Available' ? 'green' : 'red' }}>
-          {userNameMessage}
-        </p>
+        <div className="modal-overlay">
+          <div className="modal">
+            <h2>Edit Profile</h2>
+            {/* Error Message */}
+            {error && <p style={{ color: 'red' }}>{error}</p>}
+            {userNameMessage && (
+              <p style={{ color: userNameMessage === 'Username Available' ? 'green' : 'red' }}>
+                {userNameMessage}
+              </p>
+            )}
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label htmlFor="username">Username</label>
+                <input
+                  type="text"
+                  id="username"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleUsernameChange}
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="name">Name</label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={user.name}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="bio">Bio</label>
+                <textarea
+                  id="bio"
+                  name="bio"
+                  value={formData.bio}
+                  onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="modal-buttons">
+                <button type="button" onClick={handleCloseModal}>
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isDisable}
+                >
+                  Save
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label htmlFor="username">Username</label>
-          <input
-            type="text"
-            id="username"
-            name="username"
-            value={formData.username}
-            onChange={handleUsernameChange}
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="name">Name</label>
-          <input
-            type="text"
-            id="name"
-            name="name"
-            value={user.name}
-            onChange={handleInputChange}
-          />
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="bio">Bio</label>
-          <textarea
-            id="bio"
-            name="bio"
-            value={formData.bio}
-            onChange={handleInputChange}
-          />
-        </div>
-
-        <div className="modal-buttons">
-          <button type="button" onClick={handleCloseModal}>
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={isDisable}
-            style={{ backgroundColor: isDisable ? 'white' : '#6a1b9a' }}
-          >
-            Save
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-)}
     </div>
   );
 };

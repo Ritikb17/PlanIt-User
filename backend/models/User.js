@@ -13,7 +13,8 @@ const UserSchema = new Schema({
   connections: [
     {
       friend: { type: Schema.Types.ObjectId, ref: "User" },
-      chat: { type: Schema.Types.ObjectId, ref: "Chat" }
+      chat: { type: Schema.Types.ObjectId, ref: "Chat" },
+      isBlocked:{type: Boolean, default:false}
     }
   ],
   

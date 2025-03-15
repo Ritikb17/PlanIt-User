@@ -5,10 +5,19 @@ import './Navbar.css'; // Import the CSS file
 const Navbar = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false); // State for notifications dropdown
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Ref for the dropdown menu
+  // Dummy notification data
+  const [notifications, setNotifications] = useState([
+    { id: 1, message: 'You have a new friend request', link: '/friend-requests' },
+    { id: 2, message: 'Your post got 10 likes', link: '/posts/123' },
+    { id: 3, message: 'Event reminder: Meetup at 5 PM', link: '/events/456' },
+  ]);
+
+  // Refs for dropdown menus
   const dropdownRef = useRef(null);
+  const notificationsRef = useRef(null);
 
   // Handle search
   const handleSearch = (e) => {
@@ -17,11 +26,16 @@ const Navbar = () => {
     console.log('Search Query:', searchQuery);
   };
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // Close profile dropdown
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsProfileOpen(false);
+      }
+      // Close notifications dropdown
+      if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
+        setIsNotificationsOpen(false);
       }
     };
 
@@ -34,13 +48,16 @@ const Navbar = () => {
     };
   }, []);
 
- 
-    const handleLogout = () => {
-      localStorage.removeItem("token");
-      window.location.href = "/login"; // Redirect after logout
-    };
-    
-  
+  // Handle logout
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    window.location.href = '/login'; // Redirect after logout
+  };
+
+  // Handle notification click
+  const handleNotificationClick = (link) => {
+    window.location.href = link; // Redirect to the notification link
+  };
 
   return (
     <nav className="navbar">
@@ -60,12 +77,12 @@ const Navbar = () => {
 
         {/* Friends Icon */}
         <Link to="/groups" className="navbar-icon" title="Groups">
-          <i className="fas fa-user-friends"></i>
+        <i className="fas fa-users"></i>
         </Link>
 
         {/* Followers Icon */}
         <Link to="/followers" className="navbar-icon" title="Followers">
-          <i className="fas fa-users"></i>
+          <i className="fas fa-user-friends"></i>
         </Link>
 
         {/* Chat Icon */}
@@ -92,6 +109,38 @@ const Navbar = () => {
           </form>
         )}
 
+        {/* Notifications Icon with Dropdown */}
+        <div className="notifications-dropdown" ref={notificationsRef}>
+          <div
+            className="navbar-icon"
+            title="Notifications"
+            onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+          >
+            <i className="fas fa-bell"></i>
+            {/* Notification Badge */}
+            {notifications.length > 0 && (
+              <span className="notification-badge">{notifications.length}</span>
+            )}
+          </div>
+          {isNotificationsOpen && (
+            <div className="dropdown-menu">
+              {notifications.length > 0 ? (
+                notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className="dropdown-item"
+                    onClick={() => handleNotificationClick(notification.link)}
+                  >
+                    {notification.message}
+                  </div>
+                ))
+              ) : (
+                <div className="dropdown-item">No new notifications</div>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Profile Image with Dropdown */}
         <div className="profile-dropdown" ref={dropdownRef}>
           <img
@@ -108,7 +157,7 @@ const Navbar = () => {
               <Link to="/settings" className="dropdown-item">
                 <i className="fas fa-cog"></i> Settings
               </Link>
-              <Link to="/logout" className="dropdown-item"onClick={handleLogout} >
+              <Link to="/logout" className="dropdown-item" onClick={handleLogout}>
                 <i className="fas fa-sign-out-alt"></i> Logout
               </Link>
             </div>
