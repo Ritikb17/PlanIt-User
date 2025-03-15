@@ -227,7 +227,6 @@ const removeUser = async (req, res) => {
       members: [otherIdObj, selfIdObj],
     });
 
-    // assiging chats to the users 
     await User.findByIdAndUpdate(self_id, {
       $pull: {
         connections: {
