@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 import './Navbar.css'; // Import the CSS file
 
 const Navbar = () => {
@@ -8,13 +9,40 @@ const Navbar = () => {
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false); // State for notifications dropdown
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Dummy notification data
   const [notifications, setNotifications] = useState([
-    { id: 1, message: 'You have a new friend request', link: '/friend-requests' },
-    { id: 2, message: 'Your post got 10 likes', link: '/posts/123' },
-    { id: 3, message: 'Event reminder: Meetup at 5 PM', link: '/events/456' },
+    // { id: 1, message: 'You have a new friend request', link: '/friend-requests' },
+    // { id: 2, message: 'Your post got 10 likes', link: '/posts/123' },
+    // { id: 3, message: 'Event reminder: Meetup at 5 PM', link: '/events/456' },
   ]);
-
+  
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        console.error('No token found in localStorage');
+        return;
+      }
+  
+      try {
+        const response = await axios.get("http://localhost:5000/api/user/get-notification", {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`, // Use the token from localStorage
+          },
+        });
+  
+        // Assuming the response data has a structure like { notification: { notification: [...] } }
+        const fetchedNotifications = response.data.notification[0].notification;
+        setNotifications(fetchedNotifications);
+  
+        console.log("NOTIFICATIONS:", fetchedNotifications);
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+      }
+    };
+  
+    fetchNotifications();
+  }, []);
   // Refs for dropdown menus
   const dropdownRef = useRef(null);
   const notificationsRef = useRef(null);

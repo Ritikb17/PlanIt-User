@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const {editBio,checkUserName} = require('../controllers/userController')
+const {editBio,checkUserName,getNotification} = require('../controllers/userController')
 
 router.get("/get-profile", (req, res) => {
     res.json(req.user );

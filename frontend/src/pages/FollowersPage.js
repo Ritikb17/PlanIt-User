@@ -1,15 +1,17 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom'; // Import Link from react-router-dom
 import './FollowersPage.css'; // Import the CSS file
 import Navbar from '../components/Navbar';
 import axios from 'axios';
 
 const FollowersPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [followers, setFollowers] = useState([]);
+  const [followers, setFollowers] = useState([]); // Initialize with empty array
+  const [request, setRequest] = useState([]); // Initialize with empty array
   const [isLoading, setIsLoading] = useState(true); // Loading state
   const [error, setError] = useState(null); // Error state
 
-  // Fetch non-friends (followers) when the component mounts
+  // Fetch followers and follow requests when the component mounts
   useEffect(() => {
     const fetchNonFriends = async () => {
       const token = localStorage.getItem('token'); // Retrieve token from localStorage
@@ -31,8 +33,9 @@ const FollowersPage = () => {
           }
         );
 
-        // Assuming the API returns an array of non-friends in the `nonFriends` field
-        setFollowers(response.data.friends); // Update the state with the fetched data
+        // Update the state with the fetched data
+        setFollowers(response.data.friends || []); // Fallback to empty array if undefined
+        setRequest(response.data.followRequest || []); // Fallback to empty array if undefined
         setIsLoading(false); // Set loading to false
       } catch (error) {
         console.error('Error fetching non-friends:', error);
@@ -77,6 +80,72 @@ const FollowersPage = () => {
     }
   };
 
+  // Handle rejecting a follow request
+  const handleRejectRequest = async (userId) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No token found, please log in again.');
+      setError('No token found, please log in again.');
+      return;
+    }
+
+    try {
+      await axios.put(
+        'http://localhost:5000/api/user/reject-request',
+        { _id: userId },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Update the follow requests list by removing the rejected request
+      setRequest((prevRequests) =>
+        prevRequests.filter((request) => request._id !== userId)
+      );
+
+      alert('Request rejected.');
+    } catch (error) {
+      console.error('Error rejecting request:', error);
+      alert('Failed to reject request.');
+    }
+  };
+
+  // Handle accepting a follow request
+  const handleAcceptRequest = async (userId) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No token found, please log in again.');
+      setError('No token found, please log in again.');
+      return;
+    }
+
+    try {
+      await axios.put(
+        'http://localhost:5000/api/user/accept-request',
+        { _id: userId },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Update the follow requests list by removing the accepted request
+      setRequest((prevRequests) =>
+        prevRequests.filter((request) => request._id !== userId)
+      );
+
+      alert('Request accepted.');
+    } catch (error) {
+      console.error('Error accepting request:', error);
+      alert('Failed to accept request.');
+    }
+  };
+
   // Handle removing a user
   const handleRemoveUser = async (userId) => {
     const token = localStorage.getItem('token');
@@ -113,6 +182,11 @@ const FollowersPage = () => {
   // Filter followers based on search query
   const filteredFollowers = followers.filter((follower) =>
     follower.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Filter follow requests based on search query
+  const filteredFollowRequest = request.filter((request) =>
+    request.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -171,6 +245,54 @@ const FollowersPage = () => {
             </div>
           ) : (
             <p>No followers found.</p>
+          )}
+        </div>
+
+        {/* Follow Requests Section */}
+        <div className="followers-section">
+          <h2>Follow Requests</h2>
+          {isLoading ? (
+            <p>Loading...</p>
+          ) : error ? (
+            <p>Error: {error}</p>
+          ) : filteredFollowRequest.length > 0 ? (
+            <div className="followers-list">
+              {filteredFollowRequest.map((request) => (
+                <div key={request._id} className="follower-item">
+                  <div className="follower-info">
+                    <p>{request.name}</p>
+                    <span
+                      className={`follow-status ${request.isFollowing ? 'following' : 'not-following'
+                        }`}
+                    >
+                      {request.isFollowing ? 'Following' : 'Not Following'}
+                    </span>
+                  </div>
+                  <div className="follower-actions">
+                    <button
+                      className="follow-btn"
+                      onClick={() => handleAcceptRequest(request._id)} // Handle accept request
+                    >
+                      Accept
+                    </button>
+                    <button
+                      className="remove-btn"
+                      onClick={() => handleRejectRequest(request._id)} // Handle reject request
+                    >
+                      Reject
+                    </button>
+                    <button
+                      className="block-btn"
+                      onClick={() => handleBlockUser(request._id)} // Handle block user
+                    >
+                      Block
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p>No follow requests found. <Link to="/profile">Get connected</Link></p>
           )}
         </div>
       </div>

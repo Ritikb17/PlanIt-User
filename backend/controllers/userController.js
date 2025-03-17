@@ -1,5 +1,6 @@
 const User = require("../models/User");
-const Chat = require('../models/chat')
+const Chat = require('../models/chat');
+const Notfication = require('../models/notification')
 const mongoose = require("mongoose");
 const ObjectId = mongoose.Types.ObjectId;
 const editBio = async (req, res) => {
@@ -102,6 +103,18 @@ const sendRequest = async (req, res) => {
     );
     []
 
+
+    const notificationVerification = await Notfication.findOneAndUpdate(
+      { user: other_id }, 
+      {
+          $push: {
+              notification: { message: "GOT A FOLLOW REQUEST" }
+          }
+      },
+      { new: true, upsert: true } 
+  );
+
+  console.log("notification is ",notificationVerification);
     res.status(200).json({ message: "Request sent successfully." });
 
   } catch (error) {
@@ -190,7 +203,97 @@ const acceptRequest = async (req, res) => {
     //   $push: { "connections.friends": self_id, "connections.chats": chatId }
     // });
 
+    const notificationVerification = await Notfication.findOneAndUpdate(
+      { user: other_id }, 
+      {
+          $push: {
+              notification: { message: `${req.user.username} ACCECPTED YOUR FOLLOW REQUEST ` }
+          }
+      },
+      { new: true, upsert: true } 
+  );
 
+
+    // Return success response
+    res.status(200).json({ message: "Request accepted successfully." });
+
+  } catch (error) {
+    console.error("ERROR IN ACCEPTING REQUEST:", error);
+    res.status(500).json({ message: "Cannot accept request.", error: error.message });
+  }
+};
+const rejectRequest = async (req, res) => {
+  const self_id = req.user._id; // ID of the current user
+  const other_id = req.body._id; // ID of the user who sent the request
+
+  try {
+    const selfIdObj = new mongoose.Types.ObjectId(self_id);
+    const otherIdObj = new mongoose.Types.ObjectId(other_id);
+    // Validate if other_id is a valid ObjectId
+    if (!mongoose.Types.ObjectId.isValid(other_id)) {
+      return res.status(400).json({ message: "Invalid user ID." });
+    }
+
+    // Find the recipient user (the one who sent the request)
+    const recipientUser = await User.findById(other_id);
+    if (!recipientUser) {
+      return res.status(404).json({ message: "Recipient user not found." });
+    }
+
+    // Find the current user
+    const selfUser = await User.findById(self_id);
+    if (!selfUser) {
+      return res.status(404).json({ message: "Current user not found." });
+    }
+
+    // Check if the other user is in the current user's block list
+    if (recipientUser.blockUsers.includes(self_id)) {
+      return res.status(400).json({ message: "Other user is in your block list." });
+    }
+
+    // Check if the other user is already a friend
+    // if (selfUser.connections.friends.includes(otherIdObj)) {
+    //   return res.status(400).json({ message: "User is already your friend." });
+    // }
+
+
+
+    await User.findByIdAndUpdate(
+      { _id: selfIdObj },
+      { $pull: { reciveFollowRequests: otherIdObj } }, // Remove self_id
+      { new: true } // Return the updated document
+    );
+
+    // Remove other_id from the current user's sendFollowRequest array
+    const check1 = await User.findByIdAndUpdate(
+      { _id: otherIdObj },
+      { $pull: { sendFollowRequest: selfIdObj } }, // Remove other_id
+      { new: true } // Return the updated document
+    );
+
+    // creating a new chat 
+    const chat = await Chat.create({
+      members: [otherIdObj, selfIdObj],
+    });
+    //setting new chat id to new variable 
+  
+    // await User.findByIdAndUpdate(self_id, {
+    //   $push: { "connections.friends": otherIdObj, "connections.chats": chatId }
+    // });
+
+    // await User.findByIdAndUpdate(other_id, {
+    //   $push: { "connections.friends": self_id, "connections.chats": chatId }
+    // });
+
+    const notificationVerification = await Notfication.findOneAndUpdate(
+      { user: other_id }, 
+      {
+          $push: {
+              notification: { message: `${req.user.username} REJECTED YOUR FOLLOW REQUEST ` }
+          }
+      },
+      { new: true, upsert: true } 
+  );
 
 
     // Return success response
@@ -332,7 +435,7 @@ const getConnections = async (req, res) => {
     const friends = await User.find({
       _id: friendIds
     })
-      .select("username name bio")
+      .select("username name")
       .skip(skip)
       .limit(limit);
 
@@ -340,11 +443,22 @@ const getConnections = async (req, res) => {
       _id: friendIds
     });
 
+    const followRequestUsers = await User.findById(self_id);
+    const idsOfFollowRequestUsers = followRequestUsers.reciveFollowRequests
+    const followRequest = await User.find({
+      _id: idsOfFollowRequestUsers
+    })
+      .select("username name")
+    //  console.log("FINAL FOLLOW REQUEST USERS", finalFollowRequestUsers);
+
+   
+
     const totalPages = Math.ceil(totalNonFriends / limit);
 
     res.status(200).json({
       message: "List of non-friends fetched successfully.",
       friends,
+      followRequest,
       pagination: {
         currentPage: page,
         totalPages,
@@ -437,5 +551,18 @@ const unBlockUser = async (req, res) => {
     res.status(400).json({ message: 'Error unblocking  user', error: error.message });
   }
 };
+const getNotification = async ( req, res)=>
+{
+  let  _id = req.user._id;
+  _id = new mongoose.Types.ObjectId(_id);
 
-module.exports = { editBio, checkUserName, sendRequest, acceptRequest, getSuggestion, getConnections, BlockUser, unBlockUser, removeUser };
+  try {
+    const result = await Notfication.find({user:_id});
+     console.log("RESULT Is", result);
+    res.status(200).json({message:"Notification for users are ",notification:result})
+  } catch (error) {
+    res.status(400).json({error:error});    
+  }
+}
+
+module.exports = { editBio, checkUserName, sendRequest, acceptRequest, getSuggestion, getConnections, BlockUser, unBlockUser, removeUser ,getNotification,rejectRequest};
