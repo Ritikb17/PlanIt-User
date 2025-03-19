@@ -7,6 +7,9 @@ import PrivateRoute from "./PrivateRoute ";
 import Profile from "./pages/Profile";
 import Register from "./pages/Register";
 import GroupPage from "./pages/GroupPage";
+import Discover from "./pages/DiscoverPage";
+import BlockUser from "./pages/BlockUserPage";
+
 import EventPage from "./pages/EventPage";
 import FollowersPage from "./pages/FollowersPage";
 
@@ -37,6 +40,8 @@ function App() {
           <Route path="/followers" element={<FollowersPage />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/events" element={<EventPage />} />
+          <Route path="/block-users" element={<BlockUser />} />
+          <Route path="/discover" element={<Discover />} />
         </Route>
       </Routes>
     </Router>

@@ -1,0 +1,126 @@
+/* General Styles */
+.followers-page {
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  background-color: #f8f9fa; /* Light grey background */
+  height: calc(100vh - 60px); /* Adjust height to account for Navbar */
+  margin-top: 60px; /* Push content below the Navbar */
+}
+
+/* Search Bar */
+.search-bar {
+  margin-bottom: 20px;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Followers Section */
+.followers-section {
+  margin-bottom: 40px;
+}
+
+.followers-section h2 {
+  font-size: 1.5rem;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.followers-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.follower-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: white;
+  border-radius: 5px;
+  padding: 10px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.follower-info p {
+  margin: 0;
+  font-size: 1rem;
+  color: #333;
+}
+
+.follower-info .follow-status {
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.follower-info .follow-status.following {
+  color: green;
+}
+
+.follower-info .follow-status.not-following {
+  color: red;
+}
+
+.follower-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.follower-actions button {
+  padding: 5px 10px;
+  font-size: 0.9rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.follower-actions .follow-btn {
+  background-color: #6a1b9a; /* Dark purple */
+  color: white;
+}
+
+.follower-actions .follow-btn:hover {
+  background-color: #4a148c; /* Darker purple */
+}
+
+.follower-actions .unfollow-btn {
+  background-color: #dc3545; /* Red */
+  color: white;
+}
+
+.follower-actions .unfollow-btn:hover {
+  background-color: #c82333; /* Darker red */
+}
+
+.follower-actions .remove-btn {
+  background-color: #6c757d; /* Grey */
+  color: white;
+}
+
+.follower-actions .remove-btn:hover {
+  background-color: #5a6268; /* Darker grey */
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .followers-page {
+    padding: 10px;
+  }
+
+  .follower-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .follower-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

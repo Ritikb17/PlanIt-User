@@ -7,14 +7,11 @@ const Navbar = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false); // State for notifications dropdown
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false); // State for settings dropdown
   const [searchQuery, setSearchQuery] = useState('');
 
-  const [notifications, setNotifications] = useState([
-    // { id: 1, message: 'You have a new friend request', link: '/friend-requests' },
-    // { id: 2, message: 'Your post got 10 likes', link: '/posts/123' },
-    // { id: 3, message: 'Event reminder: Meetup at 5 PM', link: '/events/456' },
-  ]);
-  
+  const [notifications, setNotifications] = useState([]);
+
   useEffect(() => {
     const fetchNotifications = async () => {
       const token = localStorage.getItem('token');
@@ -22,7 +19,7 @@ const Navbar = () => {
         console.error('No token found in localStorage');
         return;
       }
-  
+
       try {
         const response = await axios.get("http://localhost:5000/api/user/get-notification", {
           headers: {
@@ -30,22 +27,24 @@ const Navbar = () => {
             Authorization: `Bearer ${token}`, // Use the token from localStorage
           },
         });
-  
+
         // Assuming the response data has a structure like { notification: { notification: [...] } }
         const fetchedNotifications = response.data.notification[0].notification;
         setNotifications(fetchedNotifications);
-  
+
         console.log("NOTIFICATIONS:", fetchedNotifications);
       } catch (error) {
         console.error("Error fetching notifications:", error);
       }
     };
-  
+
     fetchNotifications();
   }, []);
+
   // Refs for dropdown menus
   const dropdownRef = useRef(null);
   const notificationsRef = useRef(null);
+  const settingsRef = useRef(null);
 
   // Handle search
   const handleSearch = (e) => {
@@ -65,6 +64,10 @@ const Navbar = () => {
       if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
         setIsNotificationsOpen(false);
       }
+      // Close settings dropdown
+      if (settingsRef.current && !settingsRef.current.contains(event.target)) {
+        setIsSettingsOpen(false);
+      }
     };
 
     // Add event listener
@@ -83,8 +86,18 @@ const Navbar = () => {
   };
 
   // Handle notification click
-  const handleNotificationClick = (link) => {
-    window.location.href = link; // Redirect to the notification link
+  const handleNotificationClick = (type) => {
+    window.location.href = 'http://localhost:3000/followers';
+  };
+
+  // Handle block user
+  const handleBlockUser = () => {
+   window.location.href ='http://localhost:3000/block-users'
+  };
+
+  // Handle privacy settings
+  const handlePrivacySettings = () => {
+    alert('Privacy Settings functionality goes here.');
   };
 
   return (
@@ -105,7 +118,7 @@ const Navbar = () => {
 
         {/* Friends Icon */}
         <Link to="/groups" className="navbar-icon" title="Groups">
-        <i className="fas fa-users"></i>
+          <i className="fas fa-users"></i>
         </Link>
 
         {/* Followers Icon */}
@@ -157,7 +170,7 @@ const Navbar = () => {
                   <div
                     key={notification.id}
                     className="dropdown-item"
-                    onClick={() => handleNotificationClick(notification.link)}
+                    onClick={() => handleNotificationClick(notification.type)}
                   >
                     {notification.message}
                   </div>
@@ -165,6 +178,33 @@ const Navbar = () => {
               ) : (
                 <div className="dropdown-item">No new notifications</div>
               )}
+            </div>
+          )}
+        </div>
+
+        {/* Settings Icon with Dropdown */}
+        <div className="settings-dropdown" ref={settingsRef}>
+          <div
+            className="navbar-icon"
+            title="Settings"
+            onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+          >
+            <i className="fas fa-cog"></i>
+          </div>
+          {isSettingsOpen && (
+            <div className="dropdown-menu">
+              <div className="dropdown-item" onClick={handleBlockUser}>
+                <i className="fas fa-ban"></i> Block User
+              </div>
+              <div className="dropdown-item" onClick={handlePrivacySettings}>
+                <i className="fas fa-lock"></i> Privacy Settings
+              </div>
+              <Link to="/theme" className="dropdown-item">
+                <i className="fas fa-palette"></i> Theme
+              </Link>
+              <Link to="/help" className="dropdown-item">
+                <i className="fas fa-question-circle"></i> Help
+              </Link>
             </div>
           )}
         </div>
@@ -182,9 +222,7 @@ const Navbar = () => {
               <Link to="/profile" className="dropdown-item">
                 <i className="fas fa-user"></i> Profile
               </Link>
-              <Link to="/settings" className="dropdown-item">
-                <i className="fas fa-cog"></i> Settings
-              </Link>
+             
               <Link to="/logout" className="dropdown-item" onClick={handleLogout}>
                 <i className="fas fa-sign-out-alt"></i> Logout
               </Link>

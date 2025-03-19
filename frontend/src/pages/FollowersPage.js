@@ -74,6 +74,7 @@ const FollowersPage = () => {
       );
 
       alert('User blocked successfully.');
+      window.location.reload();
     } catch (error) {
       console.error('Error blocking user:', error);
       alert('Failed to block user.');
@@ -107,6 +108,7 @@ const FollowersPage = () => {
       );
 
       alert('Request rejected.');
+      window.location.reload();
     } catch (error) {
       console.error('Error rejecting request:', error);
       alert('Failed to reject request.');
@@ -140,6 +142,7 @@ const FollowersPage = () => {
       );
 
       alert('Request accepted.');
+      window.location.reload();
     } catch (error) {
       console.error('Error accepting request:', error);
       alert('Failed to accept request.');
@@ -173,6 +176,7 @@ const FollowersPage = () => {
       );
 
       alert('User removed successfully.');
+      window.location.reload();
     } catch (error) {
       console.error('Error removing user:', error);
       alert('Failed to remove user.');

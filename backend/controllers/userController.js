@@ -1,6 +1,6 @@
 const User = require("../models/User");
 const Chat = require('../models/chat');
-const Notfication = require('../models/notification')
+const Notification = require('../models/notification')
 const mongoose = require("mongoose");
 const ObjectId = mongoose.Types.ObjectId;
 const editBio = async (req, res) => {
@@ -104,11 +104,12 @@ const sendRequest = async (req, res) => {
     []
 
 
-    const notificationVerification = await Notfication.findOneAndUpdate(
+    const notificationVerification = await Notification.findOneAndUpdate(
       { user: other_id }, 
       {
           $push: {
-              notification: { message: "GOT A FOLLOW REQUEST" }
+              notification: { message: `${req.user.username} SEND YOU A FOLLOW REQUEST` ,  type: "follow"}
+            , 
           }
       },
       { new: true, upsert: true } 
@@ -203,16 +204,20 @@ const acceptRequest = async (req, res) => {
     //   $push: { "connections.friends": self_id, "connections.chats": chatId }
     // });
 
-    const notificationVerification = await Notfication.findOneAndUpdate(
-      { user: other_id }, 
+    const notificationVerification = await Notification.findOneAndUpdate(
+      { user: otherIdObj },
       {
-          $push: {
-              notification: { message: `${req.user.username} ACCECPTED YOUR FOLLOW REQUEST ` }
-          }
+        $push: {
+          notification: {
+            message: `${req.user.username} ACCEPTED YOUR FOLLOW REQUEST`, 
+            type: "follow", 
+          },
+        },
       },
       { new: true, upsert: true } 
-  );
+    );
 
+    console.log("notifiaction",notificationVerification);
 
     // Return success response
     res.status(200).json({ message: "Request accepted successfully." });
@@ -285,7 +290,7 @@ const rejectRequest = async (req, res) => {
     //   $push: { "connections.friends": self_id, "connections.chats": chatId }
     // });
 
-    const notificationVerification = await Notfication.findOneAndUpdate(
+    const notificationVerification = await Notification.findOneAndUpdate(
       { user: other_id }, 
       {
           $push: {
@@ -557,12 +562,69 @@ const getNotification = async ( req, res)=>
   _id = new mongoose.Types.ObjectId(_id);
 
   try {
-    const result = await Notfication.find({user:_id});
+    const result = await Notification.find({user:_id});
      console.log("RESULT Is", result);
     res.status(200).json({message:"Notification for users are ",notification:result})
   } catch (error) {
     res.status(400).json({error:error});    
   }
 }
+const getBlockList = async (req, res) => {
+  const self_id = req.user._id;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
 
-module.exports = { editBio, checkUserName, sendRequest, acceptRequest, getSuggestion, getConnections, BlockUser, unBlockUser, removeUser ,getNotification,rejectRequest};
+  try {
+
+    if (!mongoose.Types.ObjectId.isValid(self_id)) {
+      return res.status(400).json({ message: "Invalid user ID." });
+    }
+
+    const blockUserIds = await User.findById(self_id).select("blockUsers");
+    if (!blockUserIds) {
+      return res.status(404).json({ message: "Blockuser not found." });
+    }
+    console.log("blockuser",blockUserIds.blockUsers);
+    // const friendIds = currentUser.connections.filter((connection) => !connection.isBlocked).map((connection) => connection.friend);
+
+    const skip = (page - 1) * limit;
+    const blockUser = await User.find({
+      _id: blockUserIds.blockUsers
+    })
+      .select("username name")
+      .skip(skip)
+      .limit(limit);
+
+    const totalNonFriends = await User.countDocuments({
+      _id: blockUserIds
+    });
+
+    // const followRequestUsers = await User.findById(self_id);
+    // const idsOfFollowRequestUsers = followRequestUsers.reciveFollowRequests
+    // const followRequest = await User.find({
+    //   _id: idsOfFollowRequestUsers
+    // })
+    //   .select("username name")
+    // //  console.log("FINAL FOLLOW REQUEST USERS", finalFollowRequestUsers);
+
+   
+
+    const totalPages = Math.ceil(totalNonFriends / limit);
+
+    res.status(200).json({
+      message: "List of non-friends fetched successfully.",
+      blockUser,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalResults: totalNonFriends,
+        resultsPerPage: limit,
+      },
+    });
+  } catch (error) {
+    console.error("ERROR FETCHING NON-FRIENDS:", error);
+    res.status(500).json({ message: "Cannot fetch non-friends.", error: error.message });
+  }
+};
+
+module.exports = { editBio, checkUserName, sendRequest, acceptRequest, getSuggestion, getConnections, BlockUser, unBlockUser, removeUser ,getNotification,rejectRequest,getBlockList};
