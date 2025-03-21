@@ -210,6 +210,30 @@
 .modal-buttons button[type="submit"]:hover {
   background-color: #4a148c; /* Darker purple on hover */
 }
+/* Follow Button */
+.follow-btn {
+  padding: 10px 20px;
+  font-size: 1rem;
+  color: #fff;
+  background-color: #6a1b9a; /* Dark purple */
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.follow-btn:hover {
+  background-color: #4a148c; /* Darker purple on hover */
+}
+
+/* Unsend Button */
+.unsend-btn {
+  background-color: #ff4444; /* Red for unsend state */
+}
+
+.unsend-btn:hover {
+  background-color: #cc0000; /* Darker red on hover */
+}
 
 /* Responsive Design */
 @media (max-width: 768px) {

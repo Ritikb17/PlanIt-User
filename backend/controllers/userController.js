@@ -64,6 +64,8 @@ const sendRequest = async (req, res) => {
   console.log("other iD AND seLF ", other_id, self_id);
   self_id = self_id.toString();
 
+  const selfIdObj = new mongoose.Types.ObjectId(self_id);
+  const otherIdObj = new mongoose.Types.ObjectId(other_id);
 
   try {
 
@@ -79,17 +81,24 @@ const sendRequest = async (req, res) => {
     if (recipientUser.blockUsers.includes(self_id)) {
       return res.status(400).json({ message: "You are blocked by the user." });
     }
+    const isAlreadyConnected = recipientUser.connections.some(
+      (connection) => connection.friend.toString() === selfIdObj.toString()
+    );
+    
+    if (isAlreadyConnected) {
+      return res.status(400).json({ message: "Already connected" });
+    }
+   
 
     if (recipientUser.reciveFollowRequests.includes(self_id)) {
       return res.status(400).json({ message: "Follow request already sent." });
     }
+  
     // if (recipientUser.connections.friends.includes(self_id)) {
     //   return res.status(400).json({ message: "Already Connected " });
     // }
 
 
-    const selfIdObj = new mongoose.Types.ObjectId(self_id);
-    const otherIdObj = new mongoose.Types.ObjectId(other_id);
     const updatedRecipientUser = await User.findByIdAndUpdate(
       other_id,
       { $push: { reciveFollowRequests: selfIdObj } }, // Add self_id to reciveFollowRequests
@@ -121,6 +130,71 @@ const sendRequest = async (req, res) => {
   } catch (error) {
     console.error("ERROR IN SENDING REQUEST:", error);
     res.status(500).json({ message: "Cannot make request", error: error.message });
+  }
+};
+const unsendRequest = async (req, res) => {
+  let other_id = req.body._id; // ID of the user to send the request to
+  let self_id = req.user._id; // ID of the sending user
+  console.log("other iD AND seLF ", other_id, self_id);
+  self_id = self_id.toString();
+
+
+  try {
+
+    if (!mongoose.Types.ObjectId.isValid(other_id)) {
+      return res.status(400).json({ message: "Invalid user ID." });
+    }
+
+    const recipientUser = await User.findById(other_id);
+    if (!recipientUser) {
+      return res.status(404).json({ message: "Recipient user not found." });
+    }
+
+    if (recipientUser.blockUsers.includes(self_id)) {
+      return res.status(400).json({ message: "You are blocked by the user." });
+    }
+
+    // if (recipientUser.reciveFollowRequests.includes(self_id)) {
+    //   return res.status(400).json({ message: "Follow request already sent." });
+    // }
+    // if (recipientUser.connections.friends.includes(self_id)) {
+    //   return res.status(400).json({ message: "Already Connected " });
+    // }
+
+
+    const selfIdObj = new mongoose.Types.ObjectId(self_id);
+    const otherIdObj = new mongoose.Types.ObjectId(other_id);
+    const updatedRecipientUser = await User.findByIdAndUpdate(
+      other_id,
+      { $pull: { reciveFollowRequests: selfIdObj } }, // Add self_id to reciveFollowRequests
+      { new: true } // Return the updated document
+    );
+
+    const updatedSenderUser = await User.findByIdAndUpdate(
+      self_id,
+      { $pull: { sendFollowRequest: otherIdObj } }, // Add other_id to sendFollowRequest
+      { new: true } // Return the updated document
+    );
+    []
+
+
+    const notificationVerification = await Notification.findOneAndUpdate(
+      { user: other_id }, 
+      {
+          $pull: {
+              notification: { message: `${req.user.username} SEND YOU A FOLLOW REQUEST` ,  type: "follow"}
+            , 
+          }
+      },
+      { new: true, upsert: true } 
+  );
+
+  console.log("notification is ",notificationVerification);
+    res.status(200).json({ message: "Request unsent successfully." });
+
+  } catch (error) {
+    console.error("ERROR IN SENDING REQUEST:", error);
+    res.status(500).json({ message: "error in request unsend", error: error.message });
   }
 };
 const acceptRequest = async (req, res) => {
@@ -626,5 +700,46 @@ const getBlockList = async (req, res) => {
     res.status(500).json({ message: "Cannot fetch non-friends.", error: error.message });
   }
 };
+const getUser= async (req,res)=>
+{
+  const username = req.params.username;
+  const self_id = req.user._id;
+  const selfIdObj = new mongoose.Types.ObjectId(self_id);
 
-module.exports = { editBio, checkUserName, sendRequest, acceptRequest, getSuggestion, getConnections, BlockUser, unBlockUser, removeUser ,getNotification,rejectRequest,getBlockList};
+  try {
+    const userInfo = await User.findOne({username:username}).select('username bio connections name -_id');
+    
+    const isAlreadyConnected = userInfo.connections.some(
+      (connection) => connection.friend.toString() === selfIdObj.toString()
+    );
+    
+    if(!userInfo)
+    {
+      res.status(200).json({message:"not found user"})
+    }
+
+    res.status(200).json({message:"got user data", userInfo,isAlreadyConnected : isAlreadyConnected});
+  } catch (error) {
+    res.status(400).json({message:"error in getting user ",error:error});    
+  }
+}
+const alreadySendRequest = async(req,res)=>
+{
+  const uname = req.params.username;
+  const _id = req.user._id;
+  try {
+    
+    const userInfo = await User.findOne({username:uname});
+    if (!userInfo) {
+      return res.status(404).json({ message: "User not found." });
+    }
+    const result= userInfo.reciveFollowRequests.includes(_id);
+    res.status(200).json({result:result}) 
+    
+  } catch (error) {
+    res.status(400).json({error:error})
+    
+  }
+}
+
+module.exports = { editBio, checkUserName, sendRequest, acceptRequest, getSuggestion, getConnections, BlockUser, unBlockUser, removeUser ,getNotification,rejectRequest,getBlockList,getUser,alreadySendRequest,unsendRequest};

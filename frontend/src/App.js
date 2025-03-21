@@ -12,6 +12,7 @@ import BlockUser from "./pages/BlockUserPage";
 
 import EventPage from "./pages/EventPage";
 import FollowersPage from "./pages/FollowersPage";
+import OtherUserProfile from "./pages/OtherUserProfile";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("token"));
@@ -42,6 +43,7 @@ function App() {
           <Route path="/events" element={<EventPage />} />
           <Route path="/block-users" element={<BlockUser />} />
           <Route path="/discover" element={<Discover />} />
+          <Route path="/profile/:username" element={<OtherUserProfile/>}/>
         </Route>
       </Routes>
     </Router>

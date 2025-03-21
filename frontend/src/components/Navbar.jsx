@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; // Use useNavigate for programmatic navigation
 import axios from 'axios';
 import './Navbar.css'; // Import the CSS file
 
@@ -8,9 +8,11 @@ const Navbar = () => {
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false); // State for notifications dropdown
   const [isSettingsOpen, setIsSettingsOpen] = useState(false); // State for settings dropdown
-  const [searchQuery, setSearchQuery] = useState('');
-
+  const [searchQuery, setSearchQuery] = useState(''); // State for search input
+  const [searchResults, setSearchResults] = useState([]); // State for search results
   const [notifications, setNotifications] = useState([]);
+
+  const navigate = useNavigate(); // Use useNavigate for navigation
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -46,11 +48,61 @@ const Navbar = () => {
   const notificationsRef = useRef(null);
   const settingsRef = useRef(null);
 
-  // Handle search
-  const handleSearch = (e) => {
-    e.preventDefault();
-    // Handle search logic here, e.g., redirect to a search results page or filter content
-    console.log('Search Query:', searchQuery);
+  // Handle search input change
+  const handleSearchChange = async (e) => {
+    const query = e.target.value;
+    setSearchQuery(query); // Update the search query state
+
+    if (query.trim() === '') {
+      setSearchResults([]); // Clear search results if the query is empty
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No token found in localStorage');
+      return;
+    }
+
+    try {
+      const response = await axios.get(
+        `http://localhost:5000/api/other/search-user/${query}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      setSearchResults(response.data.result); // Store the search results
+      console.log("SEARCH RESULTS:", response.data.result);
+    } catch (error) {
+      console.error("Error searching users:", error);
+    }
+  };
+
+  // Fetch user info when a search result is clicked
+  const getUserInfo = async (username) => {
+    const token = localStorage.getItem('token');
+    console.log("The id is ", username);
+    if (!token) {
+      console.error('No token found in localStorage');
+      return;
+    }
+    try {
+      const userInfo = await axios.get(`http://localhost:5000/api/user/get-user/${username}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log("USER INFO IS ", userInfo.data);
+      navigate(`/profile/${username}`); // Navigate to the user's profile page
+    } catch (error) {
+      console.error("Error fetching user info:", error);
+    }
   };
 
   // Close dropdowns when clicking outside
@@ -82,17 +134,17 @@ const Navbar = () => {
   // Handle logout
   const handleLogout = () => {
     localStorage.removeItem('token');
-    window.location.href = '/login'; // Redirect after logout
+    navigate('/login'); // Redirect after logout
   };
 
   // Handle notification click
   const handleNotificationClick = (type) => {
-    window.location.href = 'http://localhost:3000/followers';
+    navigate('/followers'); // Use navigate instead of window.location.href
   };
 
   // Handle block user
   const handleBlockUser = () => {
-   window.location.href ='http://localhost:3000/block-users'
+    navigate('/block-users'); // Use navigate instead of window.location.href
   };
 
   // Handle privacy settings
@@ -138,16 +190,35 @@ const Navbar = () => {
 
         {/* Search Input (Visible when isSearchVisible is true) */}
         {isSearchVisible && (
-          <form onSubmit={handleSearch} className="search-form">
+          <div className="search-form">
             <input
               type="text"
-              placeholder="Search..."
+              placeholder="Search users..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={handleSearchChange} // Update search query on input change
               className="search-input"
               autoFocus
             />
-          </form>
+            {/* Display Search Results */}
+            {searchResults.length > 0 && (
+              <div className="search-results">
+                {searchResults.map((user) => (
+                  <div
+                    key={user._id}
+                    className="search-result-item"
+                    onClick={() => getUserInfo(user.username)} // Use arrow function to avoid immediate invocation
+                  >
+                    <img
+                      src={user.profilePicture || 'https://via.placeholder.com/40'}
+                      alt={user.username}
+                      className="profile-picture"
+                    />
+                    <p>{user.username}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         )}
 
         {/* Notifications Icon with Dropdown */}
@@ -222,7 +293,6 @@ const Navbar = () => {
               <Link to="/profile" className="dropdown-item">
                 <i className="fas fa-user"></i> Profile
               </Link>
-             
               <Link to="/logout" className="dropdown-item" onClick={handleLogout}>
                 <i className="fas fa-sign-out-alt"></i> Logout
               </Link>
