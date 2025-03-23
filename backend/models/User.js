@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
+const Channel = require("./channel");
 
 const { Schema } = mongoose;
 
@@ -14,24 +15,31 @@ const UserSchema = new Schema({
     {
       friend: { type: Schema.Types.ObjectId, ref: "User" },
       chat: { type: Schema.Types.ObjectId, ref: "Chat" },
-      isBlocked:{type: Boolean, default:false}
+      isBlocked: { type: Boolean, default: false }
     }
   ],
-  
-  
-  
-
+  channels: [{
+    _id: { type: Schema.Types.ObjectId, ref: "Channel" }, // Corrected reference to "Channel"
+    name: { type: String }
+  }],
+  connectedChannels: [
+    { type: Schema.Types.ObjectId, ref: "Channel" } // Corrected reference to "Channel"
+  ],
+  receivedChannelRequest: [ // Corrected spelling
+    { type: Schema.Types.ObjectId, ref: "Channel" } // Corrected reference to "Channel"
+  ],
+  blockChannels: [
+    { type: Schema.Types.ObjectId, ref: "Channel" } // Corrected reference to "Channel"
+  ],
   reciveFollowRequests: [{ type: Schema.Types.ObjectId, ref: "User" }],
   sendFollowRequest: [{ type: Schema.Types.ObjectId, ref: "User" }],
   blockUsers: [{ type: Schema.Types.ObjectId, ref: "User" }],
-  
   events: [
     { type: Schema.Types.ObjectId, ref: "Event" },
     { type: Schema.Types.ObjectId, ref: "Chat" },
   ],
   notifications: [{ type: Schema.Types.ObjectId, ref: "Notification" }],
 });
-
 
 UserSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();

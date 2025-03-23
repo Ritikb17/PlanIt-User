@@ -13,8 +13,6 @@ const OtherUserProfile = () => {
 
   // Fetch the user's data based on the username
   useEffect(() => {
-
-   
     const fetchUserData = async () => {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -39,10 +37,7 @@ const OtherUserProfile = () => {
         if (data.username === username) {
           console.log("redirect to profile");
           window.location.href = '/profile'; // or window.location.assign('/profile');
-      }
-
-
-
+        }
 
         // Fetch user data
         const userResponse = await axios.get(
@@ -174,12 +169,19 @@ const OtherUserProfile = () => {
         {/* User Information */}
         <div className="user-info">
           <>
-            <h1>{user.username}</h1>
-            <b>
+            <div className="profile-picture-container">
+              <img
+                src={user.profilePicture || 'https://via.placeholder.com/150'}
+                alt="Profile"
+                className="profile-picture"
+              />
+            </div>
+            <div className="user-details">
+              <h1>{user.username}</h1>
               <p className="pronouns">{user.name || 'No name provided'}</p>
-            </b>
-            <p className="pronouns">{user.pronouns || 'No pronouns provided'}</p>
-            <p className="bio">{user.bio || 'No bio available'}</p>
+              <p className="pronouns">{user.pronouns || 'No pronouns provided'}</p>
+              <p className="bio">{user.bio || 'No bio available'}</p>
+            </div>
           </>
         </div>
 
@@ -196,6 +198,7 @@ const OtherUserProfile = () => {
             {hasSentRequest ? 'Unsend Request' : 'Follow'}
           </button>
         )}
+
       </div>
     </div>
   );

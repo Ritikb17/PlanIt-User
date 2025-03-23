@@ -1,3 +1,5 @@
+/* Profile.css */
+
 /* General Styles */
 .profile-page {
   max-width: 600px;
@@ -13,20 +15,38 @@
   margin-bottom: 20px;
 }
 
-.user-info h1 {
-  font-size: 2rem;
-  margin-bottom: 5px;
+.profile-picture-container {
+  margin-bottom: 10px; /* Reduced spacing below the profile picture */
 }
 
-.user-info .pronouns {
+.profile-picture {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-details {
+  text-align: center;
+}
+
+.user-details h1 {
+  font-size: 2rem;
+  margin: 0; /* Remove default margin */
+  margin-bottom: 5px; /* Add small spacing below the username */
+}
+
+.user-details .pronouns {
   font-size: 1rem;
   color: #666;
-  margin-bottom: 10px;
+  margin: 0; /* Remove default margin */
+  margin-bottom: 5px; /* Add small spacing below pronouns */
 }
 
-.user-info .bio {
+.user-details .bio {
   font-size: 1.2rem;
   color: #333;
+  margin: 0; /* Remove default margin */
 }
 
 /* Edit Profile Button */
@@ -210,6 +230,7 @@
 .modal-buttons button[type="submit"]:hover {
   background-color: #4a148c; /* Darker purple on hover */
 }
+
 /* Follow Button */
 .follow-btn {
   padding: 10px 20px;
@@ -233,6 +254,130 @@
 
 .unsend-btn:hover {
   background-color: #cc0000; /* Darker red on hover */
+}
+
+/* Profile.css */
+
+/* User Information */
+.user-info {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.profile-picture-container {
+  margin-bottom: 10px; /* Reduced spacing below the profile picture */
+}
+
+.profile-picture {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-details {
+  text-align: center;
+}
+
+.user-details h1 {
+  font-size: 2rem;
+  margin: 0; /* Remove default margin */
+  margin-bottom: 5px; /* Add small spacing below the username */
+}
+
+.user-details .pronouns {
+  font-size: 1rem;
+  color: #666;
+  margin: 0; /* Remove default margin */
+  margin-bottom: 5px; /* Add small spacing below pronouns */
+}
+
+.user-details .bio {
+  font-size: 1.2rem;
+  color: #333;
+  margin: 0; /* Remove default margin */
+}
+
+/* Follow Button */
+.follow-btn {
+  padding: 10px 20px;
+  font-size: 1rem;
+  color: #fff;
+  background-color: #6a1b9a; /* Dark purple */
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.follow-btn:hover {
+  background-color: #4a148c; /* Darker purple on hover */
+}
+
+/* Unsend Button */
+.unsend-btn {
+  background-color: #ff4444; /* Red for unsend state */
+}
+
+.unsend-btn:hover {
+  background-color: #cc0000; /* Darker red on hover */
+}
+
+/* Chat Button */
+.chat-btn {
+  padding: 10px 20px;
+  font-size: 1rem;
+  color: #fff;
+  background-color: #838684; 
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.chat-btn:hover {
+  background-color: #202020; /* Darker green on hover */
+}
+
+/* Discover People Section */
+.discover-people {
+  margin-bottom: 20px;
+}
+
+.discover-people h2 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+
+.discover-people .see-all {
+  display: block;
+  text-align: right;
+  font-size: 0.9rem;
+  color: #6a1b9a; /* Dark purple */
+  text-decoration: none;
+  margin-bottom: 10px;
+}
+
+.discover-people .see-all:hover {
+  text-decoration: underline;
+}
+
+/* Complete Your Profile Section */
+.complete-profile {
+  padding: 20px;
+  background-color: #f8f9fa; /* Light grey */
+  border-radius: 5px;
+  text-align: center;
+}
+
+.complete-profile h2 {
+  font-size: 1.5rem;
+  margin-bottom: 10px;
+}
+
+.complete-profile p {
+  font-size: 1rem;
+  color: #666;
 }
 
 /* Responsive Design */

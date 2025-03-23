@@ -8,7 +8,7 @@ const Profile = () => {
   const [error, setError] = useState('');
   const [suggestions, setSuggestions] = useState([]); // State for storing suggestions
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ username: '', bio: '', email: '', _id: '' });
+  const [formData, setFormData] = useState({ username: '', bio: '', email: '', _id: '', profilePicture: '' });
   const [userNameMessage, setUsernameMessage] = useState('');
   const [isDisable, setIsDisable] = useState(false);
   const [page, setPage] = useState(1); // Pagination: Current page
@@ -38,7 +38,7 @@ const Profile = () => {
         const data = await response.json();
         console.log("DATA is ", data);
         setUser(data);
-        setFormData({ username: data.username, bio: data.bio, email: data.email, _id: data._id }); // Pre-fill form with current data
+        setFormData({ username: data.username, bio: data.bio, email: data.email, _id: data._id, profilePicture: data.profilePicture }); // Pre-fill form with current data
       } catch (error) {
         console.error('Error fetching profile:', error);
       }
@@ -171,6 +171,18 @@ const Profile = () => {
     setFormData({ ...formData, [name]: value });
   };
 
+  // Handle profile picture upload
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData({ ...formData, profilePicture: reader.result });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -220,12 +232,18 @@ const Profile = () => {
         <div className="user-info">
           {user ? (
             <>
-              <h1>{user.username}</h1>
-              <b>
-                <p className="pronouns">{user.name || 'he/him'}</p>
-              </b>
-              <p className="pronouns">{user.pronouns || 'he/him'}</p>
-              <p className="bio">{user.bio || 'Add bio'}</p>
+              <div className="profile-picture-container">
+                <img
+                  src={user.profilePicture || 'https://via.placeholder.com/150'}
+                  alt="Profile"
+                  className="profile-picture"
+                />
+              </div>
+              <div className="user-details">
+                <h1>{user.username}</h1>
+                <p className="pronouns">{user.pronouns || 'he/him'}</p>
+                <p className="bio">{user.bio || 'Add bio'}</p>
+              </div>
             </>
           ) : (
             <p>Loading profile...</p>
@@ -309,6 +327,16 @@ const Profile = () => {
                   name="bio"
                   value={formData.bio}
                   onChange={handleInputChange}
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="profilePicture">Profile Picture</label>
+                <input
+                  type="file"
+                  id="profilePicture"
+                  name="profilePicture"
+                  onChange={handleFileChange}
                 />
               </div>
 

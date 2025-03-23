@@ -8,6 +8,7 @@ const authRoutes = require("./routes/authRoutes");
 const profileRoutes = require("./routes/profileRoutes");
 const userRoutes = require("./routes/userRoutes");
 const otherRoutes = require("./routes/otherRoutes");
+const channelRoutes = require("./routes/channelRoutes");
 const { verifyToken } = require("./middlewares/authMiddleware");
 
 const app = express();
@@ -23,6 +24,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/profile", verifyToken, profileRoutes);
 app.use("/api/user", verifyToken, userRoutes);
 app.use("/api/other", verifyToken, otherRoutes);
+app.use("/api/channel", verifyToken, channelRoutes);
 connectDB();
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
