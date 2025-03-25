@@ -12,6 +12,7 @@ const channel = new Schema({
             message:{type:String},
             timestamp: { type: Date, default: Date.now },
     }],
+    members:[{type:Schema.Types.ObjectId, ref:"User"}],
 
 })
 
