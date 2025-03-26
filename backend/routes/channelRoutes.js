@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const {createChannel,deleteChannel,sendChannelConnectionRequest,removeChannelConnectionRequest,unsendChannelConnectionRequest,acceptChannelConnectionRequest} = require('../controllers/channelController');
+const {createChannel,deleteChannel,sendChannelConnectionRequest,removeChannelConnectionRequest,unsendChannelConnectionRequest,acceptChannelConnectionRequest, deleteChannel} = require('../controllers/channelController');
 
 
 router.post('/create-channel',createChannel);
@@ -11,6 +11,7 @@ router.put('/unsend-channel-connection-request-by-creator',unsendChannelConnecti
 
 router.put('/remove-channel-connection-request-by-other-user',removeChannelConnectionRequest)
 router.put('/accept-channel-connection-request-by-other-user',acceptChannelConnectionRequest)
+router.delete('/delete-channel',deleteChannel);
 
 
 
