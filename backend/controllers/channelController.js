@@ -311,5 +311,17 @@ const acceptChannelConnectionRequest = async (req, res) => {
         console.error("Error accepting channel request:", error);
         return res.status(500).json({ message: "Internal server error" });
     }
+const deleteChannel=(req,res)=>{
+const _id = req.user._id;
+const channelId =req.body.channelId;
+try{
+
+
+}
+catch(error){
+return res.status(400).json({error:error});
+}
+
+}
 };
 module.exports = { createChannel, deleteChannel, sendChannelConnectionRequest, removeChannelConnectionRequest, unsendChannelConnectionRequest, acceptChannelConnectionRequest }
