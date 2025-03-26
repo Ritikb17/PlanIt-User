@@ -315,8 +315,16 @@ const deleteChannel=(req,res)=>{
 const _id = req.user._id;
 const channelId =req.body.channelId;
 try{
+const check1 =await find({createdBy : _id});
+if(!check1)
+{
+return res.status(404).json({message:"you can't delete the channel"});
 
+}
 
+await channel.updateOne(isDelete:true).then()=>{
+res.status(200).json({message: channel deleted successfully "});
+}
 }
 catch(error){
 return res.status(400).json({error:error});
