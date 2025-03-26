@@ -311,25 +311,20 @@ const acceptChannelConnectionRequest = async (req, res) => {
         console.error("Error accepting channel request:", error);
         return res.status(500).json({ message: "Internal server error" });
     }
-const deleteChannel=(req,res)=>{
-const _id = req.user._id;
-const channelId =req.body.channelId;
-try{
-const check1 =await find({createdBy : _id});
-if(!check1)
-{
-return res.status(404).json({message:"you can't delete the channel"});
+const deleteChannel = async (req, res) => {
+    const _id = req.user._id;
+    const channelId = req.body.channelId;
+    try {
+        const check1 = await Channel.find({ createdBy: _id });
+        if (!check1) {
+            return res.status(404).json({ message: "You can't delete the channel" });
+        }
 
-}
-
-await channel.updateOne(isDelete:true).then()=>{
-res.status(200).json({message: channel deleted successfully "});
-}
-}
-catch(error){
-return res.status(400).json({error:error});
-}
-
-}
+        await Channel.updateOne({ _id: channelId }, { isDelete: true });
+        res.status(200).json({ message: "Channel deleted successfully" });
+    } catch (error) {
+        return res.status(400).json({ error: error });
+    }
+};
 };
 module.exports = { createChannel, deleteChannel, sendChannelConnectionRequest, removeChannelConnectionRequest, unsendChannelConnectionRequest, acceptChannelConnectionRequest }
