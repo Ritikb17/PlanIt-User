@@ -11,6 +11,7 @@ router.put('/unsend-channel-connection-request-by-creator',unsendChannelConnecti
 
 router.put('/remove-channel-connection-request-by-other-user',removeChannelConnectionRequest)
 router.put('/accept-channel-connection-request-by-other-user',acceptChannelConnectionRequest)
+router.delete('/delete-channel',deleteChannel);
 
 router.patch('/update-channel-info/:channelId',updateChannelInfo)
 

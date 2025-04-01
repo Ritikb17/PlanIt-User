@@ -382,6 +382,21 @@ const acceptChannelConnectionRequest = async (req, res) => {
         console.error("Error accepting channel request:", error);
         return res.status(500).json({ message: "Internal server error" });
     }
+const deleteChannel = async (req, res) => {
+    const _id = req.user._id;
+    const channelId = req.body.channelId;
+    try {
+        const check1 = await Channel.find({ createdBy: _id });
+        if (!check1) {
+            return res.status(404).json({ message: "You can't delete the channel" });
+        }
+
+        await Channel.updateOne({ _id: channelId }, { isDelete: true });
+        res.status(200).json({ message: "Channel deleted successfully" });
+    } catch (error) {
+        return res.status(400).json({ error: error });
+    }
+};
 };
 // for updating channel information
 const updateChannelInfo = async (req, res) => {
