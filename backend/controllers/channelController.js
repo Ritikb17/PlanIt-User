@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Channel = require('../models/channel');
 const User = require('../models/User');
+const Notification = require('../models/notification')
 const ObjectId = mongoose.Types.ObjectId;
 //for channel creator( create new channel)
 const createChannel = async (req, res) => {
@@ -73,6 +74,21 @@ const deleteChannel = async (req, res) => {
         //     return res.status(400).json({ message: 'Channel not found in the user channel list' });
         // }
 
+
+
+        const ch = await Channel.findById(channel__id);
+        console.log("Connected Users are:", ch.members);
+
+
+        // removing channel from all the users 
+        for (const member of ch.members) {
+
+            await User.findByIdAndUpdate(member,
+                { $pull: { connectedChannels: channel__id } });
+
+        }
+
+        // removing the channel id from the user 
         const updatedUser = await User.findByIdAndUpdate(
             _id,
             { $pull: { channel: { _id: channel__id } } },
@@ -82,6 +98,7 @@ const deleteChannel = async (req, res) => {
         if (!updatedUser) {
             return res.status(400).json({ message: 'Failed to update user' });
         }
+
 
         // Delete the channel from the Channel collection
         const deletedChannel = await Channel.findByIdAndDelete(channel__id);
@@ -101,8 +118,11 @@ const sendChannelConnectionRequest = async (req, res) => {
     const _id = req.user._id; // User ID (the one sending the request)
     const channel_id = req.body.channelId; // Channel ID to which the request is sent
     const sender_id = req.body.senderId; // Sender ID (the one initiating the request)
-
+    const obj_sender_id = new mongoose.Types.ObjectId(sender_id);
     try {
+
+
+
         // Validate the user
         const user = await User.findById(_id);
         if (!user) {
@@ -111,9 +131,14 @@ const sendChannelConnectionRequest = async (req, res) => {
 
         // Validate the channel
         const channel = await Channel.findById(channel_id);
-        if (!channel) {
-            return res.status(404).json({ message: "Channel not found" });
-        }
+
+        // const check1 =  await channel.members.includes(sender_id);
+        // if(check1)
+        // {
+        //     return res.status(400).json({message:"already member of this channel"});
+        // }
+
+
 
         // Validate the sender
         const senderUser = await User.findById(sender_id);
@@ -154,6 +179,26 @@ const sendChannelConnectionRequest = async (req, res) => {
         }
 
         // Success response
+        const notificationVerification = await Notification.findOneAndUpdate(
+            { user: obj_sender_id },
+            {
+                $push: {
+                    notification: {
+                        message: "SEND YOU CONNECTION REQUEST",
+                        type: "channel", // Changed to match your schema enum
+                        // isSeen will default to false as per your schema
+                    },
+                },
+            },
+            {
+                new: true,
+                upsert: true,
+                setDefaultsOnInsert: true // Ensures defaults are set on new documents
+            }
+        );
+
+
+
         return res.status(200).json({ message: "Request sent successfully" });
     } catch (error) {
         console.error("Error sending channel connection request:", error);
@@ -176,6 +221,11 @@ const unsendChannelConnectionRequest = async (req, res) => {
         const check1 = await channel.sendRequest.includes(sender_id)
         if (!check1) {
             return res.status(404).json({ message: "request not found in the channel " });
+        }
+
+        
+        if (!channel.createdBy.equals(_id)) {
+            return res.status(403).json({ message: 'You do not have permission ' });
         }
 
         const updatedChannel = await Channel.findByIdAndUpdate(
@@ -202,6 +252,7 @@ const unsendChannelConnectionRequest = async (req, res) => {
         if (!updatedSender) {
             return res.status(400).json({ message: "Failed to update sender's request list" });
         }
+
 
 
         return res.status(200).json({ message: "Request rejected successfully" });
@@ -257,16 +308,18 @@ const removeChannelConnectionRequest = async (req, res) => {
 const acceptChannelConnectionRequest = async (req, res) => {
     const _id = req.user._id; // User ID
     const channel_id = req.body.channelId; // Channel ID
-    
+
+
     try {
-       
+
         const obj_channel_id = new mongoose.Types.ObjectId(channel_id);
         const obj_id = new mongoose.Types.ObjectId(_id);
 
-   
-        const user = await User.findById(_id);
-        const channel = await Channel.findById(channel_id); 
 
+        const user = await User.findById(_id);
+        const channel = await Channel.findById(channel_id);
+
+        const sender_id = await channel.createdBy;
         if (!user || !channel) {
             return res.status(404).json({ message: "User or channel not found" });
         }
@@ -280,7 +333,7 @@ const acceptChannelConnectionRequest = async (req, res) => {
             { _id: _id },
             { $pull: { receivedChannelRequest: obj_channel_id } }
         );
-        
+
         if (removeRequestResult.modifiedCount === 0) {
             return res.status(400).json({ message: "Failed to remove channel request" });
         }
@@ -305,6 +358,24 @@ const acceptChannelConnectionRequest = async (req, res) => {
             return res.status(400).json({ message: "Failed to add channel to user's connections" });
         }
 
+        const notificationVerification = await Notification.findOneAndUpdate(
+            { user: sender_id },
+            {
+                $push: {
+                    notification: {
+                        message: `${req.user.username}ACCECPT YOUR REQUEST `,
+                        type: "channel", // Changed to match your schema enum
+                        // isSeen will default to false as per your schema
+                    },
+                },
+            },
+            {
+                new: true,
+                upsert: true,
+                setDefaultsOnInsert: true // Ensures defaults are set on new documents
+            }
+        );
+
         return res.status(200).json({ message: "Request accepted successfully" });
 
     } catch (error) {
@@ -312,4 +383,24 @@ const acceptChannelConnectionRequest = async (req, res) => {
         return res.status(500).json({ message: "Internal server error" });
     }
 };
-module.exports = { createChannel, deleteChannel, sendChannelConnectionRequest, removeChannelConnectionRequest, unsendChannelConnectionRequest, acceptChannelConnectionRequest }
+// for updating channel information
+const updateChannelInfo = async (req, res) => {
+    const channel__id = req.params.channelId;
+    const _id = req.user._id;
+    const data = req.body;
+    try {
+        const channelInfo = await Channel.findById(channel__id);
+
+        if (!channelInfo.createdBy.equals(_id)) {
+            return res.status(403).json({ message: 'You do not have permission to edit this channel' });
+        }
+        const update = await Channel.findByIdAndUpdate(channel__id, data);
+        if (update) {
+            res.status(200).json({ message: "data has been updated" });
+        }
+    } catch (error) {
+        res.status(400).json({ error: error });
+
+    }
+}
+module.exports = { createChannel, deleteChannel, sendChannelConnectionRequest, removeChannelConnectionRequest, unsendChannelConnectionRequest, acceptChannelConnectionRequest, updateChannelInfo }
