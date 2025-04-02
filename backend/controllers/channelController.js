@@ -53,6 +53,7 @@ const createChannel = async (req, res) => {
 const deleteChannel = async (req, res) => {
     const _id = req.user._id; // User ID
     const channel__id = req.params.channelId; // Channel ID to delete
+    const obj_channel_id = new mongoose.Types.ObjectId(channel__id);
 
     try {
         const channel = await Channel.findById(channel__id);
@@ -91,9 +92,11 @@ const deleteChannel = async (req, res) => {
         // removing the channel id from the user 
         const updatedUser = await User.findByIdAndUpdate(
             _id,
-            { $pull: { channel: { _id: channel__id } } },
+            { $pull: { channel: { _id: obj_channel_id } } },
             { new: true }
         );
+
+
 
         if (!updatedUser) {
             return res.status(400).json({ message: 'Failed to update user' });
@@ -223,7 +226,7 @@ const unsendChannelConnectionRequest = async (req, res) => {
             return res.status(404).json({ message: "request not found in the channel " });
         }
 
-        
+
         if (!channel.createdBy.equals(_id)) {
             return res.status(403).json({ message: 'You do not have permission ' });
         }
@@ -344,15 +347,20 @@ const acceptChannelConnectionRequest = async (req, res) => {
             { $addToSet: { members: obj_id } } // Using $addToSet to prevent duplicates
         );
 
-        if (addMemberResult.modifiedCount === 0) {
-            return res.status(400).json({ message: "Failed to add user to channel members" });
-        }
+        // if (addMemberResult.modifiedCount === 0) {
+        //     return res.status(400).json({ message: "Failed to add user to channel members" });
+        // }
 
         // Add channel to user's connected channels
-        const addChannelResult = await User.updateOne(
+        const addChannelResult = await User.findByIdAndUpdate(
             { _id: _id },
-            { $addToSet: { connectedChannels: obj_channel_id } }
+            { $push: { connectedChannels: obj_channel_id } }
         );
+
+        const removeChannelIdFromSendRequest = await Channel.findByIdAndUpdate(channel_id, {
+            $pull: { sendRequest: obj_id }
+        },
+            { new: true })
 
         if (addChannelResult.modifiedCount === 0) {
             return res.status(400).json({ message: "Failed to add channel to user's connections" });
@@ -382,21 +390,7 @@ const acceptChannelConnectionRequest = async (req, res) => {
         console.error("Error accepting channel request:", error);
         return res.status(500).json({ message: "Internal server error" });
     }
-const deleteChannel = async (req, res) => {
-    const _id = req.user._id;
-    const channelId = req.body.channelId;
-    try {
-        const check1 = await Channel.find({ createdBy: _id });
-        if (!check1) {
-            return res.status(404).json({ message: "You can't delete the channel" });
-        }
 
-        await Channel.updateOne({ _id: channelId }, { isDelete: true });
-        res.status(200).json({ message: "Channel deleted successfully" });
-    } catch (error) {
-        return res.status(400).json({ error: error });
-    }
-};
 };
 // for updating channel information
 const updateChannelInfo = async (req, res) => {
@@ -418,4 +412,42 @@ const updateChannelInfo = async (req, res) => {
 
     }
 }
-module.exports = { createChannel, deleteChannel, sendChannelConnectionRequest, removeChannelConnectionRequest, unsendChannelConnectionRequest, acceptChannelConnectionRequest, updateChannelInfo }
+const getChannels = async (req, res) => {
+    const _id = req.user._id;
+    try {
+        const data = await User.findById(_id).populate('connectedChannels').select('connectedChannels');
+        if (!data) {
+            res.status(400).json({ error: "error in fetching data" })
+        }
+        res.status(200).json({ connectedgroups: data });
+
+    } catch (error) {
+        res.status(400).json({ error: error })
+    }
+}
+const leaveChannel = async (req, res) => {
+    const channel__id = req.params.channelId;
+    const _id = req.user._id;
+    const obj_id = new mongoose.Types.ObjectId(_id);
+
+    try {
+        const removingIdFromUser = await User.findByIdAndUpdate(_id, { $pull: { connectedChannels: channel__id } },
+            { new: true }
+        )
+      
+
+        if (!removingIdFromUser) {
+            res.status(400).json({ error: "cannnot remove id ffromm user " });
+        }
+        const removingUserFromChannel = await Channel.findByIdAndUpdate(channel__id, { $pull: { members: _id } },
+            { new: true })
+        if (!removingUserFromChannel) {
+            res.status(400).json({ error: "cannnot remove id ffromm channel " });
+        }
+
+        res.status(200).json({ message: "successfully leaves the group" })
+    } catch (error) {
+        res.status(400).json({ error: error });
+    }
+}
+module.exports = { createChannel, deleteChannel, sendChannelConnectionRequest, removeChannelConnectionRequest, unsendChannelConnectionRequest, acceptChannelConnectionRequest, getChannels, updateChannelInfo, leaveChannel }
