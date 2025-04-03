@@ -6,7 +6,7 @@ const channel = new Schema({
     bio: { type: String },
     isPrivate: { type: Boolean, require: true, default: true },
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
-    sendRequest: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    sendRequest: [{ type: Schema.Types.ObjectId, ref: "User" ,unique:true}],
     recivedRequest: [{ type: Schema.Types.ObjectId, ref: "User" }],
     message: [{
         sender: { type: Schema.Types.ObjectId, ref: "User" },
