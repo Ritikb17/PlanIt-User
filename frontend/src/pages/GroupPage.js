@@ -1,22 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import './GroupPage.css';
 import Navbar from '../components/Navbar';
 
 const GroupPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [myGroups, setMyGroups] = useState([]);
-  const [otherGroups, setOtherGroups] = useState([]);
+  const [myChannels, setMyChannels] = useState([]);
+  const [otherChannels, setOtherChannels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [userId, setUserId] = useState('67ec24493c0ea5d4d135ef8d'); // Your user ID from the token
-  const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3ZWMyNDQ5M2MwZWE1ZDRkMTM1ZWY4ZCIsImlhdCI6MTc0MzYyMjk3MiwiZXhwIjoxNzQzNjI2NTcyfQ.u2MLkd3kiHKKM6SQ3MBdOEGCXQtRFYzrTw6rpE-7454';
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newChannel, setNewChannel] = useState({
+    name: '',
+    bio: '',
+    isPrivate: true
+  });
+  const [createChannelError, setCreateChannelError] = useState('');
+  const navigate = useNavigate();
+
+  // Get user ID and token from localStorage
+  const userId = localStorage.getItem('userId');
+  const token = localStorage.getItem('token');
 
   useEffect(() => {
-    fetchGroups();
-  }, [userId]);
+    fetchChannels();
+  }, []);
 
-  const fetchGroups = async () => {
+  const fetchChannels = async () => {
     try {
       setLoading(true);
       const response = await axios.get('http://localhost:5000/api/channel/get-channels', {
@@ -25,124 +36,305 @@ const GroupPage = () => {
         }
       });
 
-      const allGroups = response.data.connectedgroups.connectedChannels || [];
+      // The API response has connectedChannels (channels you're connected to) 
+      // and channels (all channels)
+      const connectedChannels = response.data.connectedgroups?.connectedChannels || [];
+      const allChannels = response.data.connectedgroups?.channels || [];
       
-      const myGroupsList = allGroups.filter(group => 
-        group.members.includes(userId)
+      // My channels are the ones you're connected to
+      setMyChannels(connectedChannels);
+      
+      // Other channels are all channels minus the ones you're connected to
+      const otherChannelsList = allChannels.filter(channel => 
+        !connectedChannels.some(connected => connected._id === channel._id)
       );
       
-      const otherGroupsList = allGroups.filter(group => 
-        !group.members.includes(userId)
-      );
-      
-      setMyGroups(myGroupsList);
-      setOtherGroups(otherGroupsList);
-      setLoading(false);
+      setOtherChannels(otherChannelsList);
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message);
+    } finally {
       setLoading(false);
-      console.error('Error fetching groups:', err);
     }
   };
 
-  const handleLeaveGroup = async (groupId) => {
+  const handleLeaveChannel = async (channelId) => {
     try {
-      await axios.delete(`http://localhost:5000/api/channel/leave-channel/${groupId}`, {
+      await axios.delete(`http://localhost:5000/api/channel/leave-channel/${channelId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
-      
-      // Refresh the groups list after deletion
-      fetchGroups();
-      alert('Group deleted successfully');
+      fetchChannels();
+      alert('Left channel successfully');
     } catch (err) {
-      console.error('Error deleting group:', err);
-      alert('Failed to delete group');
+      alert(err.response?.data?.message || 'Failed to leave channel');
     }
   };
 
-  // Filter groups based on search query
-  const filteredMyGroups = myGroups.filter(group =>
-    group.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const handleJoinChannel = async (channelId) => {
+    try {
+      await axios.post(`http://localhost:5000/api/channel/join-channel/${channelId}`, {}, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      fetchChannels();
+      alert('Join request sent successfully');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to send join request');
+    }
+  };
+
+  const handleCreateChannel = async () => {
+    if (!newChannel.name) {
+      setCreateChannelError('Channel name is required');
+      return;
+    }
+
+    try {
+      const response = await axios.post(
+        'http://localhost:5000/api/channel/create-channel',
+        {
+          name: newChannel.name,
+          bio: newChannel.bio,
+          isPrivate: newChannel.isPrivate
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      // Close modal and reset form
+      setShowCreateModal(false);
+      setNewChannel({
+        name: '',
+        bio: '',
+        isPrivate: true
+      });
+      setCreateChannelError('');
+
+      // Refresh channels list
+      fetchChannels();
+      alert('Channel created successfully!');
+    } catch (err) {
+      setCreateChannelError(err.response?.data?.message || 'Failed to create channel');
+    }
+  };
+
+  const filteredMyChannels = myChannels.filter(channel =>
+    channel.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredOtherGroups = otherGroups.filter(group =>
-    group.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredOtherChannels = otherChannels.filter(channel =>
+    channel.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (loading) {
-    return <div>Loading groups...</div>;
+    return (
+      <div className="loading-container">
+        <div>Loading channels...</div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div>Error: {error}</div>;
+    return (
+      <div className="error-container">
+        <div>Error: {error}</div>
+        <button onClick={fetchChannels}>Retry</button>
+      </div>
+    );
   }
 
-  const renderGroupList = (groups, isMyGroup = false) => (
-    <div className="groups-list">
-      {groups.map((group) => (
-        <div key={group._id} className="group-item">
-          <div className="group-info">
-            <p>{group.name}</p>
-            <span className="members">{group.members?.length || 0} members</span>
-            {group.isPrivate && <span className="private-badge">Private</span>}
+  const renderChannelList = (channels, isMyChannel = false) => (
+    <div className="channels-list">
+      {channels.length > 0 ? (
+        channels.map((channel) => (
+          <div key={channel._id} className="channel-item">
+            <div className="channel-info">
+              <h3>{channel.name}</h3>
+              {channel.isPrivate && <span className="private-badge">Private</span>}
+              <p className="channel-description">{channel.bio || 'No description'}</p>
+            </div>
+            <div className="channel-actions">
+              {isMyChannel ? (
+                <button 
+                  className="leave-btn"
+                  onClick={() => handleLeaveChannel(channel._id)}
+                >
+                  Leave
+                </button>
+              ) : (
+                <button 
+                  className="join-btn"
+                  onClick={() => handleJoinChannel(channel._id)}
+                >
+                  {channel.isPrivate ? 'Request to Join' : 'Send Connection Request '}
+                </button>
+              )}
+            </div>
           </div>
-          <div className="group-actions">
-            {isMyGroup ? (
-              <button 
-                className="delete-btn"
-                onClick={() => handleLeaveGroup(group._id)}
-              >
-                Leave
-              </button>
-            ) : (
-              <button className="join-btn">Join</button>
-            )}
-          </div>
+        ))
+      ) : (
+        <div className="no-channels-message">
+          {isMyChannel 
+            ? 'You are not a member of any channels yet.' 
+            : 'No channels available to join.'}
+          <br />
+          {isMyChannel && (
+            <button 
+              className="discover-btn"
+              onClick={() => navigate('/discover-groups')}
+            >
+              Discover Groups
+            </button>
+          )}
         </div>
-      ))}
+      )}
     </div>
   );
 
   return (
-    <div>                            
+    <div className="channel-page-container">
       <Navbar />
-
-      <div className="group-page">
-        {/* Search Bar */}
-        <div className="search-bar">
-          <input
-            type="text"
-            placeholder="Search groups..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+      
+      <div className="channel-page-layout">
+        {/* Side Navigation */}
+        <div className="side-navigation">
+          <div className="nav-section">
+            <h3>Channel Actions</h3>
+            <ul>
+              <li>
+                <button 
+                  className="nav-link-button"
+                  onClick={() => setShowCreateModal(true)}
+                >
+                  Create New Channel
+                </button>
+              </li>
+              <li>
+                <a href="/channel-requests">Channel Requests</a>
+              </li>
+              <li>
+                <a href="/discover-groups">Discover Channels</a>
+              </li>
+              <li>
+                <a href="/my-pending-requests">My Pending Requests</a>
+              </li>
+            </ul>
+          </div>
         </div>
 
-        {/* Groups Section */}
-        <div className="groups-section">
-          {/* My Groups Section */}
-          <div className="group-category">
-            <h2>My Groups</h2>
-            {filteredMyGroups.length > 0 ? (
-              renderGroupList(filteredMyGroups, true)
-            ) : (
-              <p>You haven't joined any groups yet.</p>
-            )}
+        {/* Main Content */}
+        <div className="main-content">
+          <div className="search-bar">
+            <input
+              type="text"
+              placeholder="Search channels..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
 
-          {/* Other Groups Section */}
-          <div className="group-category">
-            <h2>Other Groups</h2>
-            {filteredOtherGroups.length > 0 ? (
-              renderGroupList(filteredOtherGroups)
-            ) : (
-              <p>No other groups available.</p>
-            )}
+          <div className="channels-section">
+            <div className="channel-category">
+              <h2>Channels</h2>
+              {renderChannelList(filteredMyChannels, true)}
+            </div>
+
+            <div className="channel-category">
+              <h2>My Channels</h2>
+              {renderChannelList(filteredOtherChannels)}
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Create Channel Modal */}
+      {showCreateModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>Create New Channel</h2>
+              <button 
+                className="close-button"
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setCreateChannelError('');
+                }}
+              >
+                &times;
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              {createChannelError && (
+                <div className="error-message">{createChannelError}</div>
+              )}
+              
+              <div className="form-group">
+                <label htmlFor="channel-name">Channel Name*</label>
+                <input
+                  id="channel-name"
+                  type="text"
+                  value={newChannel.name}
+                  onChange={(e) => setNewChannel({...newChannel, name: e.target.value})}
+                  placeholder="Enter channel name"
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="channel-bio">Description</label>
+                <textarea
+                  id="channel-bio"
+                  value={newChannel.bio}
+                  onChange={(e) => setNewChannel({...newChannel, bio: e.target.value})}
+                  placeholder="Enter channel description (optional)"
+                  rows="3"
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={newChannel.isPrivate}
+                    onChange={(e) => setNewChannel({...newChannel, isPrivate: e.target.checked})}
+                  />
+                  Private Channel
+                </label>
+                <small className="hint">
+                  {newChannel.isPrivate 
+                    ? 'Users will need to request to join' 
+                    : 'Anyone can join without approval'}
+                </small>
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button
+                className="cancel-button"
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setCreateChannelError('');
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="create-button"
+                onClick={handleCreateChannel}
+              >
+                Create Channel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

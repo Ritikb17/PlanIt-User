@@ -123,6 +123,62 @@ const Home = () => {
       likes: 15,
       shares: 3,
     },
+    {
+      id: 2,
+      username: 'JaneDoe',
+      profilePicture: 'https://via.placeholder.com/40',
+      content: 'Another post here!',
+      likes: 15,
+      shares: 3,
+    },
+    {
+      id: 2,
+      username: 'JaneDoe',
+      profilePicture: 'https://via.placeholder.com/40',
+      content: 'Another post here!',
+      likes: 15,
+      shares: 3,
+    },
+    {
+      id: 2,
+      username: 'JaneDoe',
+      profilePicture: 'https://via.placeholder.com/40',
+      content: 'Another post here!',
+      likes: 15,
+      shares: 3,
+    },
+    {
+      id: 2,
+      username: 'JaneDoe',
+      profilePicture: 'https://via.placeholder.com/40',
+      content: 'Another post here!',
+      likes: 15,
+      shares: 3,
+    },
+    {
+      id: 2,
+      username: 'JaneDoe',
+      profilePicture: 'https://via.placeholder.com/40',
+      content: 'Another post here!',
+      likes: 15,
+      shares: 3,
+    },
+    {
+      id: 2,
+      username: 'JaneDoe',
+      profilePicture: 'https://via.placeholder.com/40',
+      content: 'Another post here!',
+      likes: 15,
+      shares: 3,
+    },
+    {
+      id: 2,
+      username: 'JaneDoe',
+      profilePicture: 'https://via.placeholder.com/40',
+      content: 'Another post here!',
+      likes: 15,
+      shares: 3,
+    },
     // Add more posts as needed
   ];
 
@@ -367,5 +423,5 @@ const Home = () => {
     </div>
   );
 };
-
+            
 export default Home;

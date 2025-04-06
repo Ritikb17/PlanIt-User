@@ -1,22 +1,41 @@
-/* Profile.css */
-
-/* General Styles */
-.profile-page {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 20px;
-  font-family: Arial, sans-serif;
-  margin-top: 60px; /* Add margin to account for the Navbar height */
+/* Profile Page - Consistent Theme */
+.profile-page-container {
+  display: flex;
+  min-height: calc(100vh - 60px);
+  margin-top: 60px;
+  background-color: #f8f9fa;
 }
 
-/* User Information */
-.user-info {
+/* Side Navigation - Matching Other Pages */
+.side-navigation {
+  width: 250px;
+  padding: 20px;
+  background-color: #ffffff;
+  border-right: 1px solid #e0e0e0;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+}
+
+/* Main Content */
+.profile-main-content {
+  flex: 1;
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Profile Header */
+.profile-header {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  margin-bottom: 2rem;
   text-align: center;
-  margin-bottom: 20px;
 }
 
 .profile-picture-container {
-  margin-bottom: 10px; /* Reduced spacing below the profile picture */
+  margin-bottom: 1rem;
 }
 
 .profile-picture {
@@ -24,395 +43,327 @@
   height: 150px;
   border-radius: 50%;
   object-fit: cover;
-}
-
-.user-details {
-  text-align: center;
+  border: 3px solid #f0f0f0;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .user-details h1 {
-  font-size: 2rem;
-  margin: 0; /* Remove default margin */
-  margin-bottom: 5px; /* Add small spacing below the username */
+  font-size: 1.8rem;
+  margin: 0 0 0.5rem 0;
+  color: #333;
 }
 
 .user-details .pronouns {
   font-size: 1rem;
-  color: #666;
-  margin: 0; /* Remove default margin */
-  margin-bottom: 5px; /* Add small spacing below pronouns */
+  color: #6a1b9a;
+  margin: 0 0 0.5rem 0;
+  font-weight: 500;
 }
 
 .user-details .bio {
-  font-size: 1.2rem;
-  color: #333;
-  margin: 0; /* Remove default margin */
+  font-size: 1.1rem;
+  color: #555;
+  margin: 0 0 1.5rem 0;
+  line-height: 1.5;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-/* Edit Profile Button */
-.edit-profile-btn {
-  display: block;
-  width: 100%;
-  padding: 10px;
+/* Action Buttons */
+.profile-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.edit-profile-btn,
+.follow-btn,
+.unsend-btn,
+.chat-btn {
+  padding: 0.75rem 1.5rem;
   font-size: 1rem;
-  color: #fff;
-  background-color: #6a1b9a; /* Dark purple */
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
-  margin-bottom: 20px;
+  transition: all 0.2s;
+  min-width: 140px;
+  text-align: center;
+}
+
+.edit-profile-btn {
+  background-color: #6a1b9a;
+  color: white;
 }
 
 .edit-profile-btn:hover {
-  background-color: #4a148c; /* Darker purple on hover */
+  background-color: #5e1480;
+  transform: translateY(-1px);
 }
 
-/* Discover People Section */
-.discover-people {
-  margin-bottom: 20px;
+.follow-btn {
+  background-color: #6a1b9a;
+  color: white;
 }
 
-.discover-people h2 {
-  font-size: 1.5rem;
-  margin-bottom: 10px;
+.follow-btn:hover {
+  background-color: #5e1480;
+  transform: translateY(-1px);
 }
 
+.unsend-btn {
+  background-color: #dc3545;
+  color: white;
+}
+
+.unsend-btn:hover {
+  background-color: #c82333;
+  transform: translateY(-1px);
+}
+
+.chat-btn {
+  background-color: #17a2b8;
+  color: white;
+}
+
+.chat-btn:hover {
+  background-color: #138496;
+  transform: translateY(-1px);
+}
+
+/* Profile Sections */
+.profile-section {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  margin-bottom: 2rem;
+}
+
+.profile-section h2 {
+  font-size: 1.3rem;
+  color: #333;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #eee;
+}
+
+/* Discover People */
 .discover-people .see-all {
   display: block;
   text-align: right;
   font-size: 0.9rem;
-  color: #6a1b9a; /* Dark purple */
+  color: #6a1b9a;
   text-decoration: none;
-  margin-bottom: 10px;
+  margin-bottom: 1rem;
+  font-weight: 500;
 }
 
 .discover-people .see-all:hover {
   text-decoration: underline;
 }
 
-.discover-people .account {
+.account {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  margin-bottom: 10px;
+  padding: 1rem;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  margin-bottom: 1rem;
+  transition: all 0.2s;
 }
 
-.discover-people .account-info h3 {
-  font-size: 1.2rem;
-  margin-bottom: 5px;
+.account:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
-.discover-people .account-info p {
+.account-info h3 {
+  font-size: 1.1rem;
+  margin: 0 0 0.25rem 0;
+  color: #333;
+}
+
+.account-info p {
   font-size: 0.9rem;
   color: #666;
+  margin: 0;
 }
 
-.discover-people .follow-btn {
-  padding: 5px 10px;
-  font-size: 0.9rem;
-  color: #fff;
-  background-color: #6a1b9a; /* Dark purple */
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.discover-people .follow-btn:hover {
-  background-color: #4a148c; /* Darker purple on hover */
-}
-
-/* Complete Your Profile Section */
+/* Complete Profile */
 .complete-profile {
-  padding: 20px;
-  background-color: #f8f9fa; /* Light grey */
-  border-radius: 5px;
+  padding: 1.5rem;
+  background-color: #f0f5ff;
+  border-radius: 8px;
   text-align: center;
+  border: 1px dashed #6a1b9a;
 }
 
 .complete-profile h2 {
-  font-size: 1.5rem;
-  margin-bottom: 10px;
+  font-size: 1.3rem;
+  color: #6a1b9a;
+  margin-bottom: 0.75rem;
 }
 
 .complete-profile p {
   font-size: 1rem;
-  color: #666;
+  color: #555;
+  margin-bottom: 1rem;
 }
 
-/* Modal Overlay */
+.complete-profile-btn {
+  background-color: #6a1b9a;
+  color: white;
+}
+
+.complete-profile-btn:hover {
+  background-color: #5e1480;
+}
+
+/* Modal Styles */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5); /* Semi-transparent black */
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0,0,0,0.5);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000; /* Ensure it's above other content */
+  z-index: 1000;
 }
 
-/* Modal Content */
 .modal {
-  background: white;
-  padding: 20px;
+  background-color: white;
+  padding: 2rem;
   border-radius: 8px;
   width: 90%;
-  max-width: 400px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  max-width: 500px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
 }
 
 .modal h2 {
   font-size: 1.5rem;
-  margin-bottom: 20px;
-  color: #6a1b9a; /* Dark purple */
+  color: #6a1b9a;
+  margin-bottom: 1.5rem;
+  text-align: center;
 }
 
-/* Form Group */
-.modal .form-group {
-  margin-bottom: 15px;
+.form-group {
+  margin-bottom: 1.5rem;
 }
 
-.modal .form-group label {
+.form-group label {
   display: block;
-  font-size: 1rem;
-  margin-bottom: 5px;
-  color: #333;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #555;
 }
 
-.modal .form-group input,
-.modal .form-group textarea {
+.form-group input,
+.form-group textarea,
+.form-group select {
   width: 100%;
-  padding: 8px;
-  font-size: 1rem;
+  padding: 0.75rem;
   border: 1px solid #ddd;
-  border-radius: 5px;
+  border-radius: 6px;
+  font-size: 1rem;
 }
 
-.modal .form-group textarea {
-  resize: vertical; /* Allow vertical resizing */
-  min-height: 100px;
+.form-group textarea {
+  min-height: 120px;
+  resize: vertical;
 }
 
-/* Modal Buttons */
 .modal-buttons {
   display: flex;
-  justify-content: space-between;
-  margin-top: 20px;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
 }
 
 .modal-buttons button {
-  padding: 10px 20px;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
   font-size: 1rem;
-  border: none;
-  border-radius: 5px;
   cursor: pointer;
+  transition: all 0.2s;
 }
 
 .modal-buttons button[type="button"] {
-  background-color: #ddd; /* Light grey for cancel button */
-  color: #333;
+  background-color: #f0f0f0;
+  color: #555;
+  border: none;
 }
 
 .modal-buttons button[type="button"]:hover {
-  background-color: #ccc; /* Darker grey on hover */
+  background-color: #e0e0e0;
 }
 
 .modal-buttons button[type="submit"] {
-  background-color: #6a1b9a; /* Dark purple for save button */
-  color: #fff;
+  background-color: #6a1b9a;
+  color: white;
+  border: none;
 }
 
 .modal-buttons button[type="submit"]:hover {
-  background-color: #4a148c; /* Darker purple on hover */
-}
-
-/* Follow Button */
-.follow-btn {
-  padding: 10px 20px;
-  font-size: 1rem;
-  color: #fff;
-  background-color: #6a1b9a; /* Dark purple */
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.follow-btn:hover {
-  background-color: #4a148c; /* Darker purple on hover */
-}
-
-/* Unsend Button */
-.unsend-btn {
-  background-color: #ff4444; /* Red for unsend state */
-}
-
-.unsend-btn:hover {
-  background-color: #cc0000; /* Darker red on hover */
-}
-
-/* Profile.css */
-
-/* User Information */
-.user-info {
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-.profile-picture-container {
-  margin-bottom: 10px; /* Reduced spacing below the profile picture */
-}
-
-.profile-picture {
-  width: 150px;
-  height: 150px;
-  border-radius: 50%;
-  object-fit: cover;
-}
-
-.user-details {
-  text-align: center;
-}
-
-.user-details h1 {
-  font-size: 2rem;
-  margin: 0; /* Remove default margin */
-  margin-bottom: 5px; /* Add small spacing below the username */
-}
-
-.user-details .pronouns {
-  font-size: 1rem;
-  color: #666;
-  margin: 0; /* Remove default margin */
-  margin-bottom: 5px; /* Add small spacing below pronouns */
-}
-
-.user-details .bio {
-  font-size: 1.2rem;
-  color: #333;
-  margin: 0; /* Remove default margin */
-}
-
-/* Follow Button */
-.follow-btn {
-  padding: 10px 20px;
-  font-size: 1rem;
-  color: #fff;
-  background-color: #6a1b9a; /* Dark purple */
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.follow-btn:hover {
-  background-color: #4a148c; /* Darker purple on hover */
-}
-
-/* Unsend Button */
-.unsend-btn {
-  background-color: #ff4444; /* Red for unsend state */
-}
-
-.unsend-btn:hover {
-  background-color: #cc0000; /* Darker red on hover */
-}
-
-/* Chat Button */
-.chat-btn {
-  padding: 10px 20px;
-  font-size: 1rem;
-  color: #fff;
-  background-color: #838684; 
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.chat-btn:hover {
-  background-color: #202020; /* Darker green on hover */
-}
-
-/* Discover People Section */
-.discover-people {
-  margin-bottom: 20px;
-}
-
-.discover-people h2 {
-  font-size: 1.5rem;
-  margin-bottom: 10px;
-}
-
-.discover-people .see-all {
-  display: block;
-  text-align: right;
-  font-size: 0.9rem;
-  color: #6a1b9a; /* Dark purple */
-  text-decoration: none;
-  margin-bottom: 10px;
-}
-
-.discover-people .see-all:hover {
-  text-decoration: underline;
-}
-
-/* Complete Your Profile Section */
-.complete-profile {
-  padding: 20px;
-  background-color: #f8f9fa; /* Light grey */
-  border-radius: 5px;
-  text-align: center;
-}
-
-.complete-profile h2 {
-  font-size: 1.5rem;
-  margin-bottom: 10px;
-}
-
-.complete-profile p {
-  font-size: 1rem;
-  color: #666;
+  background-color: #5e1480;
 }
 
 /* Responsive Design */
+@media (max-width: 992px) {
+  .profile-page-container {
+    flex-direction: column;
+  }
+  
+  .side-navigation {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+  }
+}
+
 @media (max-width: 768px) {
-  .profile-page {
-    padding: 10px;
+  .profile-main-content {
+    padding: 1rem;
   }
-
-  .user-info h1 {
-    font-size: 1.5rem;
+  
+  .profile-header {
+    padding: 1.5rem 1rem;
   }
-
-  .user-info .bio {
-    font-size: 1rem;
+  
+  .profile-actions {
+    flex-direction: column;
+    gap: 0.75rem;
   }
-
-  .discover-people h2 {
-    font-size: 1.2rem;
+  
+  .edit-profile-btn,
+  .follow-btn,
+  .unsend-btn,
+  .chat-btn {
+    width: 100%;
   }
-
-  .complete-profile h2 {
-    font-size: 1.2rem;
+  
+  .account {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
   }
-
+  
   .modal {
-    width: 95%;
-    padding: 15px;
+    padding: 1.5rem;
   }
-
-  .modal h2 {
-    font-size: 1.3rem;
+  
+  .modal-buttons {
+    flex-direction: column;
+    gap: 0.75rem;
   }
-
+  
   .modal-buttons button {
-    padding: 8px 15px;
-    font-size: 0.9rem;
+    width: 100%;
   }
 }

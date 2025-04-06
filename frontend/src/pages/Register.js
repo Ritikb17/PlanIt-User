@@ -1,5 +1,6 @@
 import React from 'react';
 import { useState } from 'react';
+import axios from 'axios';
 import { Link } from 'react-router-dom';
 import './Auth.css'; // Import the shared CSS file
 
@@ -34,37 +35,41 @@ const Register = () => {
   setName(event.target.value);
  }
 
-  const handleLogin = async (event) => {
-    event.preventDefault(); 
-    if(password!==cnfPassword)
-    {
-      setError("Password Doesnt Match");
+ const handelRegister = async (event) => {
+  event.preventDefault();
+  
+  if (password !== cnfPassword) {
+      setError("Password Doesn't Match");
       return;
-    }
-  
-    try {
-      const response = await fetch("http://localhost:5000/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password ,username ,name}),
+  }
+
+  try {
+      const response = await axios.post("http://localhost:5000/api/auth/register", {
+          email,
+          password,
+          username,
+          name
+      }, {
+          headers: { "Content-Type": "application/json" }
       });
-  
-      const data = await response.json();
-  
-      if (!response.ok) {
-        throw new Error(data.message || "Login failed. Please check your credentials.");
-      }
-  
+
+      // With axios, response data is automatically parsed and available in response.data
+      const data = response.data;
+
       // Store token securely
       localStorage.setItem("token", data.token);
-  
-      // Redirect after login
+
+      // Redirect after registration
       window.location.href = "/";
-    } catch (error) {
-      console.error("Login error:", error);
-      setError(error.message); // Set error message in UI
-    }
-  };
+      
+  } catch (error) {
+      console.error("Registration error:", error);
+      
+      // Axios wraps the error response in error.response
+      const errorMessage = error.response?.data?.message || "Registration failed. Please try again.";
+      setError(errorMessage);
+  }
+};
   return (
     <div className="auth-page">
       {/* Welcome Section */}
@@ -76,7 +81,7 @@ const Register = () => {
       {/* Register Form */}
       <div className="auth-form">
         <h2>Register</h2>
-        <form onSubmit={handleLogin}>
+        <form onSubmit={handelRegister}>
           {/* Username Input */}
           <div className="form-group">
             <label htmlFor="name">User Name</label>

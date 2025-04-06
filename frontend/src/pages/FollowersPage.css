@@ -1,41 +1,72 @@
 /* General Styles */
-.followers-page {
-  padding: 20px;
-  font-family: Arial, sans-serif;
-  background-color: #f8f9fa; /* Light grey background */
-  height: calc(100vh - 60px); /* Adjust height to account for Navbar */
-  margin-top: 60px; /* Push content below the Navbar */
+.followers-page-container {
+  display: flex;
+  min-height: calc(100vh - 60px);
+  margin-top: 60px;
+  background-color: #f8f9fa;
 }
 
-/* Search Bar */
+/* Side Navigation - Consistent with GroupPage */
+.side-navigation {
+  width: 250px;
+  padding: 20px;
+  background-color: #ffffff;
+  border-right: 1px solid #e0e0e0;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+}
+
+/* Main Content */
+.followers-main-content {
+  flex: 1;
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Search Bar - Enhanced */
 .search-bar {
-  margin-bottom: 20px;
+  margin-bottom: 2rem;
 }
 
 .search-bar input {
   width: 100%;
-  padding: 10px;
+  padding: 0.8rem 1rem;
   font-size: 1rem;
   border: 1px solid #ddd;
-  border-radius: 5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: all 0.3s;
+}
+
+.search-bar input:focus {
+  outline: none;
+  border-color: #6a1b9a;
+  box-shadow: 0 2px 8px rgba(106,27,154,0.1);
 }
 
 /* Followers Section */
 .followers-section {
-  margin-bottom: 40px;
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  margin-bottom: 2rem;
 }
 
 .followers-section h2 {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   color: #333;
-  margin-bottom: 10px;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #eee;
 }
 
+/* Followers List - Enhanced Card Style */
 .followers-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 1rem;
 }
 
 .follower-item {
@@ -43,84 +74,137 @@
   justify-content: space-between;
   align-items: center;
   background-color: white;
-  border-radius: 5px;
-  padding: 10px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 1.25rem;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.follower-info p {
+.follower-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.follower-info {
+  flex: 1;
+}
+
+.follower-info h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1.1rem;
   color: #333;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.follower-info .follow-status {
-  font-size: 0.9rem;
+.follower-bio {
   color: #666;
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  line-height: 1.4;
 }
 
-.follower-info .follow-status.following {
-  color: green;
+.follow-status {
+  font-size: 0.85rem;
+  margin-top: 0.3rem;
+  display: inline-block;
 }
 
-.follower-info .follow-status.not-following {
-  color: red;
+.follow-status.following {
+  color: #28a745;
+  font-weight: 500;
 }
 
+.follow-status.not-following {
+  color: #dc3545;
+  font-weight: 500;
+}
+
+/* Buttons - Consistent with GroupPage */
 .follower-actions {
   display: flex;
-  gap: 10px;
+  gap: 0.75rem;
 }
 
 .follower-actions button {
-  padding: 5px 10px;
-  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
   cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  min-width: 100px;
+  text-align: center;
 }
 
-.follower-actions .follow-btn {
-  background-color: #6a1b9a; /* Dark purple */
+.follow-btn {
+  background-color: #6a1b9a;
   color: white;
 }
 
-.follower-actions .follow-btn:hover {
-  background-color: #4a148c; /* Darker purple */
+.follow-btn:hover {
+  background-color: #5e1480;
 }
 
-.follower-actions .unfollow-btn {
-  background-color: #dc3545; /* Red */
+.unfollow-btn {
+  background-color: #dc3545;
   color: white;
 }
 
-.follower-actions .unfollow-btn:hover {
-  background-color: #c82333; /* Darker red */
+.unfollow-btn:hover {
+  background-color: #c82333;
 }
 
-.follower-actions .remove-btn {
-  background-color: #6c757d; /* Grey */
+.remove-btn {
+  background-color: #6c757d;
   color: white;
 }
 
-.follower-actions .remove-btn:hover {
-  background-color: #5a6268; /* Darker grey */
+.remove-btn:hover {
+  background-color: #5a6268;
+}
+
+/* Empty State */
+.no-followers-message {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  border: 1px dashed #ddd;
 }
 
 /* Responsive Design */
-@media (max-width: 768px) {
-  .followers-page {
-    padding: 10px;
+@media (max-width: 992px) {
+  .followers-page-container {
+    flex-direction: column;
   }
+  
+  .side-navigation {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+  }
+}
 
+@media (max-width: 768px) {
+  .followers-main-content {
+    padding: 1rem;
+  }
+  
   .follower-item {
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
+    gap: 1rem;
   }
-
+  
   .follower-actions {
     width: 100%;
-    justify-content: space-between;
+    justify-content: flex-end;
+  }
+  
+  .follower-actions button {
+    width: 100%;
   }
 }

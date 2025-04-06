@@ -13,6 +13,8 @@ import BlockUser from "./pages/BlockUserPage";
 import EventPage from "./pages/EventPage";
 import FollowersPage from "./pages/FollowersPage";
 import OtherUserProfile from "./pages/OtherUserProfile";
+import GroupRequestsPage from "./pages/GroupRequestPage";
+import DiscoverGroups from "./pages/DiscoverGroups";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("token"));
@@ -44,6 +46,8 @@ function App() {
           <Route path="/block-users" element={<BlockUser />} />
           <Route path="/discover" element={<Discover />} />
           <Route path="/profile/:username" element={<OtherUserProfile/>}/>
+          <Route path="/group-requests" element={<GroupRequestsPage/>}/>
+          <Route path="/discover-groups" element={<DiscoverGroups/>}/>
         </Route>
       </Routes>
     </Router>

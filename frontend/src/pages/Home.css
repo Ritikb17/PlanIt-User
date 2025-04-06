@@ -1,330 +1,196 @@
-/* General Styles */
+/* Homepage Container */
 .homepage {
   display: flex;
-  padding: 20px;
-  font-family: Arial, sans-serif;
-  background-color: #f8f9fa;
-  height: calc(100vh - 60px);
+  min-height: calc(100vh - 60px);
   margin-top: 60px;
-  gap: 20px; /* Space between Chat, Feed, and Groups */
+  background-color: #f8f9fa;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  overflow: hidden; /* Prevent overall page scrolling */
 }
 
-/* Chat Section */
-.chat-section {
-  width: 20%;
+/* All three sections - Common Styles */
+.chat-section,
+.feed,
+.groups-section {
   background-color: white;
-  border-radius: 10px;
-  padding: 15px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  overflow-y: auto; /* Make Chat Section scrollable */
-  max-height: calc(100vh - 120px); /* Limit height to prevent overflow */
-}
-
-.chat-section h3 {
-  margin: 0 0 10px;
-  font-size: 1.2rem;
-  color: #333;
-}
-
-.chat-list {
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  max-height: calc(100vh - 120px);
   display: flex;
   flex-direction: column;
-  gap: 10px;
 }
-
-.chat-item {
-  display: flex;
-  align-items: center;
-  padding: 10px;
-  background-color: #f0f0f0;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.chat-item:hover {
-  background-color: #e0e0e0;
-}
-
-/* Profile Picture */
-.profile-picture {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  margin-right: 10px;
-}
-
-/* Groups Section */
-.groups-section {
-  /* width: 20%; */
-  background-color: white;
-  border-radius: 10px;
-  padding: 15px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  overflow-y: auto; /* Make Groups Section scrollable */
-  max-height: calc(100vh - 120px); /* Limit height to prevent overflow */
-}
-
-.groups-section h3 {
-  margin: 0 0 10px;
-  font-size: 1.2rem;
-  color: #333;
-}
-
-/* Feed Section */
-.feed {
-  width: 50%;
-  background-color: white;
-  border-radius: 10px;
-  padding: 15px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  overflow-y: auto; /* Make Feed Section scrollable */
-  max-height: calc(100vh - 120px); /* Limit height to prevent overflow */
-}
-
-.post {
-  background-color: white;
-  border-radius: 10px;
-  padding: 15px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.post-header {
-  display: flex;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.post-header h3 {
-  margin: 0;
-  font-size: 1.2rem;
-  color: #333;
-}
-
-.post-content p {
-  margin: 10px 0;
-  font-size: 1rem;
-  color: #666;
-}
-
-.post-actions {
-  display: flex;
-  gap: 10px;
-}
-
-.like-btn,
-.share-btn {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 10px;
-  font-size: 0.9rem;
-  color: #333;
-  background-color: #f0f0f0;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.like-btn:hover,
-.share-btn:hover {
-  background-color: #e0e0e0;
-}
-
-/* Events Button */
 .events-button {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
-  width: 50px;
-  height: 50px;
+  bottom: 2rem;
+  right: 2rem;
+  width: 60px;
+  height: 60px;
   background-color: #6a1b9a;
   border-radius: 50%;
   display: flex;
   justify-content: center;
   align-items: center;
   color: white;
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  z-index: 1000; /* Ensure it's above other elements */
+  box-shadow: 0 4px 12px rgba(106,27,154,0.3);
+  z-index: 1000; /* High but below modal */
+  transition: all 0.2s;
 }
 
-.events-button:hover {
-  background-color: #4a148c;
+/* Chat Section */
+.chat-section {
+  width: 25%;
+  overflow-y: auto; /* Always scrollable */
 }
 
-/* Events Modal */
+/* Feed Section */
+.feed {
+  width: 50%;
+  overflow-y: auto; /* Always scrollable */
+}
+
+/* Groups Section */
+.groups-section {
+  width: 25%;
+  overflow-y: auto; /* Always scrollable */
+}
+
+/* Section Headers */
+.chat-section h3,
+.feed h3,
+.groups-section h3 {
+  font-size: 1.3rem;
+  color: #333;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #eee;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 1;
+}
+
+/* Scrollbar Styling */
+.chat-section::-webkit-scrollbar,
+.feed::-webkit-scrollbar,
+.groups-section::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-section::-webkit-scrollbar-track,
+.feed::-webkit-scrollbar-track,
+.groups-section::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.chat-section::-webkit-scrollbar-thumb,
+.feed::-webkit-scrollbar-thumb,
+.groups-section::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.chat-section::-webkit-scrollbar-thumb:hover,
+.feed::-webkit-scrollbar-thumb:hover,
+.groups-section::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* Post Styling (for feed) */
+.post {
+  background-color: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  transition: all 0.2s;
+}
+
+.post:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+/* Modal Fixes */
 .events-modal {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0,0,0,0.5);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000; /* Ensure it's above other elements */
+  z-index: 2000; /* Higher than other elements */
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0,0,0,0.5);
+  z-index: 1999;
 }
 
 .modal-content {
   background-color: white;
-  padding: 20px;
-  border-radius: 10px;
+  padding: 2rem;
+  border-radius: 8px;
   width: 100%;
-  max-width: 400px;
-  text-align: left;
+  max-width: 500px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  z-index: 2001; /* Highest in the stack */
+  position: relative;
 }
 
-.modal-content h2 {
-  margin: 0 0 20px;
-  font-size: 1.5rem;
-  color: #333;
-}
-
-/* Mode Switch */
-.mode-switch {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 20px;
-}
-
-.mode-button {
-  padding: 10px 20px;
-  font-size: 1rem;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  background-color: #f0f0f0;
-  color: #333;
-  margin: 0 5px;
-  transition: background-color 0.3s, color 0.3s;
-}
-
-.mode-button.active {
-  background-color: #6a1b9a;
-  color: white;
-}
-
-.mode-button:hover {
-  background-color: #e0e0e0;
-}
-
-/* Form Group */
-.form-group {
-  margin-bottom: 15px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-  color: #333;
-}
-
-.form-group input[type="text"],
-.form-group input[type="datetime-local"],
-.form-group textarea,
-.form-group input[type="file"] {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  font-size: 1rem;
-}
-
-.form-group textarea {
-  resize: vertical; /* Allow vertical resizing */
-  min-height: 100px;
-}
-
-.form-group input[type="file"] {
-  padding: 5px;
-}
-
-/* Visibility Options */
-.visibility-options {
-  display: flex;
-  gap: 15px;
-  margin-top: 10px;
-}
-
-.visibility-options label {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 1rem;
-  color: #333;
-}
-
-/* Modal Actions */
-.modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.submit-button,
-.close-button {
-  padding: 10px 20px;
-  font-size: 1rem;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.submit-button {
-  background-color: #6a1b9a;
-  color: white;
-}
-
-.submit-button:hover {
-  background-color: #4a148c;
-}
-
-.close-button {
-  background-color: #ccc;
-  color: #333;
-}
-
-.close-button:hover {
-  background-color: #bbb;
+/* Ensure modal inputs are clickable */
+.modal-content input,
+.modal-content textarea,
+.modal-content button {
+  pointer-events: auto;
 }
 
 /* Responsive Design */
-@media (max-width: 768px) {
+@media (max-width: 1200px) {
+  .chat-section,
+  .groups-section {
+    width: 20%;
+  }
+  
+  .feed {
+    width: 60%;
+  }
+}
+
+@media (max-width: 992px) {
   .homepage {
     flex-direction: column;
-    padding: 10px;
-    gap: 10px;
   }
-
+  
   .chat-section,
-  .groups-section,
-  .feed {
+  .feed,
+  .groups-section {
     width: 100%;
-    margin-right: 0;
-    margin-bottom: 20px;
-    max-height: none;
+    max-height: 400px;
   }
+}
 
+@media (max-width: 768px) {
+  .homepage {
+    padding: 1rem;
+    gap: 1rem;
+  }
+  
   .events-button {
-    bottom: 10px;
-    right: 10px;
-    width: 40px;
-    height: 40px;
-    font-size: 1rem;
-  }
-
-  .modal-content {
-    padding: 15px;
-  }
-
-  .mode-button {
-    padding: 8px 16px;
-    font-size: 0.9rem;
+    width: 50px;
+    height: 50px;
+    font-size: 1.2rem;
+    bottom: 1rem;
+    right: 1rem;
   }
 }

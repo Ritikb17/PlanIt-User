@@ -1,8 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const {createChannel,deleteChannel,sendChannelConnectionRequest,removeChannelConnectionRequest,unsendChannelConnectionRequest,acceptChannelConnectionRequest,updateChannelInfo,getChannels,leaveChannel} = require('../controllers/channelController');
+const {createChannel,deleteChannel,sendChannelConnectionRequest,removeChannelConnectionRequest,unsendChannelConnectionRequest,acceptChannelConnectionRequest,updateChannelInfo,getChannels,leaveChannel,getRequestChannels,getDiscoverChannels} = require('../controllers/channelController');
 
 router.get('/get-channels',getChannels);
+router.get('/get-request-channels',getRequestChannels)
+router.get('/discover-channels',getDiscoverChannels)
 
 router.post('/create-channel',createChannel);
 router.delete('/delete-channel/:channelId',deleteChannel);

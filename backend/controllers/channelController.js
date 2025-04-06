@@ -11,6 +11,8 @@ const createChannel = async (req, res) => {
     try {
 
         const user = await User.findById(_id);
+        console.log("new channel is ",user);
+    
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
@@ -24,9 +26,11 @@ const createChannel = async (req, res) => {
             name: nameOfChannel,
             bio: bio,
             isPrivate: isPrivate,
-            createdBy: _id
+            createdBy: _id,
         });
+        console.log("new channel is ",newChannel);
         if (newChannel) {
+            console.log("new channel is being created ")
             const newC = { _id: newChannel._id, name: nameOfChannel };
             const addInUser = await User.findByIdAndUpdate(
                 _id,
@@ -415,7 +419,7 @@ const updateChannelInfo = async (req, res) => {
 const getChannels = async (req, res) => {
     const _id = req.user._id;
     try {
-        const data = await User.findById(_id).populate('connectedChannels').select('connectedChannels');
+        const data = await User.findById(_id).populate('connectedChannels channels').select('connectedChannels channels');
         if (!data) {
             res.status(400).json({ error: "error in fetching data" })
         }
@@ -450,4 +454,42 @@ const leaveChannel = async (req, res) => {
         res.status(400).json({ error: error });
     }
 }
-module.exports = { createChannel, deleteChannel, sendChannelConnectionRequest, removeChannelConnectionRequest, unsendChannelConnectionRequest, acceptChannelConnectionRequest, getChannels, updateChannelInfo, leaveChannel }
+
+const getRequestChannels= async (req,res)=>
+{
+    const _id = req.user._id;
+    try {
+        const data =await  User.findById(_id).select("receivedChannelRequest email").populate("receivedChannelRequest")
+        if(!data){
+            return res.status(400).json({message:"error in in Query"});
+        }
+        console.log("data from the DB ",data);
+        res.status(200).json(data);
+    } catch (error) {
+        return res.status(400).json({error:error});   
+    }
+}
+const getDiscoverChannels = async (req, res) => {
+    const _id = req.user._id;
+    try {
+       
+        const userChannels = await Channel.find({ members: _id }).select('_id');
+        const userChannelIds = userChannels.map(ch => ch._id);
+
+    
+        const data = await Channel.find({ 
+            createdBy: { $ne: _id },
+            _id: { $nin: userChannelIds }
+        }).select('');
+        
+        if (!data) {
+            return res.status(404).json({ message: "No channels found" });
+        }
+        
+        res.status(200).json({ data: data });
+
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+}
+module.exports = { getRequestChannels,createChannel, deleteChannel, sendChannelConnectionRequest, removeChannelConnectionRequest, unsendChannelConnectionRequest, acceptChannelConnectionRequest, getChannels, updateChannelInfo, leaveChannel ,getDiscoverChannels}

@@ -1,57 +1,79 @@
 const User = require("../models/User");
-const generateToken = require("../utils/generateToken");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
+const JWT_SECRET = process.env.JWT_SECRET;
+const Notfication = require("../models/notification");
 
 // Register a new user
 const register = async (req, res) => {
-  const { name, email, password, role } = req.body;
-
   try {
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ message: "User already exists." });
-    }
+      const { username, email, password, name } = req.body;
 
-    const user = await User.create({ name, email, password, role });
+      // Check for existing username
+      const existingUser = await User.findOne({ username });
+      if (existingUser) {
+          return res.status(400).json({ message: "Username is already taken" });
+      }
 
-    res.status(201).json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    });
+      // Check for existing email
+      const existingEmail = await User.findOne({ email });
+      if (existingEmail) {
+          return res.status(400).json({ message: "Email is already registered" });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create user
+      const user = new User({ 
+          username, 
+          email, 
+          password: hashedPassword, 
+          name 
+      });
+      
+      await user.save();
+
+      // Create notification
+      const notification = new Notfication({ 
+          user: user._id  // No need for ObjectId conversion here
+      });
+      await notification.save();
+
+      // Generate token
+      const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "1h" });
+
+      res.status(201).json({ 
+          message: "User registered successfully", 
+          token 
+      });
+
   } catch (error) {
-    res.status(500).json({ message: "Server error." });
+      console.error("Registration error:", error);
+      res.status(500).json({ 
+          error: "An error occurred during registration",
+          details: error.message 
+      });
   }
-};
+}
 
 // Login user
 const login = async (req, res) => {
-  const { email, password } = req.body;
-
   try {
-    const user = await User.findOne({ email });
-    if (!user || !(await user.comparePassword(password))) {
-      return res.status(401).json({ message: "Invalid email or password." });
-    }
+      const { email, password } = req.body;
+      const user = await User.findOne({ email });
+      if (!user) return res.status(400).json({ error: "User not found" });
 
-    // Generate tokens
-    const token = generateToken(user._id, process.env.JWT_SECRET, process.env.JWT_EXPIRES_IN);
-    const refreshToken = generateToken(user._id, process.env.REFRESH_SECRET, process.env.REFRESH_EXPIRES_IN);
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
 
-    // Set refresh token in an HTTP-only cookie
-    res.cookie("refreshToken", refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    });
-
-    res.json({ token });
+      const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "1h" });
+      res.json({ token });
   } catch (error) {
-    res.status(500).json({ message: "Server error." });
+      res.status(500).json({ error: error.message });
   }
-};
-
+}
 // Logout user
 const logout = (req, res) => {
   res.clearCookie("refreshToken");
