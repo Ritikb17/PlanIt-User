@@ -3,8 +3,8 @@ const { Schema } = mongoose;
 
 const channel = new Schema({
     name: { type: String, require: true },
-    bio: { type: String },
-    isPrivate: { type: Boolean, require: true, default: true },
+    description: { type: String },
+    isPrivate: { type: Boolean, require: true, default: false },
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
     sendRequest: [{ type: Schema.Types.ObjectId, ref: "User"}],
     recivedRequest: [{ type: Schema.Types.ObjectId, ref: "User" }],

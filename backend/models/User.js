@@ -18,10 +18,7 @@ const UserSchema = new Schema({
       isBlocked: { type: Boolean, default: false }
     }
   ],
-  channels: [{
-    _id: { type: Schema.Types.ObjectId, ref: "Channel" }, // Corrected reference to "Channel"
-    name: { type: String }
-  }],
+  channels: [{ type: Schema.Types.ObjectId, ref: "Channel" } ],
   connectedChannels: [
     { type: Schema.Types.ObjectId, ref: "Channel" } // Corrected reference to "Channel"
   ],

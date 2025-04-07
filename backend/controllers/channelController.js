@@ -24,7 +24,7 @@ const createChannel = async (req, res) => {
 
         const newChannel = await Channel.create({
             name: nameOfChannel,
-            bio: bio,
+            description: bio,
             isPrivate: isPrivate,
             createdBy: _id,
         });
@@ -34,7 +34,7 @@ const createChannel = async (req, res) => {
             const newC = { _id: newChannel._id, name: nameOfChannel };
             const addInUser = await User.findByIdAndUpdate(
                 _id,
-                { $push: { channels: newC } },
+                { $push: { channels: newChannel._id } },
                 { new: true }
             );
             if (!addInUser) {

@@ -293,7 +293,7 @@ const Navbar = () => {
               <Link to="/profile" className="dropdown-item">
                 <i className="fas fa-user"></i> Profile
               </Link>
-              <Link to="/logout" className="dropdown-item" onClick={handleLogout}>
+              <Link to="/login" className="dropdown-item" onClick={handleLogout}>
                 <i className="fas fa-sign-out-alt"></i> Logout
               </Link>
             </div>

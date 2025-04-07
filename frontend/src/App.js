@@ -15,6 +15,7 @@ import FollowersPage from "./pages/FollowersPage";
 import OtherUserProfile from "./pages/OtherUserProfile";
 import GroupRequestsPage from "./pages/GroupRequestPage";
 import DiscoverGroups from "./pages/DiscoverGroups";
+import ReverseAuthRoutes from "./ReverseAuthRoutes";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("token"));
@@ -33,9 +34,10 @@ function App() {
       {isAuthenticated && <Navbar />} {/* Only show navbar if logged in */}
       
       <Routes>
+      <Route element={<ReverseAuthRoutes />}>
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-
+        </Route>
         {/* Wrap protected routes inside PrivateRoute */}
         <Route element={<PrivateRoute />}>
           <Route path="/" element={<Home />} />

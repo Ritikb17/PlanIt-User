@@ -493,6 +493,66 @@ const getSuggestion = async (req, res) => {
     res.status(500).json({ message: "Cannot fetch non-friends.", error: error.message });
   }
 };
+const getSuggestionForChannelConnectionRequest = async (req, res) => {
+  const self_id = req.user._id;
+  const channel_id = req.params.channel_id;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+
+  try {
+    if (!mongoose.Types.ObjectId.isValid(self_id) || !mongoose.Types.ObjectId.isValid(channel_id)) {
+      return res.status(400).json({ message: "Invalid ID(s)." });
+    }
+
+    const currentUser = await User.findById(self_id).select("connections blockUsers sendFollowRequest");
+    if (!currentUser) {
+      return res.status(404).json({ message: "Current user not found." });
+    }
+
+    const friendIds = currentUser.connections.map(connection => connection.friend);
+    const blockedUserIds = currentUser.blockUsers;
+    const sendRequestUserIds = currentUser.sendFollowRequest;
+
+    const skip = (page - 1) * limit;
+
+    const nonFriends = await User.find({
+      _id: {
+        $nin: [...friendIds, ...blockedUserIds, ...sendRequestUserIds, self_id],
+      },
+      receivedChannelRequest: {
+        $not: { $elemMatch: { $eq: channel_id } }
+      }
+    })
+    .select("username name bio")
+    .skip(skip)
+    .limit(limit);
+
+    const totalNonFriends = await User.countDocuments({
+      _id: {
+        $nin: [...friendIds, ...blockedUserIds, ...sendRequestUserIds, self_id],
+      },
+      receivedChannelRequest: {
+        $not: { $elemMatch: { $eq: channel_id } }
+      }
+    });
+
+    const totalPages = Math.ceil(totalNonFriends / limit);
+
+    res.status(200).json({
+      message: "List  fetched successfully.",
+      nonFriends,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalResults: totalNonFriends,
+        resultsPerPage: limit,
+      },
+    });
+  } catch (error) {
+    console.error("ERROR FETCHING NON-FRIENDS:", error);
+    res.status(500).json({ message: "Cannot fetch non-friends.", error: error.message });
+  }
+};
 const getConnections = async (req, res) => {
   const self_id = req.user._id;
   const page = parseInt(req.query.page) || 1;
@@ -548,6 +608,77 @@ const getConnections = async (req, res) => {
   } catch (error) {
     console.error("ERROR FETCHING NON-FRIENDS:", error);
     res.status(500).json({ message: "Cannot fetch non-friends.", error: error.message });
+  }
+};
+const getConnectionsForChannelConnectionRequest = async (req, res) => {
+  const self_id = req.user._id;
+  const channel_id = req.params.channel_id; // Assuming you'll pass channel_id as a parameter
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+
+  try {
+    // Validate IDs
+    if (!mongoose.Types.ObjectId.isValid(self_id) || !mongoose.Types.ObjectId.isValid(channel_id)) {
+      return res.status(400).json({ message: "Invalid ID(s)." });
+    }
+
+    // Get current user's connections (excluding blocked ones)
+    const currentUser = await User.findById(self_id).select("connections reciveFollowRequests");
+    if (!currentUser) {
+      return res.status(404).json({ message: "Current user not found." });
+    }
+
+    // Get friend IDs (excluding blocked connections)
+    const friendIds = currentUser.connections
+      .filter(connection => !connection.isBlocked)
+      .map(connection => connection.friend);
+
+    // Pagination setup
+    const skip = (page - 1) * limit;
+
+    // Get friends who haven't received a request for this channel
+    const friends = await User.find({
+      _id: { $in: friendIds },
+      receivedChannelRequest: {
+        $not: { $elemMatch: { $eq: channel_id } }
+      }
+    })
+    .select("username name")
+    .skip(skip)
+    .limit(limit);
+
+    // Count total friends (excluding those with existing channel requests)
+    const totalFriends = await User.countDocuments({
+      _id: { $in: friendIds },
+      receivedChannelRequest: {
+        $not: { $elemMatch: { $eq: channel_id } }
+      }
+    });
+
+    const followRequest = await User.find({
+      _id: { $in: currentUser.reciveFollowRequests },
+      receivedChannelRequest: {
+        $not: { $elemMatch: { $eq: channel_id } }
+      }
+    })
+    .select("username name");
+
+    const totalPages = Math.ceil(totalFriends / limit);
+
+    res.status(200).json({
+      message: "List of connections fetched successfully.",
+      friends,
+      followRequest,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalResults: totalFriends,
+        resultsPerPage: limit,
+      },
+    });
+  } catch (error) {
+    console.error("ERROR FETCHING CONNECTIONS:", error);
+    res.status(500).json({ message: "Cannot fetch connections.", error: error.message });
   }
 };
 const BlockUser = async (req, res) => {
@@ -742,4 +873,4 @@ const alreadySendRequest = async(req,res)=>
   }
 }
 
-module.exports = { editBio, checkUserName, sendRequest, acceptRequest, getSuggestion, getConnections, BlockUser, unBlockUser, removeUser ,getNotification,rejectRequest,getBlockList,getUser,alreadySendRequest,unsendRequest};
+module.exports = { editBio, checkUserName, sendRequest, acceptRequest, getSuggestion, getConnections, BlockUser, unBlockUser, removeUser ,getNotification,rejectRequest,getBlockList,getUser,alreadySendRequest,unsendRequest,getSuggestionForChannelConnectionRequest,getConnectionsForChannelConnectionRequest};

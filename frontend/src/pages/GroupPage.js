@@ -11,6 +11,9 @@ const GroupPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showUserSelectionModal, setShowUserSelectionModal] = useState(false);
+  const [usersList, setUsersList] = useState([]);
+  const [selectedChannel, setSelectedChannel] = useState(null);
   const [newChannel, setNewChannel] = useState({
     name: '',
     bio: '',
@@ -36,15 +39,11 @@ const GroupPage = () => {
         }
       });
 
-      // The API response has connectedChannels (channels you're connected to) 
-      // and channels (all channels)
       const connectedChannels = response.data.connectedgroups?.connectedChannels || [];
       const allChannels = response.data.connectedgroups?.channels || [];
       
-      // My channels are the ones you're connected to
       setMyChannels(connectedChannels);
       
-      // Other channels are all channels minus the ones you're connected to
       const otherChannelsList = allChannels.filter(channel => 
         !connectedChannels.some(connected => connected._id === channel._id)
       );
@@ -71,17 +70,83 @@ const GroupPage = () => {
     }
   };
 
-  const handleJoinChannel = async (channelId) => {
+  const handleJoinChannel = async (channel) => {
+    setSelectedChannel(channel);
+    const channel_id = channel._id;
+    
     try {
-      await axios.post(`http://localhost:5000/api/channel/join-channel/${channelId}`, {}, {
+      const endpoint = channel.isPrivate 
+        ? `http://localhost:5000/api/user/get-connections-for-channel-request/${channel_id}`
+        : `http://localhost:5000/api/user/get-suggestion-for-channel-request/${channel_id}`;
+      
+      const response = await axios.get(`${endpoint}?page=1&limit=20`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         }
       });
-      fetchChannels();
-      alert('Join request sent successfully');
+  
+      // Handle both response formats
+
+      console.log("response is ", response);
+      let users = [];
+      if (response.data.nonFriends) {
+        users = response.data.nonFriends;
+      } else if (response.data.friends) {
+        users = response.data.friends;
+      } else {
+        throw new Error('Unexpected API response format');
+      }
+  
+      // Initialize users with loading and sent states
+      const usersWithState = users.map(user => ({
+        ...user,
+        isSending: false,
+        isSent: false
+      }));
+      
+      setUsersList(usersWithState);
+      setShowUserSelectionModal(true);
+      
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to send join request');
+      console.error("Error fetching users:", err);
+      alert(err.response?.data?.message || err.message || 'Failed to fetch users');
+    }
+  };
+
+  const handleSendRequest = async (receiverId) => {
+    if (!selectedChannel) return;
+
+    try {
+      // Update loading state for this user
+      setUsersList(prev => prev.map(user => 
+        user._id === receiverId ? { ...user, isSending: true } : user
+      ));
+
+      await axios.put(
+        'http://localhost:5000/api/channel/send-channel-connection-request-by-creator',
+        {
+          channelId: selectedChannel._id,
+          senderId: receiverId
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      // Update sent state for this user
+      setUsersList(prev => prev.map(user => 
+        user._id === receiverId ? { ...user, isSending: false, isSent: true } : user
+      ));
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to send connection request');
+      // Reset loading state on error
+      setUsersList(prev => prev.map(user => 
+        user._id === receiverId ? { ...user, isSending: false } : user
+      ));
     }
   };
 
@@ -107,7 +172,6 @@ const GroupPage = () => {
         }
       );
 
-      // Close modal and reset form
       setShowCreateModal(false);
       setNewChannel({
         name: '',
@@ -115,8 +179,6 @@ const GroupPage = () => {
         isPrivate: true
       });
       setCreateChannelError('');
-
-      // Refresh channels list
       fetchChannels();
       alert('Channel created successfully!');
     } catch (err) {
@@ -157,7 +219,7 @@ const GroupPage = () => {
             <div className="channel-info">
               <h3>{channel.name}</h3>
               {channel.isPrivate && <span className="private-badge">Private</span>}
-              <p className="channel-description">{channel.bio || 'No description'}</p>
+              <p className="channel-description">{channel.description || 'No description'}</p>
             </div>
             <div className="channel-actions">
               {isMyChannel ? (
@@ -170,9 +232,9 @@ const GroupPage = () => {
               ) : (
                 <button 
                   className="join-btn"
-                  onClick={() => handleJoinChannel(channel._id)}
+                  onClick={() => handleJoinChannel(channel)}
                 >
-                  {channel.isPrivate ? 'Request to Join' : 'Send Connection Request '}
+                  {channel.isPrivate ? 'Request to Join' : 'Send Connection Request'}
                 </button>
               )}
             </div>
@@ -241,12 +303,12 @@ const GroupPage = () => {
 
           <div className="channels-section">
             <div className="channel-category">
-              <h2>Channels</h2>
+              <h2>My Channels</h2>
               {renderChannelList(filteredMyChannels, true)}
             </div>
 
             <div className="channel-category">
-              <h2>My Channels</h2>
+              <h2>Other Channels</h2>
               {renderChannelList(filteredOtherChannels)}
             </div>
           </div>
@@ -330,6 +392,59 @@ const GroupPage = () => {
                 onClick={handleCreateChannel}
               >
                 Create Channel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* User Selection Modal */}
+      {showUserSelectionModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>Select Users to Connect</h2>
+              <button 
+                className="close-button"
+                onClick={() => {
+                  setShowUserSelectionModal(false);
+                  setSelectedChannel(null);
+                }}
+              >
+                &times;
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="users-list">
+                {usersList.map(user => (
+                  <div key={user._id} className="user-item">
+                    <div className="user-info">
+                      <h4>{user.name || user.username}</h4>
+                      <p>{user.bio || 'No bio available'}</p>
+                    </div>
+                    <button
+                      className={`send-request-btn ${user.isSent ? 'sent' : ''}`}
+                      onClick={() => handleSendRequest(user._id)}
+                      disabled={user.isSending || user.isSent}
+                    >
+                      {user.isSending ? 'Sending...' : 
+                       user.isSent ? 'Request Sent' : 'Send Request'}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div className="modal-footer">
+              <button
+                className="cancel-button"
+                onClick={() => {
+                  setShowUserSelectionModal(false);
+                  setSelectedChannel(null);
+                }}
+              >
+                Close
               </button>
             </div>
           </div>
