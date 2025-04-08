@@ -515,31 +515,47 @@ const getSuggestionForChannelConnectionRequest = async (req, res) => {
 
     const skip = (page - 1) * limit;
 
+
     const nonFriends = await User.find({
       _id: {
-        $nin: [...friendIds, ...blockedUserIds, ...sendRequestUserIds, self_id],
+        $nin: [ ...blockedUserIds, ...sendRequestUserIds, self_id],
       },
       receivedChannelRequest: {
         $not: { $elemMatch: { $eq: channel_id } }
-      }
+      },
+      connectedChannels: { $not: { $elemMatch: { $eq: channel_id } } } 
     })
-    .select("username name bio")
+    .select("username name")
     .skip(skip)
     .limit(limit);
+
+    // const nonFriends = await User.find({
+    //   _id: {
+    //     $nin: [...blockedUserIds, ...sendRequestUserIds, self_id],
+    //   },
+      
+    //      receivedChannelRequest: { $not: { $elemMatch: { $eq: channel_id } } } ,
+    //      connectedChannels: { $not: { $elemMatch: { $eq: channel_id } } } 
+      
+    // })
+    // .select("username name bio")
+    // .skip(skip)
+    // .limit(limit);
 
     const totalNonFriends = await User.countDocuments({
       _id: {
         $nin: [...friendIds, ...blockedUserIds, ...sendRequestUserIds, self_id],
       },
-      receivedChannelRequest: {
-        $not: { $elemMatch: { $eq: channel_id } }
-      }
+      $and: [
+        { receivedChannelRequest: { $not: { $elemMatch: { $eq: channel_id } } } },
+        { connectedChannels: { $not: { $elemMatch: { $eq: channel_id } } } }
+      ]
     });
 
     const totalPages = Math.ceil(totalNonFriends / limit);
 
     res.status(200).json({
-      message: "List  fetched successfully.",
+      message: "List fetched successfully.",
       nonFriends,
       pagination: {
         currentPage: page,
@@ -640,6 +656,9 @@ const getConnectionsForChannelConnectionRequest = async (req, res) => {
     const friends = await User.find({
       _id: { $in: friendIds },
       receivedChannelRequest: {
+        $not: { $elemMatch: { $eq: channel_id } }
+      },
+      connectedChannels: {
         $not: { $elemMatch: { $eq: channel_id } }
       }
     })

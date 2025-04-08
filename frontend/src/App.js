@@ -16,6 +16,7 @@ import OtherUserProfile from "./pages/OtherUserProfile";
 import GroupRequestsPage from "./pages/GroupRequestPage";
 import DiscoverGroups from "./pages/DiscoverGroups";
 import ReverseAuthRoutes from "./ReverseAuthRoutes";
+import GroupConnectionRequests from "./pages/GroupConnectionRequests ";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("token"));
@@ -50,6 +51,7 @@ function App() {
           <Route path="/profile/:username" element={<OtherUserProfile/>}/>
           <Route path="/group-requests" element={<GroupRequestsPage/>}/>
           <Route path="/discover-groups" element={<DiscoverGroups/>}/>
+          <Route path="/channel-requests" element={<GroupConnectionRequests/>}/>
         </Route>
       </Routes>
     </Router>

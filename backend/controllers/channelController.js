@@ -25,7 +25,7 @@ const createChannel = async (req, res) => {
         const newChannel = await Channel.create({
             name: nameOfChannel,
             description: bio,
-            isPrivate: isPrivate,
+            isPrivate: req.body.isPrivate,
             createdBy: _id,
         });
         console.log("new channel is ",newChannel);
@@ -318,15 +318,16 @@ const acceptChannelConnectionRequest = async (req, res) => {
 
 
     try {
-
-        const obj_channel_id = new mongoose.Types.ObjectId(channel_id);
-        const obj_id = new mongoose.Types.ObjectId(_id);
-
-
-        const user = await User.findById(_id);
         const channel = await Channel.findById(channel_id);
 
         const sender_id = await channel.createdBy;
+        const obj_channel_id = new mongoose.Types.ObjectId(channel_id);
+        const obj_id = new mongoose.Types.ObjectId(_id);
+        const obj_sender_id = new mongoose.Types.ObjectId(sender_id);
+
+
+        const user = await User.findById(_id);
+       
         if (!user || !channel) {
             return res.status(404).json({ message: "User or channel not found" });
         }
@@ -360,6 +361,10 @@ const acceptChannelConnectionRequest = async (req, res) => {
             { _id: _id },
             { $push: { connectedChannels: obj_channel_id } }
         );
+        // const addChannelResultCreator= await User.findByIdAndUpdate(
+        //     { _id: channel.createdBy },
+        //     { $push: { connectedChannels: obj_channel_id } }
+        // );
 
         const removeChannelIdFromSendRequest = await Channel.findByIdAndUpdate(channel_id, {
             $pull: { sendRequest: obj_id }
@@ -375,7 +380,7 @@ const acceptChannelConnectionRequest = async (req, res) => {
             {
                 $push: {
                     notification: {
-                        message: `${req.user.username}ACCECPT YOUR REQUEST `,
+                        message: `${req.user.username}ACCECPT YOUR CHANNEL CONNECTION REQUEST `,
                         type: "channel", // Changed to match your schema enum
                         // isSeen will default to false as per your schema
                     },
@@ -388,7 +393,7 @@ const acceptChannelConnectionRequest = async (req, res) => {
             }
         );
 
-        return res.status(200).json({ message: "Request accepted successfully" });
+        return res.status(200).json({ message: "Request accepted successfully" ,notificationVerification:notificationVerification});
 
     } catch (error) {
         console.error("Error accepting channel request:", error);
@@ -416,10 +421,23 @@ const updateChannelInfo = async (req, res) => {
 
     }
 }
-const getChannels = async (req, res) => {
+const getMyChannels = async (req, res) => {
     const _id = req.user._id;
     try {
-        const data = await User.findById(_id).populate('connectedChannels channels').select('connectedChannels channels');
+        const data = await User.findById(_id).populate('channels').select('channels');
+        if (!data) {
+            res.status(400).json({ error: "error in fetching data" })
+        }
+        res.status(200).json({ connectedgroups: data });
+
+    } catch (error) {
+        res.status(400).json({ error: error })
+    }
+}
+const getOtherUserChannels = async (req, res) => {
+    const _id = req.user._id;
+    try {
+        const data = await User.findById(_id).populate('connectedChannels').select('connectedChannels');
         if (!data) {
             res.status(400).json({ error: "error in fetching data" })
         }
@@ -433,6 +451,8 @@ const leaveChannel = async (req, res) => {
     const channel__id = req.params.channelId;
     const _id = req.user._id;
     const obj_id = new mongoose.Types.ObjectId(_id);
+
+    console.log("leave channel ")
 
     try {
         const removingIdFromUser = await User.findByIdAndUpdate(_id, { $pull: { connectedChannels: channel__id } },
@@ -492,4 +512,4 @@ const getDiscoverChannels = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 }
-module.exports = { getRequestChannels,createChannel, deleteChannel, sendChannelConnectionRequest, removeChannelConnectionRequest, unsendChannelConnectionRequest, acceptChannelConnectionRequest, getChannels, updateChannelInfo, leaveChannel ,getDiscoverChannels}
+module.exports = { getRequestChannels,createChannel, deleteChannel, sendChannelConnectionRequest, removeChannelConnectionRequest, unsendChannelConnectionRequest, acceptChannelConnectionRequest, getMyChannels, updateChannelInfo, leaveChannel ,getDiscoverChannels,getOtherUserChannels}

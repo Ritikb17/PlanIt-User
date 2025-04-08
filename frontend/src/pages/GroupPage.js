@@ -27,28 +27,48 @@ const GroupPage = () => {
   const token = localStorage.getItem('token');
 
   useEffect(() => {
-    fetchChannels();
+    fetchMyChannels();
+    fetchOtherChannels();
   }, []);
 
-  const fetchChannels = async () => {
+  const fetchMyChannels = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/channel/get-channels', {
+      const response = await axios.get('http://localhost:5000/api/channel/get-my-channels', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      const connectedChannels = response.data.connectedgroups?.connectedChannels || [];
+      const connectedChannels = response.data.connectedgroups.channels || [];
       const allChannels = response.data.connectedgroups?.channels || [];
-      
+
       setMyChannels(connectedChannels);
-      
-      const otherChannelsList = allChannels.filter(channel => 
-        !connectedChannels.some(connected => connected._id === channel._id)
-      );
-      
-      setOtherChannels(otherChannelsList);
+
+    } catch (err) {
+      setError(err.response?.data?.message || err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  const fetchOtherChannels = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('http://localhost:5000/api/channel/get-other-user-channels', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+
+
+      const connectedChannels = response.data.connectedgroups.connectedChannels || [];
+
+
+      setOtherChannels(connectedChannels);
+      console.log("OTHER CHANNEL LIST ", connectedChannels)
+
+
     } catch (err) {
       setError(err.response?.data?.message || err.message);
     } finally {
@@ -63,7 +83,7 @@ const GroupPage = () => {
           'Authorization': `Bearer ${token}`
         }
       });
-      fetchChannels();
+      fetchMyChannels();
       alert('Left channel successfully');
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to leave channel');
@@ -73,19 +93,24 @@ const GroupPage = () => {
   const handleJoinChannel = async (channel) => {
     setSelectedChannel(channel);
     const channel_id = channel._id;
-    
+    let endpoint=''
+
     try {
-      const endpoint = channel.isPrivate 
-        ? `http://localhost:5000/api/user/get-connections-for-channel-request/${channel_id}`
-        : `http://localhost:5000/api/user/get-suggestion-for-channel-request/${channel_id}`;
-      
+      if(channel.isPrivate){
+       endpoint =`http://localhost:5000/api/user/get-connections-for-channel-request/${channel_id}`
+      }
+      else{
+       endpoint =`http://localhost:5000/api/user/get-suggestion-for-channel-request/${channel_id}`
+
+      }
+
       const response = await axios.get(`${endpoint}?page=1&limit=20`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       });
-  
+
       // Handle both response formats
 
       console.log("response is ", response);
@@ -97,17 +122,17 @@ const GroupPage = () => {
       } else {
         throw new Error('Unexpected API response format');
       }
-  
+
       // Initialize users with loading and sent states
       const usersWithState = users.map(user => ({
         ...user,
         isSending: false,
         isSent: false
       }));
-      
+
       setUsersList(usersWithState);
       setShowUserSelectionModal(true);
-      
+
     } catch (err) {
       console.error("Error fetching users:", err);
       alert(err.response?.data?.message || err.message || 'Failed to fetch users');
@@ -119,7 +144,7 @@ const GroupPage = () => {
 
     try {
       // Update loading state for this user
-      setUsersList(prev => prev.map(user => 
+      setUsersList(prev => prev.map(user =>
         user._id === receiverId ? { ...user, isSending: true } : user
       ));
 
@@ -138,13 +163,13 @@ const GroupPage = () => {
       );
 
       // Update sent state for this user
-      setUsersList(prev => prev.map(user => 
+      setUsersList(prev => prev.map(user =>
         user._id === receiverId ? { ...user, isSending: false, isSent: true } : user
       ));
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to send connection request');
       // Reset loading state on error
-      setUsersList(prev => prev.map(user => 
+      setUsersList(prev => prev.map(user =>
         user._id === receiverId ? { ...user, isSending: false } : user
       ));
     }
@@ -155,6 +180,7 @@ const GroupPage = () => {
       setCreateChannelError('Channel name is required');
       return;
     }
+    console.log("Data is ", newChannel.isPrivate);
 
     try {
       const response = await axios.post(
@@ -179,20 +205,17 @@ const GroupPage = () => {
         isPrivate: true
       });
       setCreateChannelError('');
-      fetchChannels();
+      fetchOtherChannels();
       alert('Channel created successfully!');
     } catch (err) {
       setCreateChannelError(err.response?.data?.message || 'Failed to create channel');
     }
   };
 
-  const filteredMyChannels = myChannels.filter(channel =>
-    channel.name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const otherChannelList = myChannels
 
-  const filteredOtherChannels = otherChannels.filter(channel =>
-    channel.name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const myChannelsList = myChannels
+  console.log("MY CHANNEL LIST ", myChannelsList)
 
   if (loading) {
     return (
@@ -206,7 +229,7 @@ const GroupPage = () => {
     return (
       <div className="error-container">
         <div>Error: {error}</div>
-        <button onClick={fetchChannels}>Retry</button>
+        <button onClick={fetchOtherChannels}>Retry</button>
       </div>
     );
   }
@@ -223,18 +246,18 @@ const GroupPage = () => {
             </div>
             <div className="channel-actions">
               {isMyChannel ? (
-                <button 
+                <button
                   className="leave-btn"
                   onClick={() => handleLeaveChannel(channel._id)}
                 >
                   Leave
                 </button>
               ) : (
-                <button 
+                <button
                   className="join-btn"
                   onClick={() => handleJoinChannel(channel)}
                 >
-                  {channel.isPrivate ? 'Request to Join' : 'Send Connection Request'}
+                  Send Connection Request
                 </button>
               )}
             </div>
@@ -242,12 +265,12 @@ const GroupPage = () => {
         ))
       ) : (
         <div className="no-channels-message">
-          {isMyChannel 
-            ? 'You are not a member of any channels yet.' 
+          {isMyChannel
+            ? 'You are not a member of any channels yet.'
             : 'No channels available to join.'}
           <br />
           {isMyChannel && (
-            <button 
+            <button
               className="discover-btn"
               onClick={() => navigate('/discover-groups')}
             >
@@ -262,7 +285,7 @@ const GroupPage = () => {
   return (
     <div className="channel-page-container">
       <Navbar />
-      
+
       <div className="channel-page-layout">
         {/* Side Navigation */}
         <div className="side-navigation">
@@ -270,7 +293,7 @@ const GroupPage = () => {
             <h3>Channel Actions</h3>
             <ul>
               <li>
-                <button 
+                <button
                   className="nav-link-button"
                   onClick={() => setShowCreateModal(true)}
                 >
@@ -304,13 +327,14 @@ const GroupPage = () => {
           <div className="channels-section">
             <div className="channel-category">
               <h2>My Channels</h2>
-              {renderChannelList(filteredMyChannels, true)}
+              {renderChannelList(myChannels,false)}
+            </div>
+            <div className="channel-category">
+              <h2>Connected Channels</h2>
+              {renderChannelList(otherChannels,true)}
             </div>
 
-            <div className="channel-category">
-              <h2>Other Channels</h2>
-              {renderChannelList(filteredOtherChannels)}
-            </div>
+
           </div>
         </div>
       </div>
@@ -321,7 +345,7 @@ const GroupPage = () => {
           <div className="modal-content">
             <div className="modal-header">
               <h2>Create New Channel</h2>
-              <button 
+              <button
                 className="close-button"
                 onClick={() => {
                   setShowCreateModal(false);
@@ -331,52 +355,52 @@ const GroupPage = () => {
                 &times;
               </button>
             </div>
-            
+
             <div className="modal-body">
               {createChannelError && (
                 <div className="error-message">{createChannelError}</div>
               )}
-              
+
               <div className="form-group">
                 <label htmlFor="channel-name">Channel Name*</label>
                 <input
                   id="channel-name"
                   type="text"
                   value={newChannel.name}
-                  onChange={(e) => setNewChannel({...newChannel, name: e.target.value})}
+                  onChange={(e) => setNewChannel({ ...newChannel, name: e.target.value })}
                   placeholder="Enter channel name"
                   required
                 />
               </div>
-              
+
               <div className="form-group">
                 <label htmlFor="channel-bio">Description</label>
                 <textarea
                   id="channel-bio"
                   value={newChannel.bio}
-                  onChange={(e) => setNewChannel({...newChannel, bio: e.target.value})}
+                  onChange={(e) => setNewChannel({ ...newChannel, bio: e.target.value })}
                   placeholder="Enter channel description (optional)"
                   rows="3"
                 />
               </div>
-              
+
               <div className="form-group">
                 <label>
                   <input
                     type="checkbox"
                     checked={newChannel.isPrivate}
-                    onChange={(e) => setNewChannel({...newChannel, isPrivate: e.target.checked})}
+                    onChange={(e) => setNewChannel({ ...newChannel, isPrivate: e.target.checked })}
                   />
                   Private Channel
                 </label>
                 <small className="hint">
-                  {newChannel.isPrivate 
-                    ? 'Users will need to request to join' 
+                  {newChannel.isPrivate
+                    ? 'Users will need to request to join'
                     : 'Anyone can join without approval'}
                 </small>
               </div>
             </div>
-            
+
             <div className="modal-footer">
               <button
                 className="cancel-button"
@@ -404,7 +428,7 @@ const GroupPage = () => {
           <div className="modal-content">
             <div className="modal-header">
               <h2>Select Users to Connect</h2>
-              <button 
+              <button
                 className="close-button"
                 onClick={() => {
                   setShowUserSelectionModal(false);
@@ -414,7 +438,7 @@ const GroupPage = () => {
                 &times;
               </button>
             </div>
-            
+
             <div className="modal-body">
               <div className="users-list">
                 {usersList.map(user => (
@@ -428,14 +452,14 @@ const GroupPage = () => {
                       onClick={() => handleSendRequest(user._id)}
                       disabled={user.isSending || user.isSent}
                     >
-                      {user.isSending ? 'Sending...' : 
-                       user.isSent ? 'Request Sent' : 'Send Request'}
+                      {user.isSending ? 'Sending...' :
+                        user.isSent ? 'Request Sent' : 'Send Request'}
                     </button>
                   </div>
                 ))}
               </div>
             </div>
-            
+
             <div className="modal-footer">
               <button
                 className="cancel-button"

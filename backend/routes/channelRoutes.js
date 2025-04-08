@@ -1,8 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const {createChannel,deleteChannel,sendChannelConnectionRequest,removeChannelConnectionRequest,unsendChannelConnectionRequest,acceptChannelConnectionRequest,updateChannelInfo,getChannels,leaveChannel,getRequestChannels,getDiscoverChannels} = require('../controllers/channelController');
+const {createChannel,deleteChannel,sendChannelConnectionRequest,removeChannelConnectionRequest,unsendChannelConnectionRequest,acceptChannelConnectionRequest,updateChannelInfo,getMyChannels,leaveChannel,getRequestChannels,getDiscoverChannels,getOtherUserChannels} = require('../controllers/channelController');
 
-router.get('/get-channels',getChannels);
+router.get('/get-my-channels',getMyChannels);
+router.get('/get-other-user-channels',getOtherUserChannels);
 router.get('/get-request-channels',getRequestChannels)
 router.get('/discover-channels',getDiscoverChannels)
 
@@ -14,7 +15,7 @@ router.put('/unsend-channel-connection-request-by-creator',unsendChannelConnecti
 
 router.put('/remove-channel-connection-request-by-other-user',removeChannelConnectionRequest)
 
-router.put('/leave-channel/:channelId',leaveChannel);
+router.delete('/leave-channel/:channelId',leaveChannel);
 router.put('/accept-channel-connection-request-by-other-user',acceptChannelConnectionRequest)
 router.delete('/delete-channel',deleteChannel);
 router.patch('/update-channel-info/:channelId',updateChannelInfo)

@@ -139,7 +139,23 @@ const Navbar = () => {
 
   // Handle notification click
   const handleNotificationClick = (type) => {
-    navigate('/followers'); // Use navigate instead of window.location.href
+    console.log("notification type ",type)
+    let fruit = 'apple';
+
+switch (type) {
+  case 'channel':
+    navigate('/channel-requests');
+    break;
+  case 'post':
+    navigate('/');
+    break;
+  case 'follow':
+    navigate('/followers');
+    break;
+  default:
+    console.log('Unknown notification type ');
+}
+
   };
 
   // Handle block user
