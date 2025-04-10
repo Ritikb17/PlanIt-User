@@ -60,6 +60,56 @@ const sendMessage = async (req, res) => {
         res.status(500).json({ error: "Internal server error" });
     }
 }
+const getMessages = async (req, res) => {
+    const _id = req.user._id;
+    const rec_id = req.body.receiverId; // Note: "reciverId" might be a typo (should be "receiverId")
+
+    try {
+        const user = await User.findById(_id);
+        const rec = await User.findById(rec_id);
+     
+
+        if (!user || !rec) {
+            return res.status(400).json({ message: "User or receiver not found" });
+        }
+
+
+        const connectedToOtherUser = rec.connections.some(conn => conn.friend.equals(_id));
+        if (!connectedToOtherUser) {
+            return res.status(403).json({ message: "You are not connected to the other user" });
+        }
+
+        // Check if blocked
+        const connection = user.connections.find(conn => conn.friend.equals(rec._id));
+
+        const isBlocked = await user.blockUsers.includes(rec_id);
+        
+        if (isBlocked) {
+            return res.status(403).json({ message: "You blocked the other user" });
+        }
+        const Blocked = await rec.blockUsers.includes(rec_id);
+        if (Blocked) {
+            return res.status(403).json({ message: "You have been blocked " });
+        }
+        const chatId = connection.chat; // Ensure this exists
+        if (!chatId) {
+            return res.status(400).json({ message: "Chat ID not found" });
+        }
+        const cid = new mongoose.Types.ObjectId(chatId);
+        // const messageJson = {
+        //     sender: _id,
+        //     receiver: rec_id,
+        //     message: message
+        // }
+        const messages = await Chat.findById( cid ).select('messages')
+        console.log("message", messages);
+        res.status(200).json({ message: messages });
+
+    } catch (error) {
+        console.error("Error in sendMessage:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+}
 const editmessage = async (req, res) => {
     const _id = req.user._id;
     const rec_id = req.body.receiverId;
@@ -190,4 +240,4 @@ const deleteMessage = async (req, res) => {
         res.status(500).json({ error: "Internal server error" });
     }
 }
-module.exports = { sendMessage ,editmessage,deleteMessage};
+module.exports = { sendMessage ,editmessage,deleteMessage,getMessages};
