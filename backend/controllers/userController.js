@@ -707,6 +707,7 @@ const BlockUser = async (req, res) => {
   try {
     // Find the user who is blocking
     const selfUser = await User.findById(self_id);
+    const otherUser = await User.findById(other_id);
 
     // Check if the other user is already blocked
     const isAlreadyBlocked = selfUser.blockUsers.includes(other_id);
@@ -726,7 +727,7 @@ const BlockUser = async (req, res) => {
       selfUser.connections[connectionIndex].isBlocked = true;
     } else {
       // If the user is not in the connections array, add them with isBlocked set to true
-      selfUser.connections.push({
+      otherUser.connections.push({
         friend: other_id,
         isBlocked: true,
       });

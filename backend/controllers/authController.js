@@ -42,6 +42,8 @@ const register = async (req, res) => {
         });
         
         await user.save();
+const tu = await User.find({email});
+console.log("HASHED PASSWORD",hashedPassword,"   user pass ",user.password)
   
         // Create notification (assuming Notfication was a typo and should be Notification)
         const notification = new Notfication({ 
