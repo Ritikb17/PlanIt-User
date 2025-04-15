@@ -4,8 +4,8 @@ const Chat = require('../models/chat');
 
 const sendMessage = async (req, res) => {
     const _id = req.user._id;
-    const rec_id = req.body.reciverId; // Note: "reciverId" might be a typo (should be "receiverId")
-    const message = req.body.message; // Fixed typo in variable name
+    const rec_id = req.body.reciverId;
+    const message = req.body.message; 
 
     try {
         const user = await User.findById(_id);
@@ -22,7 +22,6 @@ const sendMessage = async (req, res) => {
             return res.status(403).json({ message: "You are not connected to the other user" });
         }
 
-        // Check if blocked
         const connection = user.connections.find(conn => conn.friend.equals(rec._id));
 
         const isBlocked = await user.blockUsers.includes(rec_id);
@@ -38,7 +37,7 @@ const sendMessage = async (req, res) => {
 
 
 
-        const chatId = connection.chat; // Ensure this exists
+        const chatId = connection.chat; 
         if (!chatId) {
             return res.status(400).json({ message: "Chat ID not found" });
         }
@@ -62,7 +61,7 @@ const sendMessage = async (req, res) => {
 }
 const getMessages = async (req, res) => {
     const _id = req.user._id;
-    const rec_id = req.body.receiverId; // Note: "reciverId" might be a typo (should be "receiverId")
+    const rec_id = req.body.receiverId; 
 
     try {
         const user = await User.findById(_id);
@@ -79,7 +78,6 @@ const getMessages = async (req, res) => {
             return res.status(403).json({ message: "You are not connected to the other user" });
         }
 
-        // Check if blocked
         const connection = user.connections.find(conn => conn.friend.equals(rec._id));
 
         const isBlocked = await user.blockUsers.includes(rec_id);
@@ -91,7 +89,7 @@ const getMessages = async (req, res) => {
         if (Blocked) {
             return res.status(403).json({ message: "You have been blocked " });
         }
-        const chatId = connection.chat; // Ensure this exists
+        const chatId = connection.chat; 
         if (!chatId) {
             return res.status(400).json({ message: "Chat ID not found" });
         }
