@@ -858,7 +858,7 @@ const getUser= async (req,res)=>
   const selfIdObj = new mongoose.Types.ObjectId(self_id);
 
   try {
-    const userInfo = await User.findOne({username:username}).select('username bio connections name -_id');
+    const userInfo = await User.findOne({username:username}).select('username bio connections name ');
     
     const isAlreadyConnected = userInfo.connections.some(
       (connection) => connection.friend.toString() === selfIdObj.toString()

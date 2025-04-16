@@ -66,6 +66,8 @@ const getMessages = async (req, res) => {
     try {
         const user = await User.findById(_id);
         const rec = await User.findById(rec_id);
+
+        console.log("user and rec data ",rec );
      
 
         if (!user || !rec) {

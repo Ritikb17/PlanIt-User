@@ -51,9 +51,10 @@ const OtherUserProfile = () => {
         );
 
         // Extract the user data from the response
-        const userData = userResponse.data.userInfo;
+        const userData = userResponse.data;
         setUser(userData); // Set the user data
         console.log("User Data:", userData);
+        console.log("Data from the appi ", response);
 
         // Check if users are already connected
         setIsAlreadyConnected(userResponse.data.isAlreadyConnected);
@@ -84,7 +85,6 @@ const OtherUserProfile = () => {
 
   const sendFollowRequest = async () => {
     const token = localStorage.getItem('token');
-    console.log("Token is:", token);
     if (!token) {
       console.error('No token found in localStorage');
       return;
@@ -93,7 +93,7 @@ const OtherUserProfile = () => {
     try {
       const response = await axios.put(
         'http://localhost:5000/api/user/send-request',
-        { _id: user._id }, // Request body
+        { _id: user.userInfo._id }, // Request body
         {
           headers: {
             'Content-Type': 'application/json',
@@ -125,7 +125,7 @@ const OtherUserProfile = () => {
     try {
       const response = await axios.put(
         'http://localhost:5000/api/user/unsend-request',
-        { _id: user._id }, // Request body
+        { _id: user.userInfo._id }, // Request body
         {
           headers: {
             'Content-Type': 'application/json',
