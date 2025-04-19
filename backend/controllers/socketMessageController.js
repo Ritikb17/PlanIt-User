@@ -5,15 +5,19 @@ const Chat = require('../models/chat');
 module.exports = {
   handleSendMessage: async (socket, io, { receiverId, message }) => {
     try {
-      const _id = socket.userId;
+      const _id = socket.user._id;
       const rec_id = receiverId;
-
+// console.log("getting socket",socket.user._id)
+console.log("getting message",message);
       const [user, rec] = await Promise.all([
         User.findById(_id),
         User.findById(rec_id)
       ]);
+      console.log("the reciver id",rec_id);
+      console.log("the sender id",_id);
 
       if (!user || !rec) {
+        console.log("ERROR", "User or receiver not foundXXXXCCCXX")
         throw new Error("User or receiver not found");
       }
 
@@ -70,6 +74,7 @@ module.exports = {
       const _id = socket.userId;
       const rec_id = receiverId;
 
+      console.log("getting previous message ");;
       const [user, rec] = await Promise.all([
         User.findById(_id),
         User.findById(rec_id)

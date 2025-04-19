@@ -16,7 +16,7 @@ const otherRoutes = require("./routes/otherRoutes");
 const channelRoutes = require("./routes/channelRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const { verifyToken } = require("./middlewares/authMiddleware");
-const { verifySocketToken } = require("./middlewares/socketAuthMiddleware");
+const  verifySocketToken  = require("./middlewares/socketAuthMiddleware");
 
 // Initialize app
 const app = express();
@@ -31,6 +31,7 @@ const io = new Server(server, {
     credentials: true
   }
 });
+
 
 // Middleware
 app.use(express.json());

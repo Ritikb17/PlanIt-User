@@ -2,12 +2,14 @@ const socketMessageController = require('../controllers/socketMessageController'
 
 module.exports = (io) => {
   io.on('connection', (socket) => {
-    console.log('New client connected:', socket.userId);
+    console.log('New client connected:', socket);
     socket.on('send-message', (data) => {
+      console.log("the DATA is ",data);
       socketMessageController.handleSendMessage(socket, io, data);
     });
 
     socket.on('get-messages', (data, callback) => {
+      console.log("controller of getting messages ");
       socketMessageController.handleGetMessages(socket, data, callback);
     });
 

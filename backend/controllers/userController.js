@@ -788,7 +788,6 @@ const getNotification = async ( req, res)=>
 
   try {
     const result = await Notification.find({user:_id});
-     console.log("RESULT Is", result);
     res.status(200).json({message:"Notification for users are ",notification:result})
   } catch (error) {
     res.status(400).json({error:error});    
