@@ -18,7 +18,6 @@ const messageRoutes = require("./routes/messageRoutes");
 const { verifyToken } = require("./middlewares/authMiddleware");
 const  verifySocketToken  = require("./middlewares/socketAuthMiddleware");
 
-// Initialize app
 const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
@@ -41,10 +40,8 @@ app.use(cors({
 }));
 app.use(cookieParser());
 
-// Database connection
 connectDB();
 
-// Socket.IO authentication
 io.use(verifySocketToken);
 
 require('./sockets/connectionHandler')(io);

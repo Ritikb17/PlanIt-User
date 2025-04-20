@@ -4,7 +4,7 @@ import './ChatDialog.css';
 
 const socket = io('http://localhost:5000', {
   auth: {
-    token: localStorage.getItem('token') // Replace with your actual token logic
+    token: localStorage.getItem('token') 
   },
   transports: ['websocket'],
   
@@ -17,10 +17,8 @@ const ChatDialog = ({ chat, onClose }) => {
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    // Auto-scroll to latest message
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
 
-    // Listen for incoming messages (if needed)
     socket.on('get-messages', (message) => {
       setMessages((prev) => [...prev, message]);
     });
@@ -36,7 +34,7 @@ const ChatDialog = ({ chat, onClose }) => {
     console.log("TOKEN IS  ", localStorage.getItem('token'));
     if (input.trim()) {
       const message = {
-        senderId: '', // Replace with actual senderId
+        senderId: '', 
         receiverId: chat._id,
         message: input
       };
