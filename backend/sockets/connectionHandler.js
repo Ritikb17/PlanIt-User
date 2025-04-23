@@ -11,6 +11,7 @@ module.exports = (io) => {
     socket.on('get-messages', (data, callback) => {
       console.log("controller of getting messages" ,data);
       socketMessageController.handleGetMessages(socket, data, callback);
+      // io.to(socket.id).emit('receive-message', message);
     });
 
     socket.on('edit-message', (data, callback) => {

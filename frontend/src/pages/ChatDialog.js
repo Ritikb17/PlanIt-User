@@ -15,8 +15,9 @@ const ChatDialog = ({ chat, onClose }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
-
-  useEffect(() => {
+  
+  const handleGetMessages=(chat)=>{
+    
     if (!chat?._id) return;
   
     socket.emit('get-messages', chat._id, (response) => {
@@ -37,6 +38,16 @@ const ChatDialog = ({ chat, onClose }) => {
     return () => {
       socket.off('receive-message', handleReceiveMessage);
     };
+  
+  }
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+    handleGetMessages(chat)
+    }, 100); // every 10 seconds
+  
+    return () => clearInterval(interval); // cleanup
+    
   }, [chat._id]);
   
 
@@ -54,6 +65,7 @@ const ChatDialog = ({ chat, onClose }) => {
       socket.emit('send-message', message);
       setMessages((prev) => [...prev, { ...message, self: true }]);
       setInput('');
+      handleGetMessages(chat);
     }
   };
 
@@ -77,16 +89,29 @@ const ChatDialog = ({ chat, onClose }) => {
         </div>
 
         <div className="chat-dialog-body">
-          {messages.map((msg, idx) => (
-            <div
-              key={idx}
-              className={`message ${msg.self ? 'own' : 'other'}`}
-            >
-              {msg.text}
+  {messages.map((msg, idx) => {
+    const isOther = chat._id === msg.sender;
+
+    return (
+      <div key={idx} className={`message-wrapper ${isOther ? 'other' : 'own'}`}>
+        <div className={`message-bubble ${isOther ? 'other' : 'own'}`}>
+          <p>{msg.message}</p>
+          {msg.timestamp && (
+            <div className="timestamp">
+              {new Date(msg.timestamp).toLocaleTimeString([], {
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
             </div>
-          ))}
-          <div ref={messagesEndRef} />
+          )}
         </div>
+      </div>
+    );
+  })}
+  <div ref={messagesEndRef} />
+</div>
+
+
 
         <div className="chat-dialog-footer">
           <input
