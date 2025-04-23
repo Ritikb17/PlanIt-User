@@ -17,16 +17,28 @@ const ChatDialog = ({ chat, onClose }) => {
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-
-    socket.on('get-messages', (message) => {
-      setMessages((prev) => [...prev, message]);
+    if (!chat?._id) return;
+  
+    socket.emit('get-messages', chat._id, (response) => {
+      if (response.status === 'success') {
+        console.log("Initial messages received:", response.messages);
+        setMessages(response.messages);
+      } else {
+        console.error("Error getting messages:", response.message);
+      }
     });
-
-    return () => {
-      socket.off('receive-message');
+  
+    const handleReceiveMessage = (msg) => {
+      setMessages((prev) => [...prev, msg]);
     };
-  }, [messages]);
+  
+    socket.on('receive-message', handleReceiveMessage);
+  
+    return () => {
+      socket.off('receive-message', handleReceiveMessage);
+    };
+  }, [chat._id]);
+  
 
   const handleSend = () => {
 

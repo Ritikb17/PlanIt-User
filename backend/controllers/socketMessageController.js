@@ -69,12 +69,13 @@ console.log("getting message",message);
     }
   },
 
-  handleGetMessages: async (socket, { receiverId }, callback) => {
+  handleGetMessages: async (socket, data, callback) => {
     try {
-      const _id = socket.userId;
-      const rec_id = receiverId;
+      const _id = socket.user._id;
+      const rec_id = data;
 
-      console.log("getting previous message ");;
+      console.log("user and reciver id s",rec_id);
+      console.log("selfID",_id);
       const [user, rec] = await Promise.all([
         User.findById(_id),
         User.findById(rec_id)

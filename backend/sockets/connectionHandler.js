@@ -9,7 +9,7 @@ module.exports = (io) => {
     });
 
     socket.on('get-messages', (data, callback) => {
-      console.log("controller of getting messages ");
+      console.log("controller of getting messages" ,data);
       socketMessageController.handleGetMessages(socket, data, callback);
     });
 
