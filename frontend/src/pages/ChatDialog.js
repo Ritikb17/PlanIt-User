@@ -4,84 +4,106 @@ import './ChatDialog.css';
 
 const socket = io('http://localhost:5000', {
   auth: {
-    token: localStorage.getItem('token') 
+    token: localStorage.getItem('token'),
   },
   transports: ['websocket'],
-  
-
 });
 
 const ChatDialog = ({ chat, onClose }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState('');
+  const [chatId, setChatId] = useState('');
   const messagesEndRef = useRef(null);
-  
-  const handleGetMessages=(chat)=>{
-    
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+
+  useEffect(() => {
     if (!chat?._id) return;
-  
+
     socket.emit('get-messages', chat._id, (response) => {
       if (response.status === 'success') {
-        console.log("Initial messages received:", response.messages);
         setMessages(response.messages);
-      } else {
-        console.error("Error getting messages:", response.message);
+        setChatId(response.chat_id)
+        console.log("RESPONSE IS",response)
       }
     });
-  
+
     const handleReceiveMessage = (msg) => {
       setMessages((prev) => [...prev, msg]);
     };
-  
+
+    const handleMessageDeleted = (deletedId) => {
+      setMessages((prev) => prev.filter((msg) => msg._id !== deletedId));
+    };
+
+    const handleMessageEdited = (updatedMessage) => {
+      setMessages((prev) =>
+        prev.map((msg) => (msg._id === updatedMessage._id ? updatedMessage : msg))
+      );
+    };
+
     socket.on('receive-message', handleReceiveMessage);
-  
+    socket.on('message-deleted', handleMessageDeleted);
+    socket.on('message-edited', handleMessageEdited);
+
     return () => {
       socket.off('receive-message', handleReceiveMessage);
+      socket.off('message-deleted', handleMessageDeleted);
+      socket.off('message-edited', handleMessageEdited);
     };
-  
-  }
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-    handleGetMessages(chat)
-    }, 100); // every 10 seconds
-  
-    return () => clearInterval(interval); // cleanup
-    
   }, [chat._id]);
-  
 
   const handleSend = () => {
-
-
-    console.log("TOKEN IS  ", localStorage.getItem('token'));
     if (input.trim()) {
       const message = {
-        senderId: '', 
         receiverId: chat._id,
-        message: input
+        message: input,
       };
-
       socket.emit('send-message', message);
-      setMessages((prev) => [...prev, { ...message, self: true }]);
       setInput('');
-      handleGetMessages(chat);
     }
+  };
+
+  const handleEdit = (id, currentText) => {
+    setEditingId(id);
+    setEditText(currentText);
+  };
+
+  const handleEditSubmit = (id) => {
+
+    console.log("funcation is bting called ");
+    if (editText.trim()) {
+
+      socket.emit('edit-message', { messageId: id, newMessage: editText ,chatId:chatId}, (res) => {
+        if (res.status === 'success') {
+          setEditingId(null);
+          setEditText('');
+        }
+      });
+    }
+  };
+
+  const handleDelete = (id) => {
+    socket.emit('delete-message', { messageId: id });
   };
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') handleSend();
   };
 
+  const myId = JSON.parse(atob(localStorage.getItem('token').split('.')[1])).id;
+
   return (
     <div className="chat-dialog-overlay">
       <div className="chat-dialog">
         <div className="chat-dialog-header">
-          <img
-            src={chat.profilePicture}
-            alt={chat.username}
-            className="profile-picture"
-          />
+          <img src={chat.profilePicture} alt={chat.username} className="profile-picture" />
           <h3>{chat.username}</h3>
           <button className="close-button" onClick={onClose}>
             <i className="fas fa-times"></i>
@@ -89,29 +111,44 @@ const ChatDialog = ({ chat, onClose }) => {
         </div>
 
         <div className="chat-dialog-body">
-  {messages.map((msg, idx) => {
-    const isOther = chat._id === msg.sender;
+          {messages.map((msg, idx) => {
+            const isMine = msg.sender === myId;
 
-    return (
-      <div key={idx} className={`message-wrapper ${isOther ? 'other' : 'own'}`}>
-        <div className={`message-bubble ${isOther ? 'other' : 'own'}`}>
-          <p>{msg.message}</p>
-          {msg.timestamp && (
-            <div className="timestamp">
-              {new Date(msg.timestamp).toLocaleTimeString([], {
-                hour: '2-digit',
-                minute: '2-digit',
-              })}
-            </div>
-          )}
+            return (
+              <div key={msg._id || idx} className={`message-wrapper ${isMine ? 'own' : 'other'}`}>
+                <div className={`message-bubble ${isMine ? 'own' : 'other'}`}>
+                  {editingId === msg._id ? (
+                    <input
+                      value={editText}
+                      onChange={(e) => setEditText(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleEditSubmit(msg._id)}
+                      className="edit-input"
+                    />
+                  ) : (
+                    <>
+                      <p>{msg.message}</p>
+                      {isMine && (
+                        <div className="actions">
+                          <button onClick={() => handleEdit(msg._id, msg.message)}>Edit</button>
+                          <button onClick={() => handleDelete(msg._id)}>Delete</button>
+                        </div>
+                      )}
+                    </>
+                  )}
+                  {msg.timestamp && (
+                    <div className="timestamp">
+                      {new Date(msg.timestamp).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+          <div ref={messagesEndRef} />
         </div>
-      </div>
-    );
-  })}
-  <div ref={messagesEndRef} />
-</div>
-
-
 
         <div className="chat-dialog-footer">
           <input

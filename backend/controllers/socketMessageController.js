@@ -1,20 +1,18 @@
 const mongoose = require('mongoose');
 const User = require("../models/User");
 const Chat = require('../models/chat');
+// const users = new Map();
 
 module.exports = {
-  handleSendMessage: async (socket, io, { receiverId, message }) => {
+  handleSendMessage: async (socket, io, { receiverId, message }, users) => {
     try {
       const _id = socket.user._id;
       const rec_id = receiverId;
-// console.log("getting socket",socket.user._id)
-console.log("getting message",message);
       const [user, rec] = await Promise.all([
         User.findById(_id),
         User.findById(rec_id)
       ]);
-      console.log("the reciver id",rec_id);
-      console.log("the sender id",_id);
+
 
       if (!user || !rec) {
         console.log("ERROR", "User or receiver not foundXXXXCCCXX")
@@ -28,17 +26,17 @@ console.log("getting message",message);
 
       const connection = user.connections.find(conn => conn.friend.equals(rec._id));
       const isBlocked = user.blockUsers.includes(rec_id);
-      
+
       if (isBlocked) {
         throw new Error("You blocked the other user");
       }
-      
+
       const Blocked = rec.blockUsers.includes(rec_id);
       if (Blocked) {
         throw new Error("You have been blocked");
       }
 
-      const chatId = connection.chat; 
+      const chatId = connection.chat;
       if (!chatId) {
         throw new Error("Chat ID not found");
       }
@@ -57,11 +55,12 @@ console.log("getting message",message);
         { new: true }
       );
 
-      // Emit to sender
-      socket.emit('message-sent', messageJson);
-      
-      // Emit to receiver
-      io.to(rec_id).emit('new-message', messageJson);
+
+      const receiverSocketId = users.get(receiverId);
+      console.log("UPDATED CHAT IS  ", updatedChat);
+
+      io.to(receiverSocketId).emit('receive-message', messageJson);
+
 
     } catch (error) {
       console.error("Error in sendMessage:", error);
@@ -74,8 +73,8 @@ console.log("getting message",message);
       const _id = socket.user._id;
       const rec_id = data;
 
-      console.log("user and reciver id s",rec_id);
-      console.log("selfID",_id);
+      console.log("user and reciver id s", rec_id);
+      console.log("selfID", _id);
       const [user, rec] = await Promise.all([
         User.findById(_id),
         User.findById(rec_id)
@@ -92,11 +91,11 @@ console.log("getting message",message);
 
       const connection = user.connections.find(conn => conn.friend.equals(rec._id));
       const isBlocked = user.blockUsers.includes(rec_id);
-      
+
       if (isBlocked) {
         throw new Error("You blocked the other user");
       }
-      
+
       const Blocked = rec.blockUsers.includes(rec_id);
       if (Blocked) {
         throw new Error("You have been blocked");
@@ -109,10 +108,11 @@ console.log("getting message",message);
 
       const cid = new mongoose.Types.ObjectId(chatId);
       const chat = await Chat.findById(cid).select('messages');
-      
+
       callback({
         status: 'success',
-        messages: chat.messages || []
+        messages: chat.messages || [],
+        chat_id: cid
       });
 
     } catch (error) {
@@ -124,35 +124,40 @@ console.log("getting message",message);
     }
   },
 
-  handleEditMessage: async (socket, io, { messageId, receiverId, newMessage }, callback) => {
+  handleEditMessage: async (socket, io, { messageId, newMessage, chatId }, callback) => {
     try {
       const _id = socket.userId;
-      const rec_id = receiverId;
+      // const rec_id = receiverId;
 
-      const [user, rec] = await Promise.all([
-        User.findById(_id),
-        User.findById(rec_id)
-      ]);
+      // const [user, rec] = await Promise.all([
+      //   User.findById(_id),
+      //   User.findById(rec_id)
+      // ]);
 
-      if (!user || !rec) {
-        throw new Error("User not found");
-      }
+      // if (!user || !rec) {
+      //   throw new Error("User not found");
+      // }
 
-      const connection = user.connections.find(conn => conn.friend.equals(rec._id));
-      if (!connection) {
-        throw new Error("Not connected to this user");
-      }
+      // const connection = user.connections.find(conn => conn.friend.equals(rec._id));
+      // if (!connection) {
+      //   throw new Error("Not connected to this user");
+      // }
 
-      const chatId = connection.chat;
-      if (!chatId) {
-        throw new Error("Chat not found");
-      }
+      // const chatId = connection.chat;
+      // if (!chatId) {
+      //   throw new Error("Chat not found");
+      // }
 
+      const chatObjectId = new mongoose.Types.ObjectId(chatId);
+      const messageObjectId = new mongoose.Types.ObjectId(messageId);
+      const userObjectId = new mongoose.Types.ObjectId(_id);
+
+      console.log("messageId", messageId, "chatId is ", chatId, "newMessage", newMessage);
       const updatedChat = await Chat.findOneAndUpdate(
         {
-          _id: chatId,
-          "messages._id": messageId,
-          "messages.sender": _id
+          _id: chatObjectId,
+          "messages._id": messageObjectId,
+          "messages.sender": userObjectId
         },
         {
           $set: {
@@ -162,7 +167,7 @@ console.log("getting message",message);
           }
         },
         {
-          arrayFilters: [{ "elem._id": messageId }],
+          arrayFilters: [{ "elem._id": messageObjectId }],
           new: true
         }
       );
@@ -172,10 +177,10 @@ console.log("getting message",message);
       }
 
       const updatedMessage = updatedChat.messages.find(msg => msg._id.equals(messageId));
-      
+
       // Notify both users
-      io.to(_id).to(rec_id).emit('message-edited', updatedMessage);
-      
+      // io.to(_id).to(rec_id).emit('message-edited', updatedMessage);
+
       callback({
         status: 'success',
         message: updatedMessage

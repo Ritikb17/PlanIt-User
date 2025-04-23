@@ -10,6 +10,42 @@
   justify-content: center;
   z-index: 999;
 }
+.actions {
+  margin-top: 4px;
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+  font-size: 0.8rem;
+  color: #ccc;
+}
+.message-bubble .actions {
+  display: none;
+}
+
+.message-bubble:hover .actions {
+  display: flex;
+}
+
+
+.actions button {
+  background: none;
+  border: none;
+  color: #aaa;
+  cursor: pointer;
+}
+
+.actions button:hover {
+  color: #fff;
+}
+
+.edit-input {
+  width: 100%;
+  padding: 4px;
+  font-size: 1rem;
+  border: 1px solid #888;
+  border-radius: 4px;
+}
+
 
 .chat-dialog {
   background-color: #1f1f1f;
