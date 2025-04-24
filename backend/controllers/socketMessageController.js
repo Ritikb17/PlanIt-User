@@ -124,7 +124,7 @@ module.exports = {
     }
   },
 
-  handleEditMessage: async (socket, io, { messageId, newMessage, chatId }, callback) => {
+  handleEditMessage: async (socket,users, io, { messageId,receiverId, newMessage, chatId },callback) => {
     try {
       const _id = socket.user._id;
       // const rec_id = receiverId;
@@ -181,6 +181,10 @@ module.exports = {
 
       // Notify both users
       // io.to(_id).to(rec_id).emit('message-edited', updatedMessage);
+      const receiverSocketId = users.get(receiverId);
+      console.log("UPDATED id IS  ", receiverSocketId);
+
+      io.to(receiverSocketId).emit('edit-message');
 
       callback({
         status: 'success',
@@ -196,7 +200,7 @@ module.exports = {
     }
   },
 
-  handleDeleteMessage: async (socket, io, { messageId, chatId }, callback) => {
+  handleDeleteMessage: async (socket,users ,io, { messageId,receiverId ,chatId }, callback) => {
     try {
       const _id = socket.user._id;
       // const rec_id = receiverId;
@@ -250,6 +254,10 @@ module.exports = {
       //   messageId,
       //   chatId
       // });
+      const receiverSocketId = users.get(receiverId);
+      console.log("UPDATED id IS  ", receiverSocketId);
+
+      io.to(receiverSocketId).emit('edit-message');
 
       callback({
         status: 'success',

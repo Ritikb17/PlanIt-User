@@ -39,16 +39,27 @@ const ChatDialog = ({ chat, onClose }) => {
     };
 
     const handleMessageDeleted = (deletedId) => {
-      setMessages((prev) => prev.filter((msg) => msg._id !== deletedId));
+      socket.emit('get-messages', chat._id, (response) => {
+        if (response.status === 'success') {
+          setMessages(response.messages);
+          setChatId(response.chat_id)
+          console.log("RESPONSE IS",response)
+        }
+      });
     };
 
-    const handleMessageEdited = (updatedMessage) => {
-      setMessages((prev) =>
-        prev.map((msg) => (msg._id === updatedMessage._id ? updatedMessage : msg))
-      );
+    const handleMessageEdited = () => {
+      socket.emit('get-messages', chat._id, (response) => {
+        if (response.status === 'success') {
+          setMessages(response.messages);
+          setChatId(response.chat_id)
+          console.log("RESPONSE IS",response)
+        }
+      });
     };
 
     socket.on('receive-message', handleReceiveMessage);
+    socket.on('edit-message', handleMessageEdited);
     socket.on('message-deleted', handleMessageDeleted);
     socket.on('message-edited', handleMessageEdited);
 
@@ -102,7 +113,7 @@ const ChatDialog = ({ chat, onClose }) => {
 
     if (editText.trim()) {
 
-      socket.emit('edit-message', { messageId: id, newMessage: editText ,chatId:chatId}, (res) => {
+      socket.emit('edit-message', { messageId: id, newMessage: editText,receiverId: chat._id ,chatId:chatId}, (res) => {
         if (res.status === 'success') {
           setEditingId(null);
           setEditText('');
@@ -119,7 +130,7 @@ const ChatDialog = ({ chat, onClose }) => {
   };
 
   const handleDelete = (id) => {
-    socket.emit('delete-message', { messageId: id ,chatId:chatId}, (response) => {
+    socket.emit('delete-message', { messageId: id ,receiverId: chat._id,chatId:chatId}, (response) => {
       if (response.status != 'success') {
         console.log("fail to delete message ")
       }

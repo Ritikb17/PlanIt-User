@@ -26,11 +26,17 @@ module.exports = (io) => {
     });
 
     socket.on('edit-message', (data, callback) => {
-      socketMessageController.handleEditMessage(socket, io, data, callback);
+      socketMessageController.handleEditMessage(
+        socket, 
+        users,   // Assuming `users` is a Map/object tracking connected users
+        io,      // Pass the `io` instance
+        data,    // Destructured as { messageId, newMessage, chatId }
+        callback
+      );
     });
 
     socket.on('delete-message', (data, callback) => {
-      socketMessageController.handleDeleteMessage(socket, io, data, callback);
+      socketMessageController.handleDeleteMessage(socket,users, io, data, callback);
     });
 
     socket.on('disconnect', () => {
