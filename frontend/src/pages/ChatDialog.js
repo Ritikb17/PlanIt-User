@@ -61,23 +61,45 @@ const ChatDialog = ({ chat, onClose }) => {
 
   const handleSend = () => {
     if (input.trim()) {
-      const message = {
-        receiverId: chat._id,
+      const newMessage = {
+        _id: Date.now().toString(), // Temporary ID (replace with server ID later)
+        sender: myId,
         message: input,
+        timestamp: new Date().toISOString(),
       };
-      socket.emit('send-message', message);
+  
+      // Optimistically update UI
+      setMessages((prev) => [...prev, newMessage]);
       setInput('');
+  
+      // Send to server
+      socket.emit('send-message', { 
+        receiverId: chat._id, 
+        message: input 
+      }, (response) => {
+        if (response.status === 'success') {
+          // Replace temp message with server-generated one
+          setMessages((prev) =>
+            prev.map((msg) => 
+              msg._id === newMessage._id ? response.message : msg
+            )
+          );
+        } else {
+          // Rollback if failed
+          setMessages((prev) => prev.filter((msg) => msg._id !== newMessage._id));
+        }
+      });
     }
   };
 
   const handleEdit = (id, currentText) => {
     setEditingId(id);
     setEditText(currentText);
+    
   };
 
   const handleEditSubmit = (id) => {
 
-    console.log("funcation is bting called ");
     if (editText.trim()) {
 
       socket.emit('edit-message', { messageId: id, newMessage: editText ,chatId:chatId}, (res) => {
@@ -86,11 +108,31 @@ const ChatDialog = ({ chat, onClose }) => {
           setEditText('');
         }
       });
+      socket.emit('get-messages', chat._id, (response) => {
+        if (response.status === 'success') {
+          setMessages(response.messages);
+          setChatId(response.chat_id)
+          console.log("RESPONSE IS",response)
+        }
+      });
     }
   };
 
   const handleDelete = (id) => {
-    socket.emit('delete-message', { messageId: id });
+    socket.emit('delete-message', { messageId: id ,chatId:chatId}, (response) => {
+      if (response.status != 'success') {
+        console.log("fail to delete message ")
+      }
+    });
+    socket.emit('get-messages', chat._id, (response) => {
+      if (response.status === 'success') {
+        setMessages(response.messages);
+        setChatId(response.chat_id)
+        console.log("RESPONSE IS",response)
+      }
+    });
+
+
   };
 
   const handleKeyDown = (e) => {
@@ -109,11 +151,11 @@ const ChatDialog = ({ chat, onClose }) => {
             <i className="fas fa-times"></i>
           </button>
         </div>
-
+  
         <div className="chat-dialog-body">
           {messages.map((msg, idx) => {
             const isMine = msg.sender === myId;
-
+  
             return (
               <div key={msg._id || idx} className={`message-wrapper ${isMine ? 'own' : 'other'}`}>
                 <div className={`message-bubble ${isMine ? 'own' : 'other'}`}>
@@ -126,12 +168,18 @@ const ChatDialog = ({ chat, onClose }) => {
                     />
                   ) : (
                     <>
-                      <p>{msg.message}</p>
-                      {isMine && (
-                        <div className="actions">
-                          <button onClick={() => handleEdit(msg._id, msg.message)}>Edit</button>
-                          <button onClick={() => handleDelete(msg._id)}>Delete</button>
-                        </div>
+                      {msg.isDeleted ? (
+                        <p className="deleted-message">[This message has been deleted]</p>
+                      ) : (
+                        <>
+                          <p>{msg.message}</p>
+                          {isMine && (
+                            <div className="actions">
+                              <button onClick={() => handleEdit(msg._id, msg.message)}>Edit</button>
+                              <button onClick={() => handleDelete(msg._id)}>Delete</button>
+                            </div>
+                          )}
+                        </>
                       )}
                     </>
                   )}
@@ -149,7 +197,7 @@ const ChatDialog = ({ chat, onClose }) => {
           })}
           <div ref={messagesEndRef} />
         </div>
-
+  
         <div className="chat-dialog-footer">
           <input
             type="text"

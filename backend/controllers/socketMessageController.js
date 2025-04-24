@@ -126,7 +126,7 @@ module.exports = {
 
   handleEditMessage: async (socket, io, { messageId, newMessage, chatId }, callback) => {
     try {
-      const _id = socket.userId;
+      const _id = socket.user._id;
       // const rec_id = receiverId;
 
       // const [user, rec] = await Promise.all([
@@ -147,17 +147,18 @@ module.exports = {
       // if (!chatId) {
       //   throw new Error("Chat not found");
       // }
+   
 
       const chatObjectId = new mongoose.Types.ObjectId(chatId);
       const messageObjectId = new mongoose.Types.ObjectId(messageId);
       const userObjectId = new mongoose.Types.ObjectId(_id);
 
-      console.log("messageId", messageId, "chatId is ", chatId, "newMessage", newMessage);
+      console.log("messageId", messageId, "chatId is ", chatId, "newMessage", newMessage ,"userId is ",userObjectId);
       const updatedChat = await Chat.findOneAndUpdate(
         {
           _id: chatObjectId,
-          "messages._id": messageObjectId,
-          "messages.sender": userObjectId
+          "messages._id": messageId,
+          "messages.sender": _id
         },
         {
           $set: {
@@ -195,30 +196,30 @@ module.exports = {
     }
   },
 
-  handleDeleteMessage: async (socket, io, { messageId, receiverId }, callback) => {
+  handleDeleteMessage: async (socket, io, { messageId, chatId }, callback) => {
     try {
-      const _id = socket.userId;
-      const rec_id = receiverId;
+      const _id = socket.user._id;
+      // const rec_id = receiverId;
 
-      const [user, rec] = await Promise.all([
-        User.findById(_id),
-        User.findById(rec_id)
-      ]);
+      // const [user, rec] = await Promise.all([
+      //   User.findById(_id),
+      //   User.findById(rec_id)
+      // ]);
 
-      if (!user || !rec) {
-        throw new Error("User or receiver not found");
-      }
+      // if (!user || !rec) {
+      //   throw new Error("User or receiver not found");
+      // }
 
-      const connection = user.connections.find(conn => conn.friend.equals(rec._id));
-      if (!connection) {
-        throw new Error("You are not connected to this user");
-      }
+      // const connection = user.connections.find(conn => conn.friend.equals(rec._id));
+      // if (!connection) {
+      //   throw new Error("You are not connected to this user");
+      // }
 
-      const chatId = connection.chat;
-      if (!chatId) {
-        throw new Error("Chat ID not found");
-      }
-
+      // const chatId = connection.chat;
+      // if (!chatId) {
+      //   throw new Error("Chat ID not found");
+      // }
+     
       const updatedChat = await Chat.findOneAndUpdate(
         {
           _id: chatId,
@@ -244,11 +245,11 @@ module.exports = {
         msg => msg._id.toString() === messageId
       );
 
-      // Notify both users
-      io.to(_id).to(rec_id).emit('message-deleted', {
-        messageId,
-        chatId
-      });
+      // // Notify both users
+      // io.to(_id).to().emit('message-deleted', {
+      //   messageId,
+      //   chatId
+      // });
 
       callback({
         status: 'success',
