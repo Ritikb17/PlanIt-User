@@ -31,20 +31,18 @@ const register = async (req, res) => {
         }
   
         // Hash password
-        const hashedPassword = await bcrypt.hash(passwordString, 10);
+        // const hashedPassword = await bcrypt.hash(passwordString, 10);
   
         // Create user
         const user = new User({ 
             username, 
             email, 
-            password: hashedPassword, 
+            password: passwordString, 
             name 
         });
         
         await user.save();
-const tu = await User.find({email});
-console.log("HASHED PASSWORD",hashedPassword,"   user pass ",user.password)
-  
+const tu = await User.find({email});  
         // Create notification (assuming Notfication was a typo and should be Notification)
         const notification = new Notfication({ 
             user: user._id
