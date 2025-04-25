@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './GroupPage.css';
 import Navbar from '../components/Navbar';
+import ChannelChatModal from './channelChatModel'
 
 const GroupPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -20,6 +21,19 @@ const GroupPage = () => {
     isPrivate: true
   });
   const [createChannelError, setCreateChannelError] = useState('');
+  // At the top with other state declarations
+const [isChatModalOpen, setIsChatModalOpen] = useState(false);
+const [selectedChatChannel, setSelectedChatChannel] = useState(null);
+
+const openChatModal = (channel) => {
+  setSelectedChatChannel(channel);
+  setIsChatModalOpen(true);
+};
+
+const closeChatModal = () => {
+  setIsChatModalOpen(false);
+  setSelectedChatChannel(null);
+};
   const navigate = useNavigate();
 
   // Get user ID and token from localStorage
@@ -239,7 +253,11 @@ const GroupPage = () => {
       {channels.length > 0 ? (
         channels.map((channel) => (
           <div key={channel._id} className="channel-item">
-            <div className="channel-info">
+            <div 
+              className="channel-info" 
+              onClick={() => openChatModal(channel)}
+              style={{ cursor: 'pointer' }}
+            >
               <h3>{channel.name}</h3>
               {channel.isPrivate && <span className="private-badge">Private</span>}
               <p className="channel-description">{channel.description || 'No description'}</p>
@@ -248,14 +266,20 @@ const GroupPage = () => {
               {isMyChannel ? (
                 <button
                   className="leave-btn"
-                  onClick={() => handleLeaveChannel(channel._id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleLeaveChannel(channel._id);
+                  }}
                 >
                   Leave
                 </button>
               ) : (
                 <button
                   className="join-btn"
-                  onClick={() => handleJoinChannel(channel)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleJoinChannel(channel);
+                  }}
                 >
                   Send Connection Request
                 </button>
@@ -474,6 +498,18 @@ const GroupPage = () => {
           </div>
         </div>
       )}
+
+      {/* Channel Chat Modal */}
+{isChatModalOpen && selectedChatChannel && (
+  <ChannelChatModal
+    channel={selectedChatChannel}
+    onClose={closeChatModal}
+    // Pass any additional props your ChannelChatModal needs
+    // For example:
+    // currentUserId={userId}
+    // token={token}
+  />
+)}
     </div>
   );
 };

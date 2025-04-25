@@ -11,7 +11,11 @@ const channel = new Schema({
     message: [{
         sender: { type: Schema.Types.ObjectId, ref: "User" },
         message: { type: String },
+        isRead: { type: Boolean, default: false } ,
+        isEdited: { type: Boolean, default: false } ,
+        isDeleted: { type: Boolean, default: false } ,
         timestamp: { type: Date, default: Date.now },
+
     }],
     members: [{ type: Schema.Types.ObjectId, ref: "User" }],
     isDelete: { type: Boolean, default: false } // Added isDelete field
