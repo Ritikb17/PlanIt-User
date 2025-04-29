@@ -86,8 +86,9 @@ const ChatDialog = ({ chat, onClose }) => {
       // Send to server
       socket.emit('send-message', { 
         receiverId: chat._id, 
-        message: input 
-      }, (response) => {
+        message: input  
+      },
+       (response) => {
         if (response.status === 'success') {
           // Replace temp message with server-generated one
           setMessages((prev) =>

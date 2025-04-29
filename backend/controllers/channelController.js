@@ -27,6 +27,7 @@ const createChannel = async (req, res) => {
             description: bio,
             isPrivate: req.body.isPrivate,
             createdBy: _id,
+            members:[_id],
         });
         console.log("new channel is ",newChannel);
         if (newChannel) {

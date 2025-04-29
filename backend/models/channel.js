@@ -8,7 +8,7 @@ const channel = new Schema({
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
     sendRequest: [{ type: Schema.Types.ObjectId, ref: "User"}],
     recivedRequest: [{ type: Schema.Types.ObjectId, ref: "User" }],
-    message: [{
+    messages: [{
         sender: { type: Schema.Types.ObjectId, ref: "User" },
         message: { type: String },
         isRead: { type: Boolean, default: false } ,

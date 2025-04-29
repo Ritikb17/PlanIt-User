@@ -4,7 +4,7 @@ const User = require('../models/User');
 const verifySocketToken = async (socket, next) => {
   try {
     const token = socket.handshake.auth.token;
-    console.log("Socket Token Received:", token);
+    // console.log("Socket Token Received:", token);
 
     if (!token) {
       console.log(" No token provided");
@@ -13,14 +13,14 @@ const verifySocketToken = async (socket, next) => {
 
     try {
       const debugDecoded = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-      console.log("Decoded Token Payload:", debugDecoded);
+      // console.log("Decoded Token Payload:", debugDecoded);
     } catch (err) {
       console.warn("Token decoding failed");
     }
 
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    console.log("JWT Verified:", decoded);
+    // console.log("JWT Verified:", decoded);
 
     const user = await User.findById(decoded.id).select('-password');
     if (!user) {

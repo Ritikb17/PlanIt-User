@@ -3,11 +3,11 @@ const channelMessageController = require('../controllers/channelMessageControlle
 const users = new Map(); 
 module.exports = (io) => {
   io.on('connection', (socket) => {
-    console.log('New client connected:', socket);
+
     const userId = socket.user?._id?.toString();
     if (userId) {
       users.set(userId, socket.id);
-      console.log('Users Map:', Array.from(users.entries()));
+    
     }
     console.log('Users Map:', Array.from(users.entries()));
     socket.on('send-message', (data) => {
@@ -34,9 +34,28 @@ module.exports = (io) => {
 
     ////////////////////channel handlers /////////////////////
 
-    socket.on('get-channel-message', (data, callback) => {
-      channelMessageController.handleGetMessages(socket, data, callback);
-    });
+    // socket.on("join-room", () => {
+
+    //   console.log("the new user in in te room ");
+    //   socket.join(roomId); 
+      
+    // });
+    socket.on("join-channel", (data) => {
+      console.log(data.text); // "Hello!"
+      socket.join(data.channelId);
+      console.log("channel socket is connected for user ")
+
+      // io.to(data.channelId).emit("new-message", {
+      //   sender: data.userId,
+      //   text: data.text,
+      // });
+    });;
+
+    socket.on('send-message-to-channel',(data,callback)=>
+    { const userId = socket.user?._id?.toString();
+      console.log("the DATA is ",data);
+      channelMessageController.handleChannelSendMessage(socket,userId, io, data,users,callback);
+    })
 
     socket.on('disconnect', () => {
       console.log('Client disconnected:', socket.userId);
