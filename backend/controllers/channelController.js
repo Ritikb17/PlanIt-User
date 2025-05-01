@@ -17,7 +17,9 @@ const createChannel = async (req, res) => {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        const nameCheck = user.channels.some(ch => ch.name === nameOfChannel);
+          const userWithChannels = await User.findById(_id).populate('channels');
+          console.log("User with channels ",userWithChannels);
+              const nameCheck = userWithChannels.channels.some(channel => channel.name === nameOfChannel);
         if (nameCheck) {
             return res.status(400).json({ message: "Channel with the same name already exists" });
         }

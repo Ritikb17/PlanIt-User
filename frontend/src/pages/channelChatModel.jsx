@@ -34,12 +34,35 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
     newSocket.on('error', (error) => {
       console.error('Socket error:', error);
     });
+    newSocket.on('new-channel-message', (data) => {
+
+      console.log("woring ON")
+      if(data.channelId===channel._id )
+      {
+        console.log("woring ON")
+      }
+      setMessages(prev => [...prev, {
+        ...data.message,
+        channelId: data.channelId,
+        timestamp: new Date() // Add timestamp on client side if not sent from server
+      }]);
+    });
+
+    // Clean up on unmount
+   
+
+
+
+
+
 
     setSocket(newSocket);
 
     return () => {
       newSocket.off('new-message');
       newSocket.off('error');
+      newSocket.off('new-channel-message');
+      // socket.emit('leave-channel', channelId);
       newSocket.disconnect();
     };
   }, [channel._id, currentUserId, token]);

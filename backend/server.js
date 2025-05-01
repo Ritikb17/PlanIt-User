@@ -15,6 +15,7 @@ const userRoutes = require("./routes/userRoutes");
 const otherRoutes = require("./routes/otherRoutes");
 const channelRoutes = require("./routes/channelRoutes");
 const messageRoutes = require("./routes/messageRoutes");
+const eventRoutes = require("./routes/eventRoutes");
 const { verifyToken } = require("./middlewares/authMiddleware");
 const  verifySocketToken  = require("./middlewares/socketAuthMiddleware");
 
@@ -51,6 +52,7 @@ app.use("/api/profile", verifyToken, profileRoutes);
 app.use("/api/user", verifyToken, userRoutes);
 app.use("/api/other", verifyToken, otherRoutes);
 app.use("/api/channel", verifyToken, channelRoutes);
+app.use("/api/events", verifyToken, eventRoutes);
 // app.use("/api/message", verifyToken, messageRoutes);
 
 server.listen(PORT, () => {

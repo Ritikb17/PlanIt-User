@@ -19,6 +19,7 @@ const UserSchema = new Schema({
     }
   ],
   channels: [{ type: Schema.Types.ObjectId, ref: "Channel" } ],
+  events: [{ type: Schema.Types.ObjectId, ref: "Channel" } ],
   connectedChannels: [
     { type: Schema.Types.ObjectId, ref: "Channel" } // Corrected reference to "Channel"
   ],
