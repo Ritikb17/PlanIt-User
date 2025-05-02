@@ -1,6 +1,7 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const router = express.Router();
-const {createEvent, getMyEvents,updateEventInfo} = require('../controllers/eventController');
+const {createEvent, getMyEvents,updateEventInfo,sendEventConnectionRequest,sendEventConnectionRequestByOtherUser} = require('../controllers/eventController');
 
 // router.get('/get-other-user-events',getOtherUserEvents);
 // router.get('/get-request-events',getRequestEvents)
@@ -9,7 +10,8 @@ router.post('/create-event',createEvent);
 router.get('/get-my-events',getMyEvents);
 router.patch('/update-event-info/:eventId',updateEventInfo)
 // router.delete('/delete-events/:eventId',deleteEvent);
-// router.put('/send-event-connection-request-by-creator',sendEventConnectionRequest)
+router.put('/send-event-connection-request-by-creator',sendEventConnectionRequest)
+router.put('/send-event-connection-request-by-other-user',sendEventConnectionRequestByOtherUser)
 // router.put('/unsend-event-connection-request-by-creator',unsendChannelConnectionRequest)
 // router.put('/remove-event-connection-request-by-other-user',removeChannelConnectionRequest)
 // router.delete('/leave-event/:eventId',leaveEvent);

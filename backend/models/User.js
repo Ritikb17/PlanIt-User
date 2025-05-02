@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const Channel = require("./channel");
+const { sendEventConnectionRequest } = require("../controllers/eventController");
 
 const { Schema } = mongoose;
 
@@ -21,13 +22,22 @@ const UserSchema = new Schema({
   channels: [{ type: Schema.Types.ObjectId, ref: "Channel" } ],
   events: [{ type: Schema.Types.ObjectId, ref: "Channel" } ],
   connectedChannels: [
-    { type: Schema.Types.ObjectId, ref: "Channel" } // Corrected reference to "Channel"
+    { type: Schema.Types.ObjectId, ref: "Channel" } 
   ],
-  receivedChannelRequest: [ // Corrected spelling
-    { type: Schema.Types.ObjectId, ref: "Channel" } // Corrected reference to "Channel"
+  sendEventConnectionRequest: [
+    { type: Schema.Types.ObjectId, ref: "Channel" } 
+  ],
+  receivedChannelRequest: [ 
+    { type: Schema.Types.ObjectId, ref: "Channel" } 
+  ],
+  receivedEventRequest: [ 
+    { type: Schema.Types.ObjectId, ref: "Channel" }
   ],
   blockChannels: [
-    { type: Schema.Types.ObjectId, ref: "Channel" } // Corrected reference to "Channel"
+    { type: Schema.Types.ObjectId, ref: "Channel" } 
+  ],
+  blockEvents: [
+    { type: Schema.Types.ObjectId, ref: "Event" } 
   ],
   reciveFollowRequests: [{ type: Schema.Types.ObjectId, ref: "User" }],
   sendFollowRequest: [{ type: Schema.Types.ObjectId, ref: "User" }],

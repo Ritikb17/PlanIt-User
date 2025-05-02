@@ -10,7 +10,7 @@ const notificationSchema = new Schema(
         isSeen: { type: Boolean, default: false }, 
         type: {
           type: String,
-          enum: ['follow', 'post','channel'], 
+          enum: ['follow', 'post','channel','event'], 
           required: true, 
         },
       },
