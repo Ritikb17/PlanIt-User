@@ -183,10 +183,9 @@ const sendEventConnectionRequest = async (req, res) => {
         // Validate the event
         const event = await Event.findById(event__id);
 
-        const check1 =  event.members.includes(sender_id);
-        if(check1)
-        {
-            return res.status(400).json({message:"already member of this channel"});
+        const check1 = event.members.includes(sender_id);
+        if (check1) {
+            return res.status(400).json({ message: "already member of this channel" });
         }
 
 
@@ -205,9 +204,6 @@ const sendEventConnectionRequest = async (req, res) => {
         // Check if the request has already been sent
         if (event.sendRequest.includes(sender_id)) {
             return res.status(400).json({ message: "Request already sent" });
-        }
-        if (event.recivedRequest.includes(sender_id)) {
-            return res.status(400).json({ message: "Request already in the array " });
         }
         if (event.recivedRequest.includes(sender_id)) {
             return res.status(400).json({ message: "Request already in the array " });
@@ -274,18 +270,10 @@ const unsendEventConnectionRequest = async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        // Validate the event
+
         const event = await Event.findById(event__id);
 
-        // const check1 =  await channel.members.includes(sender_id);
-        // if(check1)
-        // {
-        //     return res.status(400).json({message:"already member of this channel"});
-        // }
 
-
-
-        // Validate the sender
         const senderUser = await User.findById(sender_id);
         if (!senderUser) {
             return res.status(404).json({ message: "Sender not found" });
@@ -308,7 +296,7 @@ const unsendEventConnectionRequest = async (req, res) => {
 
         const updatedSender = await User.findByIdAndUpdate(
             sender_id,
-            { $pull: { receivedEventRequest: event__id } }, 
+            { $pull: { receivedEventRequest: event__id } },
             { new: true }
         );
 
@@ -363,11 +351,9 @@ const sendEventConnectionRequestByOtherUser = async (req, res) => {
         if (isSenderBlockes) {
             return res.status(400).json({ message: "you cannnot send request to the event  contact the owner of the event " })
         }
-        if(event.isPrivate)
-        {
-            if(!senderUser.connections.includes(_id))
-            {
-                return res.status(400).json({ message: "this is a private event  , cannot send the request " })        
+        if (event.isPrivate) {
+            if (!senderUser.connections.includes(_id)) {
+                return res.status(400).json({ message: "this is a private event  , cannot send the request " })
             }
         }
 
@@ -377,6 +363,9 @@ const sendEventConnectionRequestByOtherUser = async (req, res) => {
 
         if (event.recivedRequest.includes(sender_id)) {
             return res.status(400).json({ message: "Request already sent" });
+        }
+        if (senderUser.receivedEventRequest.includes(sender_id)) {
+            return res.status(400).json({ message: "Request already in the user array" });
         }
         const sendingRequest = await Event.findByIdAndUpdate(
             event__id,
@@ -439,19 +428,17 @@ const unsendEventConnectionRequestByOtherUser = async (req, res) => {
 
     try {
         const event = await Event.findById(event__id);
-        const isSenderBlockes = event.blockedUsers.includes(sender_id);
+        // const isSenderBlockes = event.blockedUsers.includes(sender_id);
         const senderUser = await User.findById(sender_id);
         if (!senderUser) {
             return res.status(404).json({ message: "Sender not found" });
         }
-        const creatorId = event.createdBy;
-
-        if (isSenderBlockes) {
-            return res.status(400).json({ message: "you cannnot send request to the event  contact the owner of the event " })
-        }
+        // if (isSenderBlockes) {
+        //     return res.status(400).json({ message: "you cannnot send request to the event  contact the owner of the event " })
+        // }
 
         if (!event.recivedRequest.includes(sender_id)) {
-            return res.status(400).json({ message: "you did not send th request to this event " });
+            return res.status(400).json({ message: "not in the receiver array " });
         }
         const sendingRequest = await Event.findByIdAndUpdate(
             event__id,
@@ -512,34 +499,33 @@ const acceptEventConnectionRequest = async (req, res) => {
             {
                 $pull:
                 {
-                    recivedRequest:sender_id,
+                    recivedRequest: sender_id,
                 },
                 $push:
                 {
-                    members:sender_id
+                    members: sender_id
                 }
             },
-            {new:true}
+            { new: true }
         )
-        if (!acceptRequest)
-        {
-            return res.status(400),json({message:"CANNOT ACCEPT THE REQUEST IN THE EVENTS  "});
+        if (!acceptRequest) {
+            return res.status(400), json({ message: "CANNOT ACCEPT THE REQUEST IN THE EVENTS  " });
         }
         const removingRequestUser = await User.findByIdAndUpdate(sender_id,
             {
                 $pull:
                 {
-                    sendEventConnectionRequest:sender_id,
+                    sendEventConnectionRequest: sender_id,
                 },
                 $push:
                 {
-                    connectedEvents:sender_id,
+                    connectedEvents: sender_id,
                 }
             },
-            {new:true}
+            { new: true }
         )
 
-         await Notification.findOneAndUpdate(
+        await Notification.findOneAndUpdate(
             { user: obj_sender_id },
             {
                 $push: {
@@ -555,17 +541,15 @@ const acceptEventConnectionRequest = async (req, res) => {
                 setDefaultsOnInsert: true // Ensures defaults are set on new documents
             }
         );
-        if (!removingRequestUser)
-            {
-                return res.status(400),json({message:"CANNOT ACCEPT THE REQUEST IN THE USERS  "});
-            }else
-            {
-                return res.status(200).json({message:"successfully accecpted the request "});
-            }
+        if (!removingRequestUser) {
+            return res.status(400), json({ message: "CANNOT ACCEPT THE REQUEST IN THE USERS  " });
+        } else {
+            return res.status(200).json({ message: "successfully accecpted the request " });
+        }
 
 
 
-        
+
 
         return res.status(200).json({ message: "request is been unsend successfully " });
     } catch (error) {
@@ -573,64 +557,58 @@ const acceptEventConnectionRequest = async (req, res) => {
         return res.status(400).json({ error: error });
     }
 }
-const leaveEvent = async ( req,res)=>
-{
+const leaveEvent = async (req, res) => {
     const _id = req.user._id;
     const event__id = req.body.eventId;
     try {
         const user = await User.findById(_id);
-        if(!user)
-        {
-            return res.status(400),json({message:"CANNOT FIND THE USER "});
+        if (!user) {
+            return res.status(400), json({ message: "CANNOT FIND THE USER " });
         }
 
         const event = await Event.findById(event__id);
-        if(!event)
-            {
-                return res.status(400),json({message:"CANNOT FIND THE EVENT "});
-            }
-        
+        if (!event) {
+            return res.status(400), json({ message: "CANNOT FIND THE EVENT " });
+        }
+
         const leaveEvent = await Event.findByIdAndUpdate(event__id,
             {
-                pull:{
-                    members:_id,
+                pull: {
+                    members: _id,
                 }
             },
-            {new:true}
+            { new: true }
         );
-        if(leaveEvent)
-        {
-            return res.status(400),json({message:"CANNOT REMOVE ID FROM  THE EVENT "});
+        if (leaveEvent) {
+            return res.status(400), json({ message: "CANNOT REMOVE ID FROM  THE EVENT " });
         };
-        
+
         const updateUser = await User.findByIdAndUpdate(_id,
             {
                 $pull:
                 {
-                    connectedEvents:_id,
+                    connectedEvents: _id,
                 }
             },
-            {new:true}
+            { new: true }
         );
 
-        if(!updateUser)
-        {
-            return res.status(400),json({message:"CANNNOT UPDATE USER  "});
+        if (!updateUser) {
+            return res.status(400), json({ message: "CANNNOT UPDATE USER  " });
         }
-        else
-        {
-            return res.status(200),json({message:"successfully leaved the group "});
+        else {
+            return res.status(200), json({ message: "successfully leaved the group " });
         }
 
 
-        
-    
-        
-        
+
+
+
+
     } catch (error) {
-        console.log("ERROR IN GET REQUEST EVENTS ")        
+        console.log("ERROR IN GET REQUEST EVENTS ")
     }
 }
 
-module.exports = { createEvent, getMyEvents, updateEventInfo, deleteEvent, sendEventConnectionRequest, sendEventConnectionRequestByOtherUser, unsendEventConnectionRequestByOtherUser,leaveEvent,acceptEventConnectionRequest,unsendEventConnectionRequest };
+module.exports = { createEvent, getMyEvents, updateEventInfo, deleteEvent, sendEventConnectionRequest, sendEventConnectionRequestByOtherUser, unsendEventConnectionRequestByOtherUser, leaveEvent, acceptEventConnectionRequest, unsendEventConnectionRequest };
 
