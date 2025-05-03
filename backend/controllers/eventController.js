@@ -1,20 +1,24 @@
-const Event = require('../models/event');
-const User = require('../models/User');
-const Notification = require('../models/notification');
 const mongoose = require('mongoose')
+const User = require('../models/User')
+
+console.log('User import:', User);  // Should show Mongoose model functions
+const Event = require('../models/event');
+const Notification = require('../models/notification');
 const createEvent = async (req, res) => {
     const _id = req.user._id;
-    console.log("user is",_id);
+    console.log("user is", _id);
     const { name: name, bio, status: isPrivate, eventDate: eventDate } = req.body; // Destructure request body
 
     try {
 
-        const user = await User.findById(_id);
-        console.log("new eventDate  is ", eventDate);
+        console.log('User model:', User); // Check if this shows a Mongoose model
+        console.log('Does findById exist?', typeof User.findById);
 
+        const user = await User.findById(_id);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
+
         const userWithEvents = await User.findById(_id).populate('events');
         const nameCheck = userWithEvents.events.some(event => event.name === name);
         console.log("this is name check ", nameCheck);
@@ -93,7 +97,7 @@ const updateEventInfo = async (req, res) => {
             res.status(200).json({ message: "data has been updated" });
         }
     } catch (error) {
-        console.log("the error is ",error);
+        console.log("the error is ", error);
         res.status(400).json({ error: error });
 
     }
@@ -165,9 +169,9 @@ const deleteEvent = async (req, res) => {
     }
 };
 const sendEventConnectionRequest = async (req, res) => {
-    const _id = req.user._id; 
-    const event__id = req.body.eventId; 
-    const sender_id = req.body.senderId; 
+    const _id = req.user._id;
+    const event__id = req.body.eventId;
+    const sender_id = req.body.senderId;
     const obj_sender_id = new mongoose.Types.ObjectId(sender_id);
     try {
 
@@ -179,11 +183,11 @@ const sendEventConnectionRequest = async (req, res) => {
         // Validate the event
         const event = await Event.findById(event__id);
 
-        // const check1 =  await channel.members.includes(sender_id);
-        // if(check1)
-        // {
-        //     return res.status(400).json({message:"already member of this channel"});
-        // }
+        const check1 =  event.members.includes(sender_id);
+        if(check1)
+        {
+            return res.status(400).json({message:"already member of this channel"});
+        }
 
 
 
@@ -201,6 +205,12 @@ const sendEventConnectionRequest = async (req, res) => {
         // Check if the request has already been sent
         if (event.sendRequest.includes(sender_id)) {
             return res.status(400).json({ message: "Request already sent" });
+        }
+        if (event.recivedRequest.includes(sender_id)) {
+            return res.status(400).json({ message: "Request already in the array " });
+        }
+        if (event.recivedRequest.includes(sender_id)) {
+            return res.status(400).json({ message: "Request already in the array " });
         }
 
         // Add the sender to the channel's sendRequest array
@@ -252,26 +262,116 @@ const sendEventConnectionRequest = async (req, res) => {
         return res.status(500).json({ error: "Internal server error" });
     }
 };
-const sendEventConnectionRequestByOtherUser = async ( req,res )=>
-{
-    const _id = req.user._id; 
-    const event__id = req.body.eventId; 
-    const sender_id = req.body.senderId; 
+const unsendEventConnectionRequest = async (req, res) => {
+    const _id = req.user._id;
+    const event__id = req.body.eventId;
+    const sender_id = req.body.senderId;
     const obj_sender_id = new mongoose.Types.ObjectId(sender_id);
     try {
-        const event  = await Event.findById(event__id);
-        const isSenderBlockes = event.blockedUsers.includes(sender_id);
+
+        const user = await User.findById(_id);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Validate the event
+        const event = await Event.findById(event__id);
+
+        // const check1 =  await channel.members.includes(sender_id);
+        // if(check1)
+        // {
+        //     return res.status(400).json({message:"already member of this channel"});
+        // }
+
+
+
+        // Validate the sender
         const senderUser = await User.findById(sender_id);
         if (!senderUser) {
             return res.status(404).json({ message: "Sender not found" });
         }
 
-        if(isSenderBlockes)
-        {
-            return res.status(400).json({message:"you cannnot send request to the event  contact the owner of the event "})
-        }       
+        if (!event.sendRequest.includes(sender_id)) {
+            return res.status(400).json({ message: "REQUEST NOT FOUND IN THE ARRAY " });
+        }
 
-        if (sender_id === _id) {
+        const updateEvent = await Event.findByIdAndUpdate(
+            event__id,
+            { $pull: { sendRequest: sender_id } },
+            { new: true }
+        );
+
+        if (!updateEvent) {
+            return res.status(400).json({ message: "Failed to send request to channel" });
+        }
+
+
+        const updatedSender = await User.findByIdAndUpdate(
+            sender_id,
+            { $pull: { receivedEventRequest: event__id } }, 
+            { new: true }
+        );
+
+        if (!updatedSender) {
+            return res.status(400).json({ message: "Failed to update sender's request list" });
+        }
+
+        // Success response
+        const notificationVerification = await Notification.findOneAndUpdate(
+            { user: obj_sender_id },
+            {
+                $push: {
+                    notification: {
+                        message: "GOT YOU EVENT CONNECTION  REQUEST",
+                        type: "event", // Changed to match your schema enum
+                        // isSeen will default to false as per your schema
+                    },
+                },
+            },
+            {
+                new: true,
+                upsert: true,
+                setDefaultsOnInsert: true // Ensures defaults are set on new documents
+            }
+        );
+
+
+
+        return res.status(200).json({ message: "Request sent successfully" });
+    } catch (error) {
+        console.error("Error sending channel connection request:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+};
+const sendEventConnectionRequestByOtherUser = async (req, res) => {
+    const sender_id = req.user._id;
+    const _id = req.user._id;
+    const event__id = req.body.eventId;
+
+    const obj_sender_id = new mongoose.Types.ObjectId(sender_id);
+    try {
+        const event = await Event.findById(event__id);
+        const isSenderBlockes = event.blockedUsers.includes(sender_id);
+        const senderUser = await User.findById(sender_id);
+        if (!senderUser) {
+            return res.status(404).json({ message: "Sender not found" });
+        }
+        const creatorId = event.createdBy;
+        if (event.members.includes(sender_id)) {
+            return res.status(400).json({ message: "ALREADY MEMBER OF THE EVENT " });
+        }
+        if (isSenderBlockes) {
+            return res.status(400).json({ message: "you cannnot send request to the event  contact the owner of the event " })
+        }
+        if(event.isPrivate)
+        {
+            if(!senderUser.connections.includes(_id))
+            {
+                return res.status(400).json({ message: "this is a private event  , cannot send the request " })        
+            }
+        }
+
+        if (sender_id === creatorId) {
             return res.status(400).json({ message: "You cannot send a request to yourself" });
         }
 
@@ -283,35 +383,168 @@ const sendEventConnectionRequestByOtherUser = async ( req,res )=>
             {
                 $push:
                 {
-                    recivedRequest:sender_id,
+                    recivedRequest: sender_id,
                 },
-            },{ new: true }
+            }, { new: true }
         );
-        if(!sendingRequest)
-        {
-            return res.status(400).json({message:"error in sending request to the event "});
+        if (!sendingRequest) {
+            return res.status(400).json({ message: "error in sending request to the event " });
         };
 
         const updateSender = await User.findByIdAndUpdate(
             sender_id,
             {
-                $push:{
-                    sendEventConnectionRequest:event__id
+                $push: {
+                    sendEventConnectionRequest: event__id
                 }
             },
             { new: true }
-            
-        
+
+
         );
-        if(!updateSender)
-            {
-                return res.status(400).json({message:"error in updating user  "});
-            };
-         const sendNotification = await Notification.findByIdAndUpdate({user:obj_sender_id},
+        if (!updateSender) {
+            return res.status(400).json({ message: "error in updating user  " });
+        };
+        const notificationVerification = await Notification.findOneAndUpdate(
+            { user: obj_sender_id },
             {
                 $push: {
                     notification: {
-                        message: "GOT YOU EVENT CONNECTION  REQUEST",
+                        message: "YOU GOT EVENT CONNECTION REQUEST ",
+                        type: "event", // Changed to match your schema enum
+                        // isSeen will default to false as per your schema
+                    },
+                },
+            },
+            {
+                new: true,
+                upsert: true,
+                setDefaultsOnInsert: true // Ensures defaults are set on new documents
+            }
+        );
+
+        if (!notificationVerification) {
+            return res.status(400).json({ message: "request is been send but error in sending notificaion " })
+        };
+
+        return res.status(200).json({ message: "request is been send" });
+    } catch (error) {
+        console.log("ERROR", error);
+        return res.status(400).json({ error: error });
+    }
+}
+const unsendEventConnectionRequestByOtherUser = async (req, res) => {
+    const sender_id = req.user._id;
+    const event__id = req.body.eventId;
+
+    try {
+        const event = await Event.findById(event__id);
+        const isSenderBlockes = event.blockedUsers.includes(sender_id);
+        const senderUser = await User.findById(sender_id);
+        if (!senderUser) {
+            return res.status(404).json({ message: "Sender not found" });
+        }
+        const creatorId = event.createdBy;
+
+        if (isSenderBlockes) {
+            return res.status(400).json({ message: "you cannnot send request to the event  contact the owner of the event " })
+        }
+
+        if (!event.recivedRequest.includes(sender_id)) {
+            return res.status(400).json({ message: "you did not send th request to this event " });
+        }
+        const sendingRequest = await Event.findByIdAndUpdate(
+            event__id,
+            {
+                $pull:
+                {
+                    recivedRequest: sender_id,
+                },
+            }, { new: true }
+        );
+        if (!sendingRequest) {
+            return res.status(400).json({ message: "error in unsending request to the event " });
+        };
+
+        const updateSender = await User.findByIdAndUpdate(
+            sender_id,
+            {
+                $pull: {
+                    sendEventConnectionRequest: event__id
+                }
+            },
+            { new: true }
+
+
+        );
+        if (!updateSender) {
+            return res.status(400).json({ message: "error in updating user  " });
+        };
+
+        return res.status(200).json({ message: "request is been unsend successfully " });
+    } catch (error) {
+        console.log("ERROR", error);
+        return res.status(400).json({ error: error });
+    }
+}
+const acceptEventConnectionRequest = async (req, res) => {
+    const sender_id = req.body.senderId;
+    const event__id = req.body.eventId;
+    const obj_sender_id = new mongoose.Types.ObjectId(sender_id);
+
+    try {
+        const event = await Event.findById(event__id);
+        const isSenderBlockes = event.blockedUsers.includes(sender_id);
+        const senderUser = await User.findById(sender_id);
+        if (!senderUser) {
+            return res.status(404).json({ message: "Sender not found" });
+        }
+        const creatorId = event.createdBy;
+
+        if (isSenderBlockes) {
+            return res.status(400).json({ message: "you cannnot send request to the event  contact the owner of the event " })
+        }
+
+        if (!event.recivedRequest.includes(sender_id)) {
+            return res.status(400).json({ message: "USER NOT FOUND IN THE REQUEST ARRAY " });
+        }
+        const acceptRequest = await Event.findByIdAndUpdate(event__id,
+            {
+                $pull:
+                {
+                    recivedRequest:sender_id,
+                },
+                $push:
+                {
+                    members:sender_id
+                }
+            },
+            {new:true}
+        )
+        if (!acceptRequest)
+        {
+            return res.status(400),json({message:"CANNOT ACCEPT THE REQUEST IN THE EVENTS  "});
+        }
+        const removingRequestUser = await User.findByIdAndUpdate(sender_id,
+            {
+                $pull:
+                {
+                    sendEventConnectionRequest:sender_id,
+                },
+                $push:
+                {
+                    connectedEvents:sender_id,
+                }
+            },
+            {new:true}
+        )
+
+         await Notification.findOneAndUpdate(
+            { user: obj_sender_id },
+            {
+                $push: {
+                    notification: {
+                        message: `your request has been accecpted `,
                         type: "event",
                     },
                 },
@@ -321,19 +554,83 @@ const sendEventConnectionRequestByOtherUser = async ( req,res )=>
                 upsert: true,
                 setDefaultsOnInsert: true // Ensures defaults are set on new documents
             }
+        );
+        if (!removingRequestUser)
+            {
+                return res.status(400),json({message:"CANNOT ACCEPT THE REQUEST IN THE USERS  "});
+            }else
+            {
+                return res.status(200).json({message:"successfully accecpted the request "});
+            }
 
-         ) 
 
-         if(!sendNotification)
-         {
-            return res.status(400).json({message:"request is been send but error in sending notificaion "})
-         };
 
-         return res.status(200).json({message:"request is been send"});        
+        
+
+        return res.status(200).json({ message: "request is been unsend successfully " });
     } catch (error) {
-        console.log("ERROR",error);
-        return res.status(400).json({error:error});        
+        console.log("ERROR", error);
+        return res.status(400).json({ error: error });
     }
 }
-module.exports = { createEvent,getMyEvents ,updateEventInfo,deleteEvent,sendEventConnectionRequest,sendEventConnectionRequestByOtherUser};
+const leaveEvent = async ( req,res)=>
+{
+    const _id = req.user._id;
+    const event__id = req.body.eventId;
+    try {
+        const user = await User.findById(_id);
+        if(!user)
+        {
+            return res.status(400),json({message:"CANNOT FIND THE USER "});
+        }
+
+        const event = await Event.findById(event__id);
+        if(!event)
+            {
+                return res.status(400),json({message:"CANNOT FIND THE EVENT "});
+            }
+        
+        const leaveEvent = await Event.findByIdAndUpdate(event__id,
+            {
+                pull:{
+                    members:_id,
+                }
+            },
+            {new:true}
+        );
+        if(leaveEvent)
+        {
+            return res.status(400),json({message:"CANNOT REMOVE ID FROM  THE EVENT "});
+        };
+        
+        const updateUser = await User.findByIdAndUpdate(_id,
+            {
+                $pull:
+                {
+                    connectedEvents:_id,
+                }
+            },
+            {new:true}
+        );
+
+        if(!updateUser)
+        {
+            return res.status(400),json({message:"CANNNOT UPDATE USER  "});
+        }
+        else
+        {
+            return res.status(200),json({message:"successfully leaved the group "});
+        }
+
+
+        
+    
+        
+        
+    } catch (error) {
+        console.log("ERROR IN GET REQUEST EVENTS ")        
+    }
+}
+
+module.exports = { createEvent, getMyEvents, updateEventInfo, deleteEvent, sendEventConnectionRequest, sendEventConnectionRequestByOtherUser, unsendEventConnectionRequestByOtherUser,leaveEvent,acceptEventConnectionRequest,unsendEventConnectionRequest };
 

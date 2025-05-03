@@ -1,4 +1,5 @@
-const User = require("../models/User");
+const User = require('../models/User')
+ 
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
@@ -70,6 +71,7 @@ const tu = await User.find({email});
 const login = async (req, res) => {
   try {
       const { email, password } = req.body;
+      console.log("user model is ",User);
       const user = await User.findOne({ email });
       if (!user) return res.status(400).json({ error: "User not found" });
 

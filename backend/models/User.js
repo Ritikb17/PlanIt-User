@@ -1,8 +1,5 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
-const Channel = require("./channel");
-const { sendEventConnectionRequest } = require("../controllers/eventController");
-
 const { Schema } = mongoose;
 
 const UserSchema = new Schema({
@@ -22,6 +19,9 @@ const UserSchema = new Schema({
   channels: [{ type: Schema.Types.ObjectId, ref: "Channel" } ],
   events: [{ type: Schema.Types.ObjectId, ref: "Channel" } ],
   connectedChannels: [
+    { type: Schema.Types.ObjectId, ref: "Channel" } 
+  ],  
+  connectedEvents: [
     { type: Schema.Types.ObjectId, ref: "Channel" } 
   ],
   sendEventConnectionRequest: [
