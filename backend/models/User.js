@@ -22,17 +22,18 @@ const UserSchema = new Schema({
     { type: Schema.Types.ObjectId, ref: "Channel" } 
   ],  
   connectedEvents: [
-    { type: Schema.Types.ObjectId, ref: "Channel" } 
+    { type: Schema.Types.ObjectId, ref: "Event" } 
   ],
   sendEventConnectionRequest: [
-    { type: Schema.Types.ObjectId, ref: "Channel" } 
+    { type: Schema.Types.ObjectId, ref: "Event" } 
+  ],
+  receivedEventConnectionRequest: [ 
+    { type: Schema.Types.ObjectId, ref: "Event" }
   ],
   receivedChannelRequest: [ 
     { type: Schema.Types.ObjectId, ref: "Channel" } 
   ],
-  receivedEventRequest: [ 
-    { type: Schema.Types.ObjectId, ref: "Channel" }
-  ],
+  
   blockChannels: [
     { type: Schema.Types.ObjectId, ref: "Channel" } 
   ],

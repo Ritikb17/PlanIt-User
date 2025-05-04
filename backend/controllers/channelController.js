@@ -142,11 +142,11 @@ const sendChannelConnectionRequest = async (req, res) => {
         // Validate the channel
         const channel = await Channel.findById(channel_id);
 
-        // const check1 =  await channel.members.includes(sender_id);
-        // if(check1)
-        // {
-        //     return res.status(400).json({message:"already member of this channel"});
-        // }
+        const check1 =   channel.members.includes(sender_id);
+        if(check1)
+        {
+            return res.status(400).json({message:"already member of this channel"});
+        }
 
 
 
@@ -164,6 +164,9 @@ const sendChannelConnectionRequest = async (req, res) => {
         // Check if the request has already been sent
         if (channel.sendRequest.includes(sender_id)) {
             return res.status(400).json({ message: "Request already sent" });
+        }
+        if (channel.recivedRequest.includes(sender_id)) {
+            return res.status(400).json({ message: "Request already in the array" });
         }
 
         // Add the sender to the channel's sendRequest array
