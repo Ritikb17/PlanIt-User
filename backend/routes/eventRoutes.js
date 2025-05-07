@@ -50,7 +50,7 @@ router.put('/reject-event-connection-sendby-by-otheruser',rejectEventConnectionR
 
 
 
-router.delete('/leave-event/:eventId',leaveEvent);
+router.put('/leave-event',leaveEvent);
 
 router.delete('/delete-event',deleteEvent);
 

@@ -163,7 +163,9 @@ const deleteEvent = async (req, res) => {
 
 
         // Delete the channel from the Channel collection
-        const deletedChannel = await Event.findByIdAndDelete(event__id);
+        const deletedChannel = await Event.findByIdAndUpdate(event__id,{
+            isDelete:true,
+        });
         if (!deletedChannel) {
             return res.status(400).json({ message: 'Failed to delete channel' });
         }
@@ -175,8 +177,6 @@ const deleteEvent = async (req, res) => {
         return res.status(500).json({ error: 'Internal server error' });
     }
 };
-
-
 //creator send request to other user
 const sendEventConnectionRequest = async (req, res) => {
     const _id = req.user._id;
@@ -350,7 +350,6 @@ const unsendEventConnectionRequest = async (req, res) => {
         return res.status(500).json({ error: "Internal server error" });
     }
 };
-
 // other user send request to event
 const sendEventConnectionRequestByOtherUser = async (req, res) => {
     const sender_id = req.user._id;
@@ -363,7 +362,7 @@ const sendEventConnectionRequestByOtherUser = async (req, res) => {
         const isSenderBlockes = event.blockedUsers.includes(sender_id);
         const senderUser = await User.findById(sender_id);
         if (!senderUser) {
-            return res.status(404).json({ message: "Sender not found" });
+            return res.status(404).json({ message: " SENDER IS BLOCKED " });
         }
         const creatorId = event.createdBy;
         if (senderUser.receivedEventConnectionRequest.includes(event__id)) {
@@ -501,17 +500,17 @@ const unsendEventConnectionRequestByOtherUser = async (req, res) => {
             return res.status(400).json({ message: "error in updating user  " });
         };
 
-        const updatingCreator = await User.findByIdAndUpdate(creatorId,
-            {
-                $pull: {
-                    receivedEventConnectionRequest:sender_id,                   
-                }
-            })
+        // const updatingCreator = await User.findByIdAndUpdate(creatorId,
+        //     {
+        //         $pull: {
+        //             receivedEventConnectionRequest:sender_id,                   
+        //         }
+        //     })
 
-        if(!updatingCreator)
-        {
-            return res.status(400).json({ message: "error in updating user  " });
-        }
+        // if(!updatingCreator)
+        // {
+        //     return res.status(400).json({ message: "error in updating user  " });
+        // }
 
         return res.status(200).json({ message: "request is been unsend successfully " });
     } catch (error) {
@@ -519,8 +518,6 @@ const unsendEventConnectionRequestByOtherUser = async (req, res) => {
         return res.status(400).json({ error: error });
     }
 }
-
-
 // this accecpt the reqquest send by the other-user( creator side ) 
 const acceptEventConnectionRequestSendByOtherUser = async (req, res) => {
     const sender_id = req.body.senderId;
@@ -613,27 +610,31 @@ const acceptEventConnectionRequestSendByCreator = async (req, res) => {
     const _id = req.user._id;
     const obj_sender_id = new mongoose.Types.ObjectId(sender_id);
     try {
-        const user = await User.findById(sender_id);
+        // const user = await User.findById(sender_id);
         const self = await User.findById(_id);
-        if (!user) {
-            return res.status(404).json({ message: "USER IS NOT FOUND" });
-        }
+        // if (!user) {
+        //     return res.status(404).json({ message: "USER IS NOT FOUND" });
+        // }
         const event = await Event.findById(event__id);
 
         if (!event) {
             return res.status(404).json({ message: "EVENT IS NOT FOUND" });
         }
-        if(!event.recivedRequest.includes(sender_id))
+        if(!self.receivedEventConnectionRequest.includes(event__id))
         {
             return res.status(404).json({ message: "REQUEST IS NOT FOUND " });
  
         }
+        if(self.connectedEvents.includes(event__id))
+        {
+            return res.status(200).json({message:"ALREADY MEMBER OF THE EVENT "});
+        }
 
         const acceptInEvent = await Event.findByIdAndUpdate(event__id, {
             $pull: {
-                sendRequest:sender_id
+                sendRequest:_id
             },
-            $push: { members: sender_id },
+            $push: { members: _id },
         });
         if (!acceptInEvent) {
             return res.status(407).json({ message: "CANNOT ACCEPT THE REQUEST IN EVENT " });
@@ -900,7 +901,7 @@ const getEventConnectionRequestListToUser = async ( req,res)=>
     }
 }
 
-
+// leave the event
 const leaveEvent = async (req, res) => {
     const _id = req.user._id;
     const event__id = req.body.eventId;
@@ -912,7 +913,7 @@ const leaveEvent = async (req, res) => {
 
         const event = await Event.findById(event__id);
         if (!event) {
-            return res.status(400), json({ message: "CANNOT FIND THE EVENT " });
+            return res.status(400).json({ message: "CANNOT FIND THE EVENT " });
         }
         const createdId = event.createdBy;
 
@@ -920,16 +921,22 @@ const leaveEvent = async (req, res) => {
             return res.status(400).json({message: "YOU  ARE CREATOR OF THE EVENT " });
         }
 
+        if(!user.connectedEvents.includes(event__id))
+        {
+            return res.status(400).json({message: "YOU ARE NOT CONNECTED TO THIS EVENT " });
+        }
+        console.log("the event id and _id is",event__id,_id);
         const leaveEvent = await Event.findByIdAndUpdate(event__id,
             {
-                pull: {
+                $pull: {
                     members: _id,
                 }
             },
             { new: true }
-        );
-        if (leaveEvent) {
-            return res.status(400), json({ message: "CANNOT REMOVE ID FROM  THE EVENT " });
+        )
+        console.log("after leave event ",leaveEvent);
+        if (!leaveEvent) {
+            return res.status(400).json({ message: "CANNOT REMOVE ID FROM  THE EVENT " });
         };
 
         const updateUser = await User.findByIdAndUpdate(_id,
@@ -943,10 +950,10 @@ const leaveEvent = async (req, res) => {
         );
 
         if (!updateUser) {
-            return res.status(400), json({ message: "CANNNOT UPDATE USER  " });
+            return res.status(400).json({ message: "CANNNOT UPDATE USER  " });
         }
         else {
-            return res.status(200), json({ message: "successfully leaved the group " });
+            return res.status(200).json({ message: "successfully leaved the group " });
         }
 
 
@@ -955,7 +962,7 @@ const leaveEvent = async (req, res) => {
 
 
     } catch (error) {
-        console.log("ERROR IN GET REQUEST EVENTS ")
+        console.log("ERROR IN GET REQUEST EVENTS ",error)
         return res.status (500).json({error:error})
     }
 }
