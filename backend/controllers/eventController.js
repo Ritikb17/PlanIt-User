@@ -186,12 +186,16 @@ const sendEventConnectionRequest = async (req, res) => {
     try {
 
         const user = await User.findById(_id);
+        const event = await Event.findById(event__id);
         if (!user) {
             return res.status(404).json({ message: "User not found" });
         }
 
+        if(event.recivedRequest.includes(sender_id))
+        {
+            return res.status(400).json({message:"ALREADY HAVE REQUEST TO YOUR ACCOUNT "})
+        }
         
-        const event = await Event.findById(event__id);
         if (event.isPrivate) {
             if (!user.connections.includes(sender_id)) {
                 return res.status(400).json({ message: "this is a private event  , cannot send the request " })
@@ -203,11 +207,11 @@ const sendEventConnectionRequest = async (req, res) => {
             return res.status(400).json({ message: "already member of this channel" });
         }
         const creatorId = event.createdBy;
-        if (_id!=creatorId)
-        {
-            return res.status(400).json({message:"YOU CANT SEND REQUEST"});
-        }
 
+        console.log("creator and id",creatorId,"    ",_id)
+        if (_id.toString() != creatorId.toString()) {
+            return res.status(400).json({message: "ONLY CREATOR CAN REJECT THE REQUEST"});
+        }
 
         // Validate the sender
         const senderUser = await User.findById(sender_id);
@@ -249,11 +253,11 @@ const sendEventConnectionRequest = async (req, res) => {
         if (!updatedSender) {
             return res.status(400).json({ message: "Failed to update sender's request list" });
         }
-        // const updatedUser = await User.findByIdAndUpdate(
-        //     _id,
-        //     { $push: { sendEventConnectionRequest: event__id } }, // Corrected spelling
-        //     { new: true }
-        // );
+        const updatedUser = await User.findByIdAndUpdate(
+            sender_id,
+            { $push: { receivedEventConnectionRequest: event__id } }, // Corrected spelling
+            { new: true }
+        );
 
         if (!updatedUser) {
             return res.status(400).json({ message: "Failed to update users's request list" });
@@ -314,9 +318,8 @@ const unsendEventConnectionRequest = async (req, res) => {
         }
 
         const creatorId = event.createdBy;
-        if (_id!=creatorId)
-        {
-            return res.status(400).json({message:"YOU CANT UNSEND REQUEST"});
+        if (_id.toString() != creatorId.toString()) {
+            return res.status(400).json({message: "ONLY CREATOR CAN REJECT THE REQUEST"});
         }
 
 
@@ -333,7 +336,7 @@ const unsendEventConnectionRequest = async (req, res) => {
 
         const updatedSender = await User.findByIdAndUpdate(
             sender_id,
-            { $pull: { receivedEventRequest: event__id } },
+            { $pull: { receivedEventConnectionRequest: event__id } },
             { new: true }
         );
 
@@ -341,7 +344,7 @@ const unsendEventConnectionRequest = async (req, res) => {
             return res.status(400).json({ message: "Failed to update sender's request list" });
         }
 
-        return res.status(200).json({ message: "Request sent successfully" });
+        return res.status(200).json({ message: "Request unsent successfully" });
     } catch (error) {
         console.error("Error sending channel connection request:", error);
         return res.status(500).json({ error: "Internal server error" });
@@ -363,6 +366,9 @@ const sendEventConnectionRequestByOtherUser = async (req, res) => {
             return res.status(404).json({ message: "Sender not found" });
         }
         const creatorId = event.createdBy;
+        if (senderUser.receivedEventConnectionRequest.includes(event__id)) {
+            return res.status(400).json({ message: "ALREADY HAVE REQUEST TO YOUR ACCOUNT " });
+        }
         if (event.members.includes(sender_id)) {
             return res.status(400).json({ message: "ALREADY MEMBER OF THE EVENT " });
         }
@@ -779,17 +785,17 @@ const rejectEventConnectionRequestSendByOtherUser = async (req, res) => {
 const rejectEventConnectionRequestSendByCreator = async ( req,res)=>
 {
     const _id = req.user._id;
-    const sender_id = req.body.senderId;
+    // const sender_id = req.body.senderId;
     const event__id = req.body.eventId;
     try {
         const user = await User.findById(_id);
+        const event =await Event.findById(event__id);
         const creatorId = event.createdBy;
         if(!user)
         {
             return res.status(400).json({message:"USER NOT FOUND "});
         }
 
-        const event =await Event.findById(event__id);
         if(!event)
         {
             return res.staus(400).json({message:"EVENT IS NOT FOUND "});
@@ -827,17 +833,17 @@ const rejectEventConnectionRequestSendByCreator = async ( req,res)=>
             return res.status(400).json({message:"CANNOT UPDATE THE EVENT "});
         }
 
-        const updateCreator = await User.findByIdAndUpdate(creatorId,
-            {
-                $pull:{
-                    sendEventConnectionRequest:_id
-                }
-            }
-        );
-        if(!updateCreator)
-        {
-            return res.status(400).json({message:"CANNOT UPDATE THE CREATOR "})
-        }
+        // const updateCreator = await User.findByIdAndUpdate(creatorId,
+        //     {
+        //         $pull:{
+        //             sendEventConnectionRequest:_id
+        //         }
+        //     }
+        // );
+        // if(!updateCreator)
+        // {
+        //     return res.status(400).json({message:"CANNOT UPDATE THE CREATOR "})
+        // }
 
         await Notification.findOneAndUpdate(
             { user: creatorId },
@@ -852,14 +858,15 @@ const rejectEventConnectionRequestSendByCreator = async ( req,res)=>
             {
                 new: true,
                 upsert: true,
-                setDefaultsOnInsert: true // Ensures defaults are set on new documents
-            }
+                setDefaultsOnInsert: true 
+           }
         );
         
 
         return res.status(200).json({message:"request is successfully rejected "});
 
     } catch (error) {
+        console.log("error ",error);
         return res.status(500).json({error:error});
         
     }
@@ -906,6 +913,11 @@ const leaveEvent = async (req, res) => {
         const event = await Event.findById(event__id);
         if (!event) {
             return res.status(400), json({ message: "CANNOT FIND THE EVENT " });
+        }
+        const createdId = event.createdBy;
+
+        if (_id.toString() === createdId.toString()) {
+            return res.status(400).json({message: "YOU  ARE CREATOR OF THE EVENT " });
         }
 
         const leaveEvent = await Event.findByIdAndUpdate(event__id,
