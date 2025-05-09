@@ -2,25 +2,26 @@ const Channel =  require('../models/channel')
 
 module.exports={
 
-    handleGetMessages : async(socket ,io,{channelId,userId},callback)=>
+    handleGetMessages : async(socket ,userId,io,{channelId},callback)=>
     {
+        // const channelIdObj = new mongoose.
         try {
-        const channel = await  Channel.findOne(channelId);
+        const channel = await  Channel.findOne({_id:channelId});
         if(!channel)
         {
             throw new Error ("Channel not found ");
         }
-
+        console.log("user id is",userId)
         const include = channel.members.includes(userId);
         if(!include)
             {
                 throw new Error ("User  not found  in channel ");
             }
-
-            callback({
+             callback({
                 status: 'success',
-                messages: channel.message || [],
+                messages: channel.messages || [],
               });
+           
 
             }
             catch (error) {
@@ -61,23 +62,37 @@ module.exports={
               },
               { new: true }
           );
-  
+          console.log("the new channel data is ",updatedChannel);
           if (!updatedChannel) {
               console.log("Error in saving message in database");
               throw new Error("Error in saving message in database");
           }
+
+          
           callback({
             status: 'success'
           });
     
   
-          io.to(channelId).emit("new-channel-message", {
-              channelId,
-              message: {
-                  sender: userId,
-                  message: message.message,
-              }
-          });
+        //   io.to(channelId).emit("new-channel-message", {
+        //       channelId,
+        //       message: {
+        //           sender: userId,
+        //           message: message.message,
+        //       }
+        //   });
+
+            io.to(channelId).emit("new-channel-message", {
+            channelId,
+            message: {
+                _id: savedMessage._id,
+                message: savedMessage.message,
+                sender: savedMessage.sender,
+                timestamp: savedMessage.timestamp,
+                isEdited: savedMessage.isEdited,
+                isDeleted: savedMessage.isDeleted
+            }
+        })
           
       } catch (error) {
           console.error("Error in handleChannelSendMessage:", error.message);

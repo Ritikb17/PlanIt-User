@@ -43,7 +43,7 @@ module.exports = (io) => {
     socket.on("join-channel", (data) => {
       console.log(data.text); // "Hello!"
       socket.join(data.channelId);
-      console.log("channel socket is connected for user ")
+      console.log("channel socket is connected for user ",data);
 
       // io.to(data.channelId).emit("new-message", {
       //   sender: data.userId,
@@ -56,6 +56,24 @@ module.exports = (io) => {
       console.log("the DATA is ",data);
       channelMessageController.handleChannelSendMessage(socket,userId, io, data,users,callback);
     })
+    socket.on('delete-message-of-the-channel',(data,callback)=>
+    { const userId = socket.user?._id?.toString();
+      console.log("the DATA is ",data);
+      channelMessageController.handleChannelDeleteMessage(socket,userId, io, data,users,callback);
+    })
+    socket.on('get-message-of-the-channel',(data,callback)=>
+    { const userId = socket.user?._id?.toString();
+
+      console.log("in the channel get handler ",data,userId);
+      console.log("the DATA is ",data);
+      channelMessageController.handleGetMessages(socket,userId, io, data,callback);
+    })
+    socket.on('edit-message-of-the-channel',(data,callback)=>
+    { const userId = socket.user?._id?.toString();
+      console.log("the DATA is ",data);
+      channelMessageController.handleChannelEditMessage(socket,userId, io, data,users,callback);
+    })
+
 
     socket.on('disconnect', () => {
       console.log('Client disconnected:', socket.userId);

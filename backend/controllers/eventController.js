@@ -371,6 +371,11 @@ const sendEventConnectionRequestByOtherUser = async (req, res) => {
         if (event.members.includes(sender_id)) {
             return res.status(400).json({ message: "ALREADY MEMBER OF THE EVENT " });
         }
+        if (event.isPrivate) {
+            if (!senderUser.connections.includes(sender_id)) {
+                return res.status(400).json({ message: "this is a private event  , cannot send the request " })
+            }
+        }
         if (isSenderBlockes) {
             return res.status(400).json({ message: "you cannnot send request to the event  contact the owner of the event " })
         }

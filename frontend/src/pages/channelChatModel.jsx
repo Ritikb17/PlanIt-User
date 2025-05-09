@@ -1,205 +1,286 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import axios from 'axios';
-// import './channelChatModal.css';
+import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
-import PropTypes from 'prop-types';
+import '../pages/channelChatModel.css';
 
 const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
   const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
-  const [socket, setSocket] = useState(null);
+  const [input, setInput] = useState('');
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState('');
+  const [isConnected, setIsConnected] = useState(false);
   const messagesEndRef = useRef(null);
-  const token = localStorage.getItem('token');
+  const socketRef = useRef(null);
 
-  // Initialize WebSocket connection and message listeners
+  // Initialize socket connection
   useEffect(() => {
-    const newSocket = io('http://localhost:5000', { 
-      auth: { token },
+   
+    const socket = io('http://localhost:5000', {
+      auth: {
+        token: localStorage.getItem('token'),
+      },
+      transports: ['websocket'],
       query: { channelId: channel._id }
     });
 
-    newSocket.on('connect', () => {
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
       console.log('Connected to socket server');
-      newSocket.emit('join-channel', {
+      setIsConnected(true);
+      socket.emit('join-channel', {
         channelId: channel._id,
         userId: currentUserId,
       });
     });
 
-    newSocket.on('new-message', (message) => {
-      setMessages(prev => [...prev, message]);
+    socket.on('disconnect', () => {
+      setIsConnected(false);
     });
 
-    newSocket.on('error', (error) => {
-      console.error('Socket error:', error);
-    });
-    newSocket.on('new-channel-message', (data) => {
-
-      console.log("woring ON")
-      if(data.channelId===channel._id )
-      {
-        console.log("woring ON")
+    // Load initial messages
+    socket.emit('get-message-of-the-channel', 
+    { 
+      channelId: channel._id
+    }, 
+    (response) => {
+      if (response?.status === 'success') {
+        setMessages(response.messages || []);
+      } else {
+        console.error('Failed to get messages:', response?.message);
       }
-      setMessages(prev => [...prev, {
-        ...data.message,
-        channelId: data.channelId,
-        timestamp: new Date() // Add timestamp on client side if not sent from server
-      }]);
-    });
+    }
+  );
 
-    // Clean up on unmount
-   
+    // Message event handlers
+    const handleNewMessage = (message) => {
 
 
+      setMessages(prev => [...prev, message]);
+      console.log("after new channel message ", messages);
+    };
 
+    const handleMessageEdited = (updatedMessage) => {
+      setMessages(prev => 
+        prev.map(msg => 
+          msg._id === updatedMessage._id ? updatedMessage : msg
+        )
+      );
+    };
 
+    const handleMessageDeleted = (deletedMessage) => {
+      setMessages(prev => 
+        prev.map(msg => 
+          msg._id === deletedMessage._id ? { ...msg, isDeleted: true } : msg
+        )
+      );
+    };
 
-
-    setSocket(newSocket);
+    socket.on('new-channel-message', handleNewMessage);
+    socket.on('message-edited', handleMessageEdited);
+    socket.on('message-deleted', handleMessageDeleted);
 
     return () => {
-      newSocket.off('new-message');
-      newSocket.off('error');
-      newSocket.off('new-channel-message');
-      // socket.emit('leave-channel', channelId);
-      newSocket.disconnect();
+      socket.off('new-channel-message', handleNewMessage);
+      socket.off('message-edited', handleMessageEdited);
+      socket.off('message-deleted', handleMessageDeleted);
+      socket.emit('leave-channel', { channelId: channel._id, userId: currentUserId });
+      socket.disconnect();
     };
-  }, [channel._id, currentUserId, token]);
-
-  // Load existing messages
-  useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const response = await axios.get(
-          `http://localhost:5000/api/messages/channel/${channel._id}`,
-          { headers: { 'Authorization': `Bearer ${token}` } }
-        );
-        setMessages(response.data.messages || []);
-      } catch (error) {
-        console.error('Error fetching messages:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchMessages();
-  }, [channel._id, token]);
+  }, [channel._id, currentUserId]);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const handleSendMessage = useCallback(async () => {
-    if (!newMessage.trim() || !socket) return;
+  const handleSend = () => {
+    if (!input.trim() || !socketRef.current) return;
 
-    const messageData = {
-      channelId: channel._id,
-      message: newMessage,
-      sender: currentUserId
-    };
-
-    // Optimistic UI update
     const tempMessage = {
-      ...messageData,
       _id: `temp-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      sender: { _id: currentUserId, name: 'You' }
+      message: input,
+      sender: currentUserId,
+      timestamp: new Date().toISOString(),
+      isTemp: true
     };
 
+    // Optimistic update
     setMessages(prev => [...prev, tempMessage]);
-    setNewMessage('');
+    setInput('');
 
-    try {
-      // Send via WebSocket
-      socket.emit('send-message-to-channel', messageData, (response) => {
-        if (response.status === 'success') {
-          // Replace temp message with server-generated one
+    // Send to server
+    socketRef.current.emit('send-message-to-channel', { 
+      channelId: channel._id,
+      message: input,
+      sender: currentUserId
+    }, (response) => {
+      if (response.status === 'success') {
+     console.log("GOT SUCCESS",messages)
+    
+    
+      } else {
+        // Mark as failed
+          // setMessages((prev) => [...prev, msg]);
+        setMessages(prev =>
+          prev.map(msg => 
+            msg._id === tempMessage._id ? { ...msg, failed: true } : msg
+          )
+        );
+      }
+    });
+  };
 
-            console.log("return success");
-          // setMessages((prev) =>
-          //   prev.map((msg) => 
-          //     msg._id === newMessage._id ? response.message : msg
-          //   )
-          // );
-        } else {
-          // Rollback if failed
-          // setMessages((prev) => prev.filter((msg) => msg._id !== newMessage._id));
-        }
-      });
-      
-      // Fallback HTTP request if needed
-      // await axios.post(
-      //   `http://localhost:5000/api/messages/channel/${channel._id}`,
-      //   messageData,
-      //   { headers: { 'Authorization': `Bearer ${token}` } }
-      // );
-    } catch (error) {
-      console.error('Error sending message:', error);
-      setMessages(prev => prev.filter(msg => msg._id !== tempMessage._id));
-    }
-  }, [newMessage, socket, channel._id, currentUserId]);
+  const handleEdit = (id, currentText) => {
+    setEditingId(id);
+    setEditText(currentText);
+  };
 
-  const handleKeyPress = (e) => {
+  const handleEditSubmit = () => {
+    if (!editText.trim() || !socketRef.current) return;
+
+    socketRef.current.emit('edit-message-of-the-channel', { 
+      channelId: channel._id,
+      messageId: editingId,
+      message: { message: editText }
+    }, (response) => {
+      if (response.status === 'success') {
+        setEditingId(null);
+        setEditText('');
+      }
+    });
+  };
+
+  const handleDelete = (id) => {
+    if (!socketRef.current) return;
+
+    socketRef.current.emit('delete-message-of-the-channel', { 
+      channelId: channel._id,
+      messageId: id
+    }, (response) => {
+      if (response.status !== 'success') {
+        console.log("Failed to delete message");
+      }
+    });
+  };
+
+  const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSendMessage();
+      if (editingId) {
+        handleEditSubmit();
+      } else {
+        handleSend();
+      }
     }
   };
 
+  const formatTime = (timestamp) => {
+    return new Date(timestamp).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   return (
-    <div className="modal-overlay">
-      <div className="chat-modal-content">
-        <div className="chat-modal-header">
+    <div className="channel-chat-modal-overlay">
+      <div className="channel-chat-modal">
+        <div className="channel-chat-header">
           <h2>#{channel.name}</h2>
-          <button onClick={onClose} className="close-button">
-            ×
+          <div className="connection-status">
+            {isConnected ? '🟢 Online' : '🔴 Offline'}
+          </div>
+          <button className="channel-chat-close-btn" onClick={onClose}>
+            &times;
           </button>
         </div>
 
-        <div className="chat-modal-body">
-          {isLoading ? (
-            <div className="loading-messages">Loading messages...</div>
-          ) : messages.length === 0 ? (
+        <div className="channel-chat-body">
+          {messages.length === 0 ? (
             <div className="no-messages">No messages yet. Start the conversation!</div>
           ) : (
             <div className="messages-container">
-             
+              {messages.map((msg) => {
+                const isMine = msg.sender === currentUserId;
+                const isDeleted = msg.isDeleted;
+
+                return (
+                  <div 
+                    key={msg._id} 
+                    className={`message-wrapper ${isMine ? 'own' : 'other'}`}
+                  >
+                    <div className={`message-bubble ${isMine ? 'own' : 'other'} ${isDeleted ? 'deleted' : ''}`}>
+                      {editingId === msg._id ? (
+                        <input
+                          value={editText}
+                          onChange={(e) => setEditText(e.target.value)}
+                          onKeyDown={handleKeyDown}
+                          className="edit-input"
+                          autoFocus
+                        />
+                      ) : (
+                        <>
+                          {isDeleted ? (
+                            <p className="deleted-message-text">[Message deleted]</p>
+                          ) : (
+                            <>
+                              <p className="message-content">{msg.message}</p>
+                              {isMine && !isDeleted && (
+                                <div className="message-actions">
+                                  <button onClick={() => handleEdit(msg._id, msg.message)}>
+                                    Edit
+                                  </button>
+                                  <button onClick={() => handleDelete(msg._id)}>
+                                    Delete
+                                  </button>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </>
+                      )}
+                      {msg.timestamp && (
+                        <div className="message-time">
+                          {formatTime(msg.timestamp)}
+                          {msg.isEdited && !isDeleted && ' (edited)'}
+                          {msg.failed && ' (failed)'}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
               <div ref={messagesEndRef} />
             </div>
           )}
         </div>
 
-        <div className="chat-input-container">
+        <div className="channel-chat-footer">
           <input
             type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Type a message..."
-            className="chat-input"
+            value={editingId ? editText : input}
+            onChange={(e) => editingId ? setEditText(e.target.value) : setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={editingId ? "Edit your message..." : "Type a message..."}
+            disabled={!isConnected}
           />
-          <button
-            onClick={handleSendMessage}
-            disabled={!newMessage.trim()}
-            className="send-button"
-          >
-            Send
-          </button>
+          {editingId ? (
+            <>
+              <button onClick={handleEditSubmit} disabled={!editText.trim()}>
+                Save
+              </button>
+              <button onClick={() => { setEditingId(null); setEditText(''); }}>
+                Cancel
+              </button>
+            </>
+          ) : (
+            <button onClick={handleSend} disabled={!input.trim() || !isConnected}>
+              Send
+            </button>
+          )}
         </div>
       </div>
     </div>
   );
-};
-
-ChannelChatModal.propTypes = {
-  channel: PropTypes.shape({
-    _id: PropTypes.string.isRequired,
-    name: PropTypes.string.isRequired,
-  }).isRequired,
-  onClose: PropTypes.func.isRequired,
-  currentUserId: PropTypes.string.isRequired,
 };
 
 export default ChannelChatModal;

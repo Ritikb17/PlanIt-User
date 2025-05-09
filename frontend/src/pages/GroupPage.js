@@ -36,8 +36,8 @@ const closeChatModal = () => {
 };
   const navigate = useNavigate();
 
-  // Get user ID and token from localStorage
-  const userId = localStorage.getItem('userId');
+  const userId = JSON.parse(atob(localStorage.getItem('token').split('.')[1])).id;
+
   const token = localStorage.getItem('token');
 
   useEffect(() => {
@@ -506,7 +506,7 @@ const closeChatModal = () => {
     onClose={closeChatModal}
     // Pass any additional props your ChannelChatModal needs
     // For example:
-    // currentUserId={userId}
+    currentUserId={userId}
     // token={token}
   />
 )}

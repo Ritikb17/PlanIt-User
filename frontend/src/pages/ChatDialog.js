@@ -73,7 +73,7 @@ const ChatDialog = ({ chat, onClose }) => {
   const handleSend = () => {
     if (input.trim()) {
       const newMessage = {
-        _id: Date.now().toString(), // Temporary ID (replace with server ID later)
+        _id: Date.now().toString(), 
         sender: myId,
         message: input,
         timestamp: new Date().toISOString(),
