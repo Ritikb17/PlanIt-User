@@ -78,6 +78,25 @@ const getMyEvents = async (req, res) => {
         res.status(400).json({ error: error })
     }
 }
+const getEventRequests = async (req, res) => {
+    const _id = req.user._id;
+    try {
+        const data = await User.findById(_id)
+  .select('receivedEventConnectionRequest')
+  .populate({
+    path: 'receivedEventConnectionRequest',
+    model: 'Event'  
+  });
+        // const data = await User.findById(_id).select('receivedEventConnectionRequest').populate('receivedEventConnectionRequest');
+        if (!data) {
+            res.status(400).json({ error: "error in fetching data" })
+        }
+        res.status(200).json({ eventRequests: data });
+
+    } catch (error) {
+        res.status(400).json({ error: error })
+    }
+}
 const updateEventInfo = async (req, res) => {
     const event__id = req.params.eventId;
     const _id = req.user._id;
@@ -197,7 +216,7 @@ const sendEventConnectionRequest = async (req, res) => {
         }
         
         if (event.isPrivate) {
-            if (!user.connections.includes(sender_id)) {
+            if (user.connections.some(connection => connection.friend.$oid === sender_id)) {
                 return res.status(400).json({ message: "this is a private event  , cannot send the request " })
             }
         }
@@ -235,7 +254,7 @@ const sendEventConnectionRequest = async (req, res) => {
         // Add the sender to the channel's sendRequest array
         const updateEvent = await Event.findByIdAndUpdate(
             event__id,
-            { $push: { sendRequest: sender_id } },
+            { $push: { sendEventConnectionRequest: sender_id } },
             { new: true }
         );
 
@@ -897,7 +916,7 @@ const getEventConnectionRequestListToUser = async ( req,res)=>
     const _id = req.user._id;
    
     try {    
-        const data =await  User.findById(_id).select("receivedEventRequest email").populate("receivedEventRequest")
+        const data =await  User.findById(_id).select("receivedEventConnectionRequest email").populate("receivedEventConnectionRequest")
 
         return res.status(200).json({message:"successfull get the data",data:data})
     } catch (error) {
@@ -972,6 +991,76 @@ const leaveEvent = async (req, res) => {
     }
 }
 
+const getSuggestionForEventConnectionRequest = async (req, res) => {
+  const self_id = req.user._id;
+  const event_id = req.params.eventId;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
 
-module.exports = { createEvent, getMyEvents, updateEventInfo, deleteEvent, sendEventConnectionRequest, sendEventConnectionRequestByOtherUser, unsendEventConnectionRequestByOtherUser, leaveEvent, unsendEventConnectionRequest, acceptEventConnectionRequestSendByOtherUser,rejectEventConnectionRequestSendByOtherUser,rejectEventConnectionRequestSendByCreator ,getEventConnectionRequestListToEvents,getEventConnectionRequestListToUser,acceptEventConnectionRequestSendByCreator};
+  try {
+    // Validate IDs
+    if (!mongoose.Types.ObjectId.isValid(self_id) || !mongoose.Types.ObjectId.isValid(event_id)) {
+      return res.status(400).json({ message: "Invalid ID(s)." });
+    }
+
+    // Check if event exists
+    const eventExists = await Event.exists({ _id: event_id });
+    if (!eventExists) {
+      return res.status(404).json({ message: "Event not found." });
+    }
+
+    // Get current user's filter data
+    const currentUser = await User.findById(self_id).select(
+      "connections blockUsers sendEventConnectionRequest"
+    );
+    if (!currentUser) {
+      return res.status(404).json({ message: "Current user not found." });
+    }
+
+    const blockedUserIds = currentUser.blockUsers;
+    const sendRequestUserIds = currentUser.sendEventConnectionRequest;
+
+    const skip = (page - 1) * limit;
+
+    // Base query conditions
+    const queryConditions = {
+      _id: {
+        $nin: [...blockedUserIds, ...sendRequestUserIds, self_id],
+      },
+      receivedEventConnectionRequest: { $ne: event_id },
+      connectedEvents: { $ne: event_id }
+    };
+
+    // Get paginated results
+    const nonFriends = await User.find(queryConditions)
+      .select("username name")
+      .skip(skip)
+      .limit(limit);
+
+    // Get total count (with same conditions as find)
+    const totalNonFriends = await User.countDocuments(queryConditions);
+
+    const totalPages = Math.ceil(totalNonFriends / limit);
+
+    res.status(200).json({
+      message: "List fetched successfully.",
+      nonFriends,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalResults: totalNonFriends,
+        resultsPerPage: limit,
+      },
+    });
+  } catch (error) {
+    console.error("ERROR FETCHING NON-FRIENDS:", error);
+    res.status(500).json({ 
+      message: "Cannot fetch non-friends.", 
+      error: error.message 
+    });
+  }
+};
+
+
+module.exports = { createEvent, getMyEvents, updateEventInfo, deleteEvent, sendEventConnectionRequest, sendEventConnectionRequestByOtherUser, unsendEventConnectionRequestByOtherUser, leaveEvent, unsendEventConnectionRequest, acceptEventConnectionRequestSendByOtherUser,rejectEventConnectionRequestSendByOtherUser,rejectEventConnectionRequestSendByCreator ,getEventConnectionRequestListToEvents,getEventConnectionRequestListToUser,acceptEventConnectionRequestSendByCreator,getEventRequests,getSuggestionForEventConnectionRequest};
 

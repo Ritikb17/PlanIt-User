@@ -1,7 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const router = express.Router();
-const {createEvent, getMyEvents,updateEventInfo,sendEventConnectionRequest,sendEventConnectionRequestByOtherUser,unsendEventConnectionRequestByOtherUser,leaveEvent,unsendEventConnectionRequest,acceptEventConnectionRequestSendByOtherUser,rejectEventConnectionRequestSendByOtherUser,rejectEventConnectionRequestSendByCreator,deleteEvent,getEventConnectionRequestListToEvents,getEventConnectionRequestListToUser,acceptEventConnectionRequestSendByCreator} = require('../controllers/eventController');
+const {createEvent, getMyEvents,updateEventInfo,sendEventConnectionRequest,sendEventConnectionRequestByOtherUser,unsendEventConnectionRequestByOtherUser,leaveEvent,unsendEventConnectionRequest,acceptEventConnectionRequestSendByOtherUser,rejectEventConnectionRequestSendByOtherUser,rejectEventConnectionRequestSendByCreator,deleteEvent,getEventConnectionRequestListToEvents,getEventConnectionRequestListToUser,acceptEventConnectionRequestSendByCreator,getEventRequests,getSuggestionForEventConnectionRequest} = require('../controllers/eventController');
 
 // router.get('/get-other-user-events',getOtherUserEvents);
 // router.get('/get-request-events',getRequestEvents)
@@ -18,6 +18,9 @@ router.get('/get-my-events',getMyEvents);
 router.get('/get-event-connecton-request-list-to-event',getEventConnectionRequestListToEvents)
 //send the list of the event connection to the user
 router.get('/get-event-connecton-request-list-to-user',getEventConnectionRequestListToUser)
+
+
+router.get('/get-suggestion-for-event-request/:eventId',getSuggestionForEventConnectionRequest)
 
 //update the event information 
 router.patch('/update-event-info/:eventId',updateEventInfo)
@@ -51,6 +54,9 @@ router.put('/reject-event-connection-sendby-by-otheruser',rejectEventConnectionR
 
 
 router.put('/leave-event',leaveEvent);
+router.get('/get-event-requests',getEventRequests);
+
+
 
 router.delete('/delete-event',deleteEvent);
 
