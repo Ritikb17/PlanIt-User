@@ -47,23 +47,40 @@ const EventPage = () => {
     fetchEventRequests();
   }, []);
 
-  const fetchMyEvents = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/events/get-my-events', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+const fetchMyEvents = async () => {
+  if (!token) {
+    console.error("No token available");
+    return;
+  }
 
-      const events = response.data.connectedEvents?.events || [];
-      setMyEvents(events);
-    } catch (err) {
-      setError(err.response?.data?.message || err.message);
-    } finally {
-      setLoading(false);
+  try {
+    setLoading(true);
+    console.log("Making request with token:", token); // Debug token
+    
+    const response = await axios.get('http://localhost:5000/api/events/get-my-events', {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    console.log("Full API response:", response.data.events.connectedEvents); // Debug full response
+    
+    const events = response.data.events.connectedEvents;  
+    console.log("Processed events:", events); // Debug processed data
+    
+    if (events.length === 0) {
+      console.warn("Received empty events array");
     }
-  };
+    
+    setMyEvents(events);
+  } catch (err) {
+    const errorMsg = err.response?.data?.message || err.message;
+    console.error("API Error:", err.response?.data || err); // More detailed error
+    setError(errorMsg);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const fetchEventRequests = async () => {
     try {
@@ -142,6 +159,7 @@ const EventPage = () => {
     }
   };
 
+
   const handleJoinEvent = async (event) => {
     setSelectedEvent(event);
     const event_id = event._id;
@@ -184,6 +202,32 @@ const EventPage = () => {
       alert(err.response?.data?.message || err.message || 'Failed to fetch users');
     }
   };
+ const handelAccecptInvitation = async (event) => {
+    setSelectedEvent(event);
+    const event_id = event._id;
+    
+    try {
+        const response = await axios.put(
+            `http://localhost:5000/api/events/accept-event-connection-request-sendby-creator`,
+            {  // Request body/data
+                eventId: event_id,
+            },
+            {  // Config object
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        // Handle successful response here
+        console.log("Invitation accepted:", response.data);
+        
+    } catch (err) {
+        console.error("Error accepting invitation:", err);
+        alert(err.response?.data?.message || err.message || 'Failed to accept invitation');
+    }
+};
 
   const handleSendRequest = async (receiverId) => {
     if (!selectedEvent) return;
@@ -287,15 +331,89 @@ const EventPage = () => {
               <button
                 className="join-btn"
                 onClick={(e) => {
-                  e.stopPropagation();
-                  if (isMyEvent) {
-                    handleJoinEvent(event);
-                  } else {
-                    handleJoinEvent(event);
-                  }
+                  handleJoinEvent(event)
                 }}
               >
-                Send Connection Request
+                Add members
+              </button>
+              {isMyEvent && event.createdBy === userId && (
+                <>
+                  <button
+                    className="edit-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditEvent(event);
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="leave-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleLeaveEvent(event._id);
+                    }}
+                  >
+                    Leave
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        ))
+      ) : (
+        <div className="no-channels-message">
+          {isMyEvent
+            ? 'You are not a member of any events yet.'
+            : 'No event requests available.'}
+          <br />
+          {isMyEvent && (
+            <button
+              className="discover-btn"
+              onClick={() => navigate('/discover-events')}
+            >
+              Discover Events
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+  const renderRequestEventList = (events, isMyEvent = false) => (
+    <div className="channels-list">
+      {events.length > 0 ? (
+        events.map((event) => (
+          <div key={event._id} className="channel-item">
+            <div 
+              className="channel-info" 
+              onClick={() => openChatModal(event)}
+              style={{ cursor: 'pointer' }}
+            >
+              <h3>{event.name}</h3>
+              {event.isPrivate && <span className="private-badge">Private</span>}
+              <p className="channel-description">
+                {event.description || 'No description'}
+              </p>
+              {event.eventDate && (
+                <p className="event-date">
+                  Date: {new Date(event.eventDate).toLocaleString()}
+                </p>
+              )}
+              <p className="event-members">
+                Members: {event.members?.length || 0}
+              </p>
+              <p className="event-creator">
+                Created by: {event.createdBy === userId ? 'You' : 'Other user'}
+              </p>
+            </div>
+            <div className="channel-actions">
+              <button
+                className="join-btn"
+                onClick={(e) => {
+                  handelAccecptInvitation(event)
+                }}
+              >
+                Accecpt invitation 
               </button>
               {isMyEvent && event.createdBy === userId && (
                 <>
@@ -405,7 +523,7 @@ const EventPage = () => {
             </div>
             <div className="channel-category">
               <h2>Event Requests</h2>
-              {renderEventList(eventRequests, false)}
+              {renderRequestEventList(eventRequests, false)}
             </div>
           </div>
         </div>
