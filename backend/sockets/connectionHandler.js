@@ -29,7 +29,8 @@ module.exports = (io) => {
       );
     });
     socket.on('delete-message', (data, callback) => {
-      socketMessageController.handleGetMessages(socket,users, io, data, callback);
+      console.log("in the handler of delete message");
+      socketMessageController.handleDeleteMessage(socket,users, io, data, callback);
     });
 
     ////////////////////channel handlers /////////////////////
@@ -59,6 +60,7 @@ module.exports = (io) => {
     socket.on('delete-message-of-the-channel',(data,callback)=>
     { const userId = socket.user?._id?.toString();
       console.log("the DATA is ",data);
+      console.log("IN THE DELETE MESSAGE OF CHANNEL HANDLER",data);
       channelMessageController.handleChannelDeleteMessage(socket,userId, io, data,users,callback);
     })
     socket.on('get-message-of-the-channel',(data,callback)=>
@@ -70,7 +72,7 @@ module.exports = (io) => {
     })
     socket.on('edit-message-of-the-channel',(data,callback)=>
     { const userId = socket.user?._id?.toString();
-      console.log("the DATA is ",data);
+      // console.log("IN THE EDIT HANDLER OF THE CHANNEL  ",data);
       channelMessageController.handleChannelEditMessage(socket,userId, io, data,users,callback);
     })
 

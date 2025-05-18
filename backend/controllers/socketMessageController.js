@@ -177,12 +177,12 @@ module.exports = {
         throw new Error("Message not found or not authorized");
       }
 
-      const updatedMessage = updatedChat.messages.find(msg => msg._id.equals(messageId));
+      const updatedMessage = Chat.findById(chatId).select("messages")
 
       // Notify both users
       // io.to(_id).to(rec_id).emit('message-edited', updatedMessage);
       const receiverSocketId = users.get(receiverId);
-      console.log("UPDATED id IS  ", receiverSocketId);
+      console.log("UPDATED message is   ", updatedMessage);
 
       io.to(receiverSocketId).emit('edit-message');
 
@@ -203,6 +203,8 @@ module.exports = {
   handleDeleteMessage: async (socket,users ,io, { messageId,receiverId ,chatId }, callback) => {
     try {
       const _id = socket.user._id;
+
+      console.log("in the delete message ");
       // const rec_id = receiverId;
 
       // const [user, rec] = await Promise.all([

@@ -13,7 +13,6 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
 
   // Initialize socket connection
   useEffect(() => {
-   
     const socket = io('http://localhost:5000', {
       auth: {
         token: localStorage.getItem('token'),
@@ -39,38 +38,37 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
 
     // Load initial messages
     socket.emit('get-message-of-the-channel', 
-    { 
-      channelId: channel._id
-    }, 
-    (response) => {
-      if (response?.status === 'success') {
-        setMessages(response.messages || []);
-      } else {
-        console.error('Failed to get messages:', response?.message);
+      { channelId: channel._id }, 
+      (response) => {
+        if (response?.status === 'success') {
+          setMessages(response.messages || []);
+        } else {
+          console.error('Failed to get messages:', response?.message);
+        }
       }
-    }
-  );
+    );
 
     // Message event handlers
-    const handleNewMessage = (message) => {
-
-
-      setMessages(prev => [...prev, message]);
-      console.log("after new channel message ", messages);
+    const handleNewMessage = (data) => {
+      setMessages(data.message.message.messages);
     };
 
-    const handleMessageEdited = (updatedMessage) => {
+    const handleMessageEdited = (data) => {
       setMessages(prev => 
         prev.map(msg => 
-          msg._id === updatedMessage._id ? updatedMessage : msg
+          msg._id === data.messageId ? { 
+            ...msg, 
+            message: data.message?.message || data.message,
+            isEdited: true 
+          } : msg
         )
       );
     };
 
-    const handleMessageDeleted = (deletedMessage) => {
+    const handleMessageDeleted = (data) => {
       setMessages(prev => 
         prev.map(msg => 
-          msg._id === deletedMessage._id ? { ...msg, isDeleted: true } : msg
+          msg._id === data.messageId ? { ...msg, isDeleted: true } : msg
         )
       );
     };
@@ -114,13 +112,8 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
       message: input,
       sender: currentUserId
     }, (response) => {
-      if (response.status === 'success') {
-     console.log("GOT SUCCESS",messages)
-    
-    
-      } else {
+      if (response.status !== 'success') {
         // Mark as failed
-          // setMessages((prev) => [...prev, msg]);
         setMessages(prev =>
           prev.map(msg => 
             msg._id === tempMessage._id ? { ...msg, failed: true } : msg
@@ -159,6 +152,19 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
     }, (response) => {
       if (response.status !== 'success') {
         console.log("Failed to delete message");
+      }
+      else
+      {
+        socketRef.current.emit('get-message-of-the-channel', 
+      { channelId: channel._id }, 
+      (response) => {
+        if (response?.status === 'success') {
+          setMessages(response.messages || []);
+        } else {
+          console.error('Failed to get messages:', response?.message);
+        }
+      }
+    );
       }
     });
   };
@@ -202,6 +208,9 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
               {messages.map((msg) => {
                 const isMine = msg.sender === currentUserId;
                 const isDeleted = msg.isDeleted;
+                const messageContent = typeof msg.message === 'string' 
+                  ? msg.message 
+                  : msg.message?.message || '[Invalid message format]';
 
                 return (
                   <div 
@@ -223,10 +232,10 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
                             <p className="deleted-message-text">[Message deleted]</p>
                           ) : (
                             <>
-                              <p className="message-content">{msg.message}</p>
+                              <p className="message-content">{messageContent}</p>
                               {isMine && !isDeleted && (
                                 <div className="message-actions">
-                                  <button onClick={() => handleEdit(msg._id, msg.message)}>
+                                  <button onClick={() => handleEdit(msg._id, messageContent)}>
                                     Edit
                                   </button>
                                   <button onClick={() => handleDelete(msg._id)}>
