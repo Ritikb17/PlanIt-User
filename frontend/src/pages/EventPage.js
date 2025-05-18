@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import './GroupPage.css';
 import Navbar from '../components/Navbar';
-import ChannelChatModal from './channelChatModel';
+import EventChatModal from './eventChatModel';
 
 const EventPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -765,8 +765,8 @@ const fetchMyEvents = async () => {
 
       {/* Event Chat Modal */}
       {isChatModalOpen && selectedChatEvent && (
-        <ChannelChatModal
-          channel={selectedChatEvent}
+        <EventChatModal
+          event={selectedChatEvent}
           onClose={closeChatModal}
           currentUserId={userId}
         />
