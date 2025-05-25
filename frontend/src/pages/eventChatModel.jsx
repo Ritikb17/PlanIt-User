@@ -50,6 +50,7 @@ const EventChatModel = ({ event, onClose, currentUserId }) => {
 
     // Message event handlers
     const handleNewMessage = (data) => {
+      console.log("the message form the socket is XXXXXX",data);
       setMessages(prev => [...prev, data.message]);
     };
 
