@@ -176,18 +176,24 @@ module.exports = {
         });
     }
 },
-handleEventDeleteMessage: async (socket, userId, io, { eventId, messageId }, data, callback) => {
-    console.log("IN THE DELETE MESSAGE CONTROLLER OF EVENT", eventId, messageId);
+handleEventDeleteMessage: async (socket, data, callback) => {
     try {
+        const { eventId, messageId, userId } = data; // Destructure data
+        const io = socket.server;
+
+        console.log("DELETE MESSAGE REQUEST:", { eventId, messageId, userId });
+
+        if (!callback || typeof callback !== 'function') {
+            throw new Error('Callback function not provided');
+        }
+
         const event = await Event.findById(eventId);
         if (!event) {
-            console.log("Event not found");
             throw new Error("Event not found");
         }
 
         if (!event.members.includes(userId)) {
-            console.log("User not found in Event");
-            throw new Error("User not found in Event");
+            throw new Error("User not member of event");
         }
 
         const messageToDelete = event.messages.id(messageId);
@@ -196,57 +202,49 @@ handleEventDeleteMessage: async (socket, userId, io, { eventId, messageId }, dat
         }
 
         if (messageToDelete.sender.toString() !== userId.toString()) {
-            throw new Error("Unauthorized - you can only delete your own messages");
+            throw new Error("Unauthorized: Can only delete your own messages");
         }
 
-        const eventObjectId = new mongoose.Types.ObjectId(eventId);
-        const messageObjectId = new mongoose.Types.ObjectId(messageId);
-
-        console.log("The Event id is", eventObjectId);
-        console.log("The message id is", messageObjectId);
-
         const updatedEvent = await Event.findOneAndUpdate(
-            {
-                _id: eventObjectId,
-                "messages._id": messageObjectId
-            },
-            {
-                $set: {
+            { _id: eventId, "messages._id": messageId },
+            { 
+                $set: { 
                     "messages.$.isDeleted": true,
-                    "messages.$.deletedAt": new Date()  // Added deletion timestamp
-                }
+                    "messages.$.deletedAt": new Date() 
+                } 
             },
             { new: true }
         );
 
         if (!updatedEvent) {
-            console.log("Error in deleting message in database");
-            throw new Error("Error in deleting message in database");
+            throw new Error("Database update failed");
         }
 
-        // Get the updated message from the returned document
         const deletedMessage = updatedEvent.messages.id(messageId);
 
+        // Send success response
         callback({
             status: 'success',
-            messageId: messageId,
+            messageId,
             deletedAt: deletedMessage.deletedAt
         });
 
-        // Emit to all clients in the event room
+        // Broadcast to room
         io.to(eventId).emit("message-deleted", {
             eventId,
-            messageId: messageId,
+            messageId,
             deletedAt: deletedMessage.deletedAt
         });
 
     } catch (error) {
-        console.error("Error in handleEventDeleteMessage:", error.message);
+        console.error("Delete error:", error.message);
+        if (callback && typeof callback === 'function') {
+            callback({
+                status: 'error',
+                message: error.message
+            });
+        }
         socket.emit("message-error", { error: error.message });
-        callback({
-            status: 'error',
-            message: error.message
-        });
     }
 }
 

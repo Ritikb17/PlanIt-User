@@ -52,11 +52,40 @@ module.exports = (io) => {
       //   text: data.text,
       // });
     });
-    socket.on('send-message-to-channel',(data,callback)=>
-    { const userId = socket.user?._id?.toString();
-      console.log("the DATA is ",data);
-      channelMessageController.handleChannelSendMessage(socket,userId, io, data,users,callback);
-    })
+    socket.on('send-message-to-channel', (data, callback) => {
+    try {
+        const userId = socket.user?._id?.toString();
+        if (!userId) {
+            throw new Error('User not authenticated');
+        }
+
+        console.log("Received message data:", data);
+        
+        // Combine the incoming data with userId
+        const messageData = {
+            ...data,
+            userId: userId
+        };
+
+        // Call controller with proper parameters
+        channelMessageController.handleChannelSendMessage(
+            socket, 
+            messageData, // Combined data object
+            callback    // Callback function
+        );
+    } catch (error) {
+        console.error("Handler error:", error.message);
+        if (typeof callback === 'function') {
+            callback({ 
+                status: 'error', 
+                message: error.message 
+            });
+        }
+        socket.emit('message-error', { 
+            error: error.message 
+        });
+    }
+});
     socket.on('delete-message-of-the-channel',(data,callback)=>
     { const userId = socket.user?._id?.toString();
       console.log("the DATA is ",data);
@@ -91,12 +120,38 @@ module.exports = (io) => {
       console.log("IN THE SEND MESSSAGE TO EVENT HANDLER the DATA is ",data);
       eventMessageController.handleEventSendMessage(socket,userId, io, data,users,callback);
     })
-    socket.on('delete-message-of-the-event',(data,callback)=>
-    { const userId = socket.user?._id?.toString();
-      console.log("the DATA is ",data);
-      console.log("IN THE DELETE MESSAGE OF EVENT HANDLER",data);
-      eventMessageController.handleEventDeleteMessage(socket,userId, io, data,users,callback);
-    })
+  socket.on('delete-message-of-the-event', (data, callback) => {
+    try {
+        const userId = socket.user?._id?.toString();
+        if (!userId) {
+            throw new Error('User not authenticated');
+        }
+
+        console.log("Delete message request:", { 
+            eventId: data.eventId, 
+            messageId: data.messageId,
+            userId 
+        });
+
+        // Call controller with proper parameters
+        eventMessageController.handleEventDeleteMessage(
+            socket, 
+            { ...data, userId }, // Combine data with userId
+            callback
+        );
+    } catch (error) {
+        console.error("Handler error:", error.message);
+        if (typeof callback === 'function') {
+            callback({ 
+                status: 'error', 
+                message: error.message 
+            });
+        }
+        socket.emit('message-error', { 
+            error: error.message 
+        });
+    }
+});
     socket.on('get-message-of-the-event',(data,callback)=>
     { const userId = socket.user?._id?.toString();
 

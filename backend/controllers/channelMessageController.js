@@ -31,70 +31,64 @@ module.exports = {
         }
 
     },
-    handleChannelSendMessage: async (socket, userId, io, { channelId, message }, data, callback) => {
-        console.log("IN THE SEND MESSAGE CONTROLLER OF CHANNEL", channelId, message);
+    handleChannelSendMessage: async (socket, data, callback) => {
         try {
+            const { channelId, message, userId } = data;
+            const io = socket.server;
 
+            console.log("the channel is ",channelId);
             const channel = await Channel.findById(channelId);
             if (!channel) {
-                console.log("Channel not found");
                 throw new Error("Channel not found");
             }
 
-
             if (!channel.members.includes(userId)) {
-                console.log("User not found in channel");
                 throw new Error("User not found in channel");
             }
+
+            // Create new message object with all required fields
+            const newMessage = {
+                message: message,
+                sender: userId,
+                timestamp: new Date(),
+                isEdited: false,
+                isDeleted: false
+            };
 
             const updatedChannel = await Channel.findByIdAndUpdate(
                 channelId,
                 {
                     $push: {
-                        messages: {
-                            message: message,
-                            sender: userId,
-
-                        }
+                        messages: newMessage
                     }
                 },
                 { new: true }
             );
-            console.log("the new channel data is ", updatedChannel);
+
             if (!updatedChannel) {
-                console.log("Error in saving message in database");
-                throw new Error("Error in saving message in database");
+                throw new Error("Error saving message");
             }
 
+            // Get the last message (the one we just added)
+            const savedMessage = updatedChannel.messages[updatedChannel.messages.length - 1];
 
             callback({
-                status: 'success'
+                status: 'success',
+                message: savedMessage
             });
 
-
-            //   io.to(channelId).emit("new-channel-message", {
-            //       channelId,
-            //       message: {
-            //           sender: userId,
-            //           message: message.message,
-            //       }
-            //   });
-
+            // Emit to all clients in the channel
             io.to(channelId).emit("new-channel-message", {
                 channelId,
-                message: {
-                    _id: savedMessage._id,
-                    message: savedMessage.message,
-                    sender: savedMessage.sender,
-                    timestamp: savedMessage.timestamp,
-                    isEdited: savedMessage.isEdited,
-                    isDeleted: savedMessage.isDeleted
-                }
-            })
+                message: savedMessage
+            });
 
         } catch (error) {
-            console.error("Error in handleChannelSendMessage:", error.message);
-            // You might want to emit an error back to the sender
+            console.error("Send message error:", error.message);
+            callback({
+                status: 'error',
+                message: error.message
+            });
             socket.emit("message-error", { error: error.message });
         }
     },

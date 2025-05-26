@@ -50,6 +50,9 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
 
     // Message event handlers
     const handleNewMessage = (data) => {
+
+
+      console.log("new message is coming",data);
       setMessages(data.message.message.messages);
     };
 
@@ -112,13 +115,14 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
       message: input,
       sender: currentUserId
     }, (response) => {
-      if (response.status !== 'success') {
-        // Mark as failed
-        setMessages(prev =>
-          prev.map(msg => 
-            msg._id === tempMessage._id ? { ...msg, failed: true } : msg
-          )
-        );
+      if (response.status === 'success') {
+        setEditingId(null);
+        setEditText('');
+        
+        
+        
+
+
       }
     });
   };

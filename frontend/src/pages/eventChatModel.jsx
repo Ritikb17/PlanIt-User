@@ -154,14 +154,23 @@ const EventChatModel = ({ event, onClose, currentUserId }) => {
     });
   };
 
-  const handleDelete = (id) => {
-    if (!socketRef.current || !window.confirm('Are you sure you want to delete this message?')) return;
+ const handleDelete = (id) => {
+  if (!socketRef.current || !window.confirm('Are you sure you want to delete this message?')) return;
 
-    socketRef.current.emit('delete-message-of-the-event', { 
+  // Add callback function as third parameter
+  socketRef.current.emit(
+    'delete-message-of-the-event', 
+    { 
       eventId: event._id,
       messageId: id
-    });
-  };
+    },
+    (response) => { // This is the callback function
+      if (response.status !== 'success') {
+        console.error('Delete failed:', response.message);
+      }
+    }
+  );
+};
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
