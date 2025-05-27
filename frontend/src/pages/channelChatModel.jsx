@@ -52,8 +52,18 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
     const handleNewMessage = (data) => {
 
 
-      console.log("new message is coming",data);
-      setMessages(data.message.message.messages);
+      // console.log("new message is coming",data);
+      // // setMessages(data.message.message.messages);
+      socket.emit('get-message-of-the-channel', 
+      { channelId: channel._id }, 
+      (response) => {
+        if (response?.status === 'success') {
+          setMessages(response.messages || []);
+        } else {
+          console.error('Failed to get messages:', response?.message);
+        }
+      }
+    );
     };
 
     const handleMessageEdited = (data) => {

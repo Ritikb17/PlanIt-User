@@ -212,13 +212,9 @@ module.exports = {
                 status: 'success'
             });
 
-
+            console.log("now it is calling the channel emmit ")
             io.to(channelId).emit("new-channel-message", {
-                channelId,
-                message: {
-                    sender: userId,
-                    message: message.message,
-                }
+                channelId
             });
 
         } catch (error) {
