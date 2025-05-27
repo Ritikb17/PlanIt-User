@@ -51,7 +51,17 @@ const EventChatModel = ({ event, onClose, currentUserId }) => {
     // Message event handlers
     const handleNewMessage = (data) => {
       console.log("the message form the socket is XXXXXX",data);
-      setMessages(prev => [...prev, data.message]);
+      // setMessages(prev => [...prev, data.message]);
+      socket.emit('get-message-of-the-event', 
+      { eventId: event._id }, 
+      (response) => {
+        if (response?.status === 'success') {
+          setMessages(response.messages || []);
+        } else {
+          console.error('Failed to get messages:', response?.message);
+        }
+      }
+    );
     };
 
     const handleMessageUpdated = (data) => {

@@ -118,6 +118,25 @@ const fetchMyEvents = async () => {
       alert(err.response?.data?.message || 'Failed to leave event');
     }
   };
+  const handleDeleteEvent = async (eventId) => {
+  try {
+    const token = localStorage.getItem('token');
+    await axios.delete(
+      'http://localhost:5000/api/events/delete-event',
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        data: { eventId }  // Send data in the 'data' property for DELETE requests
+      }
+    );
+    fetchMyEvents();
+    alert('Event deleted successfully');
+  } catch (err) {
+    alert(err.response?.data?.message || 'Failed to delete event');
+  }
+};
 
   const handleEditEvent = (event) => {
     setEventToEdit(event);
@@ -355,6 +374,15 @@ const fetchMyEvents = async () => {
                     }}
                   >
                     Leave
+                  </button>
+                  <button
+                    className="leave-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteEvent(event._id);
+                    }}
+                  >
+                    Delete Event
                   </button>
                 </>
               )}
@@ -678,14 +706,14 @@ const fetchMyEvents = async () => {
               </div>
 
               <div className="form-group">
-                <label>
+                {/* <label>
                   <input
                     type="checkbox"
                     checked={newEvent.isPrivate}
                     onChange={(e) => setNewEvent({ ...newEvent, isPrivate: e.target.checked })}
                   />
                   Private Event
-                </label>
+                </label> */}
               </div>
             </div>
 

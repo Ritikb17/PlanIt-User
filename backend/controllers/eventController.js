@@ -8,7 +8,7 @@ const { findByIdAndUpdate } = require('../models/channel');
 const createEvent = async (req, res) => {
     const _id = req.user._id;
     console.log("user is", _id);
-    const { name: name, bio, status: isPrivate, eventDate: eventDate } = req.body; // Destructure request body
+    const { name: name, description:description, status: isPrivate, eventDate: eventDate ,location:location } = req.body; // Destructure request body
 
     try {
 
@@ -29,9 +29,10 @@ const createEvent = async (req, res) => {
 
         const newEvent = await Event.create({
             name: name,
-            description: bio,
+            description: description,
             isPrivate: req.body.isPrivate,
             createdBy: _id,
+            location:location,
             eventDate: eventDate,
             members: [_id],
         });
@@ -1059,7 +1060,73 @@ const getConnectionForEventConnectionRequest = async (req, res) => {
     res.status(500).json({ message: "Cannot fetch connections.", error: error.message });
   }
 };
+const getSuggestionsForEventConnectionRequest = async (req, res) => {
+  const self_id = req.user._id;
+  const eventId = req.params.eventId;
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+
+  try {
+    // Validate IDs
+    if (!mongoose.Types.ObjectId.isValid(self_id) || !mongoose.Types.ObjectId.isValid(eventId)) {
+      return res.status(400).json({ message: "Invalid ID(s)." });
+    }
+
+    // Get current user's connections and received requests
+    const currentUser = await User.find()
+    if (!currentUser) {
+      return res.status(404).json({ message: "Current user not found." });
+    }
+
+    // Get non-blocked friend IDs
+    const friendIds = currentUser
+      .filter(connection => !connection.isBlocked)
+      .map(connection => connection.friend);
+
+    // Pagination setup
+    const skip = (page - 1) * limit;
+
+    // Main query for friends who can receive event connection requests
+    const friendsQuery = {
+      _id: { $nin: friendIds },
+      receivedEventConnectionRequest: { $ne: eventId },
+      connectedEvents: { $ne: eventId }
+    };
+
+    const friends = await User.find(friendsQuery)
+      .select("username name")
+      .skip(skip)
+      .limit(limit);
+
+      console.log("friends",friends);
+
+    // Count total matching friends
+    const totalFriends = await User.countDocuments(friendsQuery);
+
+    // Get users who have sent event connection requests to current user
+    const followRequest = await User.find({
+      _id: { $in: currentUser.receivedEventConnectionRequest }
+    }).select("username name");
+
+    const totalPages = Math.ceil(totalFriends / limit);
+
+    res.status(200).json({
+      message: "List of connections fetched successfully.",
+      friends,
+      followRequest,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalResults: totalFriends,
+        resultsPerPage: limit,
+      },
+    });
+  } catch (error) {
+    console.error("ERROR FETCHING CONNECTIONS:", error);
+    res.status(500).json({ message: "Cannot fetch connections.", error: error.message });
+  }
+};
 
 
-module.exports = { createEvent, getMyEvents, updateEventInfo, deleteEvent, sendEventConnectionRequest, sendEventConnectionRequestByOtherUser, unsendEventConnectionRequestByOtherUser, leaveEvent, unsendEventConnectionRequest, acceptEventConnectionRequestSendByOtherUser,rejectEventConnectionRequestSendByOtherUser,rejectEventConnectionRequestSendByCreator ,getEventConnectionRequestListToEvents,getEventConnectionRequestListToUser,acceptEventConnectionRequestSendByCreator,getEventRequests,getConnectionForEventConnectionRequest};
+module.exports = { createEvent, getMyEvents, updateEventInfo, deleteEvent, sendEventConnectionRequest, sendEventConnectionRequestByOtherUser, unsendEventConnectionRequestByOtherUser, leaveEvent, unsendEventConnectionRequest, acceptEventConnectionRequestSendByOtherUser,rejectEventConnectionRequestSendByOtherUser,rejectEventConnectionRequestSendByCreator ,getEventConnectionRequestListToEvents,getEventConnectionRequestListToUser,acceptEventConnectionRequestSendByCreator,getEventRequests,getConnectionForEventConnectionRequest,getSuggestionsForEventConnectionRequest};
 

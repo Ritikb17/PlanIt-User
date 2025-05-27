@@ -4,6 +4,7 @@ const { Schema } = mongoose;
 const event = new Schema({
     name: { type: String, require: true },
     description: { type: String },
+    location: { type: String },
     isPrivate: { type: Boolean, require: true, default: false },
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
     sendRequest: [{ type: Schema.Types.ObjectId, ref: "User"}],

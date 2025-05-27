@@ -45,26 +45,26 @@ const closeChatModal = () => {
     fetchOtherChannels();
   }, []);
 
-  const fetchMyChannels = async () => {
-    try {
-      setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/channel/get-my-channels', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+    const fetchMyChannels = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get('http://localhost:5000/api/channel/get-my-channels', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
 
-      const connectedChannels = response.data.connectedgroups.channels || [];
-      const allChannels = response.data.connectedgroups?.channels || [];
+        const connectedChannels = response.data.connectedgroups.channels || [];
+        const allChannels = response.data.connectedgroups?.channels || [];
 
-      setMyChannels(connectedChannels);
+        setMyChannels(connectedChannels);
 
-    } catch (err) {
-      setError(err.response?.data?.message || err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+      } catch (err) {
+        setError(err.response?.data?.message || err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
   const fetchOtherChannels = async () => {
     try {
       setLoading(true);

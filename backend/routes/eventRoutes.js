@@ -1,7 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const router = express.Router();
-const {createEvent, getMyEvents,updateEventInfo,sendEventConnectionRequest,sendEventConnectionRequestByOtherUser,unsendEventConnectionRequestByOtherUser,leaveEvent,unsendEventConnectionRequest,acceptEventConnectionRequestSendByOtherUser,rejectEventConnectionRequestSendByOtherUser,rejectEventConnectionRequestSendByCreator,deleteEvent,getEventConnectionRequestListToEvents,getEventConnectionRequestListToUser,acceptEventConnectionRequestSendByCreator,getEventRequests,getConnectionForEventConnectionRequest} = require('../controllers/eventController');
+const {createEvent, getMyEvents,updateEventInfo,sendEventConnectionRequest,sendEventConnectionRequestByOtherUser,unsendEventConnectionRequestByOtherUser,leaveEvent,unsendEventConnectionRequest,acceptEventConnectionRequestSendByOtherUser,rejectEventConnectionRequestSendByOtherUser,rejectEventConnectionRequestSendByCreator,deleteEvent,getEventConnectionRequestListToEvents,getEventConnectionRequestListToUser,acceptEventConnectionRequestSendByCreator,getEventRequests,getConnectionForEventConnectionRequest,getSuggestionsForEventConnectionRequest} = require('../controllers/eventController');
 
 // router.get('/get-other-user-events',getOtherUserEvents);
 // router.get('/get-request-events',getRequestEvents)
@@ -21,6 +21,7 @@ router.get('/get-event-connecton-request-list-to-user',getEventConnectionRequest
 
 
 router.get('/get-connections-for-event-request/:eventId',getConnectionForEventConnectionRequest)
+router.get('/get-suggestion-for-event-request/:eventId',getSuggestionsForEventConnectionRequest)
 
 //update the event information 
 router.patch('/update-event-info/:eventId',updateEventInfo)

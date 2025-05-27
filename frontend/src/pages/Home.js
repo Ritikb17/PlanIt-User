@@ -3,10 +3,14 @@ import axios from 'axios'; // Import axios for making HTTP requests
 import './Home.css'; // Import the CSS file
 import ChatDialog from './ChatDialog'; // Import the ChatDialog component
 import Navbar from '../components/Navbar';
+import ChannelChatModal from './channelChatModel'
 
 const Home = () => {
   const [isEventsModalOpen, setIsEventsModalOpen] = useState(false);
+  const [isChatModalOpen, setIsChatModalOpen] = useState(false);
+  const [selectedChatChannel, setSelectedChatChannel] = useState(null);
   const [modalMode, setModalMode] = useState('event'); // 'event' or 'post'
+  const [myChannels, setMyChannels] = useState([]);
   const [eventForm, setEventForm] = useState({
     eventName: '',
     eventDateTime: '',
@@ -22,7 +26,8 @@ const Home = () => {
   const [chats, setChats] = useState([]); // State to store the list of non-friends
   const [isLoading, setIsLoading] = useState(true); // Loading state
   const [error, setError] = useState(null); // Error state
-
+  const userId = JSON.parse(atob(localStorage.getItem('token').split('.')[1])).id;
+   const [createEventError, setCreateEventError] = useState('');
   // Fetch the list of non-friends when the component mounts
   useEffect(() => {
     const fetchNonFriends = async () => {
@@ -48,7 +53,7 @@ const Home = () => {
         // Assuming the API returns an array of non-friends in the `nonFriends` field
         setChats(response.data.friends); // Update the state with the fetched data
 
-        console.log("CHATS",chats,response.data.friends );
+        console.log("CHATS", chats, response.data.friends);
         setIsLoading(false); // Set loading to false
       } catch (error) {
         console.error('Error fetching non-friends:', error);
@@ -56,8 +61,28 @@ const Home = () => {
         setIsLoading(false); // Set loading to false
       }
     };
+    const fetchMyChannels = async () => {
+      try {
+        setIsLoading(true);
+        const token = localStorage.getItem('token'); // Retrieve token from localStorage
+
+        const response = await axios.get('http://localhost:5000/api/channel/get-my-channels', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        // Directly set the channels array without transformation
+        setMyChannels(response.data.connectedgroups?.channels || []);
+
+      } catch (err) {
+        console.error("Failed to fetch channels:", err);
+        setError(err.response?.data?.message || err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
     fetchNonFriends();
+    fetchMyChannels();
   }, []); // Empty dependency array ensures this runs only once on mount
 
   const handleInputChange = (e) => {
@@ -93,10 +118,48 @@ const Home = () => {
     setIsEventsModalOpen(false); // Close the modal after submission
   };
 
+  const handleCreateEvent = async () => {
+
+    console.log("THE EVENT FORM IS:", eventForm);
+    if (!eventForm.eventName) {
+      setCreateEventError('Event name is required');
+      return;
+    }
+
+    try {
+        const token = localStorage.getItem('token');
+      const response = await axios.post(
+        'http://localhost:5000/api/events/create-event',
+        {
+          name: eventForm.eventName,
+          description: eventForm.eventDescrption,
+          isPrivate: eventForm.isPublic,
+          eventDate: eventForm.eventDateTime,
+          location: eventForm.eventLocation
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      setCreateEventError('');
+      alert('Event created successfully!');
+    } catch (err) {
+      setCreateEventError(err.response?.data?.message || 'Failed to create event');
+    }
+  };
+
   // Open chat dialog
   const openChatDialog = (chat) => {
     setSelectedChat(chat);
     setIsChatDialogOpen(true);
+  };
+  const closeChatModal = () => {
+    setIsChatModalOpen(false);
+    setSelectedChatChannel(null);
   };
 
   // Close chat dialog
@@ -247,11 +310,10 @@ const Home = () => {
           ))}
         </div>
 
-        {/* Groups Section */}
         <div className="groups-section">
           <h3>Groups</h3>
           <div className="chat-list">
-            {groups.map((group) => (
+            {myChannels.map((group) => (
               <div
                 key={group.id}
                 className="chat-item"
@@ -259,10 +321,22 @@ const Home = () => {
               >
                 <img
                   src={group.profilePicture}
-                  alt={group.username}
+                  alt={group.name}
                   className="profile-picture"
                 />
-                <p>{group.username}</p>
+                <div className="group-info">
+                  <p className="group-name">{group.name}</p>
+                  <p className="group-last-message">
+                    {group.lastMessage?.length > 20
+                      ? `${group.lastMessage.substring(0, 20)}...`
+                      : group.lastMessage}
+                  </p>
+                </div>
+                {group.timestamp && (
+                  <span className="message-time">
+                    {new Date(group.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                )}
               </div>
             ))}
           </div>
@@ -307,6 +381,15 @@ const Home = () => {
                       onChange={handleInputChange}
                       required
                     />
+                    <label htmlFor="eventLocation">Event description</label>
+                    <input
+                      type="text"
+                      id="eventDescrption"
+                      name="eventDescrption"
+                      value={eventForm.eventDescription}
+                      onChange={handleInputChange}
+                      required
+                    />
                   </div>
                   <div className="form-group">
                     <label htmlFor="eventDateTime">Event Date and Time</label>
@@ -329,6 +412,7 @@ const Home = () => {
                       onChange={handleInputChange}
                       required
                     />
+                    
                   </div>
                   <div className="form-group">
                     <label>Event Visibility</label>
@@ -356,7 +440,7 @@ const Home = () => {
                     </div>
                   </div>
                   <div className="modal-actions">
-                    <button type="submit" className="submit-button">
+                    <button type="submit" className="submit-button" onClick={handleCreateEvent}>
                       Create Event
                     </button>
                     <button
@@ -419,9 +503,20 @@ const Home = () => {
         {isChatDialogOpen && (
           <ChatDialog chat={selectedChat} onClose={closeChatDialog} />
         )}
+
+        {isChatModalOpen && selectedChatChannel && (
+          <ChannelChatModal
+            channel={selectedChatChannel}
+            onClose={closeChatModal}
+            // Pass any additional props your ChannelChatModal needs
+            // For example:
+            currentUserId={userId}
+          // token={token}
+          />
+        )}
       </div>
     </div>
   );
 };
-            
+
 export default Home;
