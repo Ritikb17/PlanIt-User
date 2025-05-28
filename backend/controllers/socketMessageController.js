@@ -58,8 +58,14 @@ module.exports = {
 
       const receiverSocketId = users.get(receiverId);
       console.log("UPDATED CHAT IS  ", updatedChat);
+      socket.emit('message-sent', { 
+      status: 'success'
+    });
 
       io.to(receiverSocketId).emit('receive-message', messageJson);
+       return {
+        status: 'success'
+      };
 
 
     } catch (error) {
