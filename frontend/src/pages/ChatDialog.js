@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import './ChatDialog.css';
-import recSound from '../assests/sounds/notification/recMessage.mp3'
-import sendSound from '../assests/sounds/notification/sendMessage.mp3'
+import recSound from '../assets/sounds/notification/recMessage.mp3'
+import sendSound from '../assets/sounds/notification/sendMessage.mp3'
 
 const socket = io('http://localhost:5000', {
   auth: {
@@ -107,8 +107,8 @@ playSendSound();
       },
         (response) => {
           if (response.status === 'success') {
-            console.log("playing sound ")
-            playSound();
+          //   console.log("playing sound ")
+          //  playSound();
             setMessages((prev) =>
               prev.map((msg) =>
                 msg._id === newMessage._id ? response.message : msg

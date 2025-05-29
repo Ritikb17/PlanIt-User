@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom'; // Use useNavigate for programmatic navigation
 import axios from 'axios';
+import io from 'socket.io-client';
+import recNotification from '../assets/sounds/notification/recNotification.mp3'
 import './Navbar.css'; // Import the CSS file
 
 const Navbar = () => {
@@ -15,33 +17,62 @@ const Navbar = () => {
   const navigate = useNavigate(); // Use useNavigate for navigation
 
   useEffect(() => {
-    const fetchNotifications = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        console.error('No token found in localStorage');
-        return;
-      }
+  const token = localStorage.getItem('token');
+  if (!token) {
+    console.error('No token found in localStorage');
+    return;
+  }
 
-      try {
-        const response = await axios.get("http://localhost:5000/api/user/get-notification", {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`, // Use the token from localStorage
-          },
-        });
+  // Initialize socket connection
+  const socket = io('http://localhost:5000', {
+    auth: { token },
+    transports: ['websocket'] // Force WebSocket only
+  });
 
-        // Assuming the response data has a structure like { notification: { notification: [...] } }
-        const fetchedNotifications = response.data.notification[0].notification;
-        setNotifications(fetchedNotifications);
+  // Join notification room on connection
+  socket.on('connect', () => {
+    const userId = JSON.parse(atob(localStorage.getItem('token').split('.')[1])).id;
 
-        console.log("NOTIFICATIONS:", fetchedNotifications);
-      } catch (error) {
-        console.error("Error fetching notifications:", error);
-      }
-    };
+    socket.emit('join-notification', { userId });
+  });
 
-    fetchNotifications();
-  }, []);
+  // Notification event handlers
+  socket.on('join-success', (data) => {
+    console.log('Joined notification room:', data.eventId);
+  });
+
+  socket.on('join-error', (error) => {
+    console.error('Failed to join room:', error.message);
+  });
+
+  // Handle incoming notifications
+  socket.on('new-notification', (notification) => {
+    setNotifications(prev => [notification, ...prev]);
+  });
+
+  // Request initial notifications
+  socket.emit('get-notification', {}, (response) => {
+    if (response.success) {
+      setNotifications(response.notifications[0].notification);
+      console.log("success in getting notfication ",response.notifications[0].notification);
+    } else {
+      console.error('Error fetching notifications:', response.error);
+    }
+  });
+
+  // Error handling
+  socket.on('connect_error', (err) => {
+    console.error('Connection error:', err.message);
+  });
+
+  // Cleanup on unmount
+  return () => {
+    socket.off('new-notification');
+    socket.off('join-success');
+    socket.off('join-error');
+    socket.disconnect();
+  };
+}, []); // Empty dependency array to run only once
 
   // Refs for dropdown menus
   const dropdownRef = useRef(null);

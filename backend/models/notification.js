@@ -8,6 +8,7 @@ const notificationSchema = new Schema(
       {
         message: { type: String, required: true }, 
         isSeen: { type: Boolean, default: false }, 
+        isDeleted:{ type: Boolean, default: false }, 
         type: {
           type: String,
           enum: ['follow', 'post','channel','event'], 
