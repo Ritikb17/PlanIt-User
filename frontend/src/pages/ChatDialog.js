@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import './ChatDialog.css';
-import notificationSound from '../assests/sounds/notification/sendMessage.mp3'
+import recSound from '../assests/sounds/notification/recMessage.mp3'
+import sendSound from '../assests/sounds/notification/sendMessage.mp3'
 
 const socket = io('http://localhost:5000', {
   auth: {
@@ -17,11 +18,17 @@ const ChatDialog = ({ chat, onClose }) => {
   const [editText, setEditText] = useState('');
   const [chatId, setChatId] = useState('');
   const messagesEndRef = useRef(null);
-  const playSound = () => {
-    const audio = new Audio(notificationSound);
+  const playSendSound = () => {
+    const audio = new Audio(sendSound);
     audio.play()
       .catch(error => console.log("Audio play failed:", error));
   };
+const playRecSound = () => {
+    const audio = new Audio(recSound);
+    audio.play()
+      .catch(error => console.log("Audio play failed:", error));
+  };
+
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -42,7 +49,7 @@ const ChatDialog = ({ chat, onClose }) => {
     const handleReceiveMessage = (msg) => {
       setMessages((prev) => [...prev, msg]);
       console.log("playing sound ")
-      playSound();
+      playRecSound();
     };
 
     const handleMessageDeleted = (deletedId) => {
@@ -78,6 +85,7 @@ const ChatDialog = ({ chat, onClose }) => {
   }, [chat._id]);
 
   const handleSend = () => {
+playSendSound();
     if (input.trim()) {
       const newMessage = {
         _id: Date.now().toString(),
