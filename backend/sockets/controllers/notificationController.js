@@ -24,6 +24,43 @@ module.exports = {
       });
     }
   },
+setIsSeen : async (socket,data,callback)=>{
+try {
+      if (!socket.user?._id) {
+        throw new Error("Unauthorized: Missing user ID");
+      }
+
+      const userId = new mongoose.Types.ObjectId(socket.user._id);
+
+
+      const update = await Notifications.findOneAndUpdate(
+  {
+    userId: socket.user._id
+  },
+  {
+    $set: { "notifications.$[].isSeen": true } // Update 'isSeen' to true for ALL array elements
+  },
+  {
+    new: true 
+  }
+);
+
+
+     console.log("NOTIFICATION IN BACKEND ",notifications)
+      callback({
+        success: true,
+        notifications,
+      });
+    } catch (error) {
+      console.error("Failed to set all  notifications:", error);
+
+      callback({
+        success: false,
+        error: error.message,
+      });
+    }
+
+}
   
  
 };
