@@ -24,7 +24,7 @@ module.exports = {
       });
     }
   },
-setIsSeen : async (socket,data,callback)=>{
+setNotificationIsSeenTrue : async (socket,data,callback)=>{
 try {
       if (!socket.user?._id) {
         throw new Error("Unauthorized: Missing user ID");
