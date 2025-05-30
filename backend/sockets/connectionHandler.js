@@ -212,6 +212,12 @@ module.exports = (io) => {
       console.log("IN THE GET NOTIFICATION HANDLER OF THE EVENT  ", data);
       notificationController.getNotifications(socket, data, callback);
     })
+    socket.on("set-notification-isSeen",(data,callback)=>
+    {
+      console.log("IN THE GET NOTIFICATION HANDLER OF THE EVENT  ", data);
+      notificationController.setIsSeensocket, data, callback);
+    })
+
 
 
 
