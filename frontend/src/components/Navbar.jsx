@@ -16,6 +16,7 @@ const Navbar = () => {
 
   const navigate = useNavigate(); // Use useNavigate for navigation
 
+
   useEffect(() => {
   const token = localStorage.getItem('token');
   if (!token) {
@@ -171,7 +172,7 @@ const Navbar = () => {
   // Handle notification click
   const handleNotificationClick = (type) => {
     console.log("notification type ",type)
-    let fruit = 'apple';
+    handlesSetNotificationIsSeenTrue();
 
 switch (type) {
   case 'channel':
