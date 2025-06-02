@@ -1,7 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const router = express.Router();
-const {createEvent, getMyEvents,updateEventInfo,sendEventConnectionRequest,sendEventConnectionRequestByOtherUser,unsendEventConnectionRequestByOtherUser,leaveEvent,unsendEventConnectionRequest,acceptEventConnectionRequestSendByOtherUser,rejectEventConnectionRequestSendByOtherUser,rejectEventConnectionRequestSendByCreator,deleteEvent,getEventConnectionRequestListToEvents,getEventConnectionRequestListToUser,acceptEventConnectionRequestSendByCreator,getEventRequests,getConnectionForEventConnectionRequest,getSuggestionsForEventConnectionRequest} = require('../controllers/eventController');
+const {createEvent, getMyEvents,updateEventInfo,sendEventConnectionRequest,sendEventConnectionRequestByOtherUser,unsendEventConnectionRequestByOtherUser,leaveEvent,unsendEventConnectionRequest,acceptEventConnectionRequestSendByOtherUser,rejectEventConnectionRequestSendByOtherUser,rejectEventConnectionRequestSendByCreator,deleteEvent,getEventConnectionRequestListToEvents,getEventConnectionRequestListToUser,acceptEventConnectionRequestSendByCreator,getEventRequests,getConnectionForEventConnectionRequest,getSuggestionsForEventConnectionRequest,discoverEvent,blockUserEvent,unblockUserEvent} = require('../controllers/eventController');
 
 // router.get('/get-other-user-events',getOtherUserEvents);
 // router.get('/get-request-events',getRequestEvents)
@@ -57,6 +57,11 @@ router.put('/reject-event-connection-sendby-by-otheruser',rejectEventConnectionR
 router.put('/leave-event',leaveEvent);
 router.get('/get-event-requests',getEventRequests);
 
+
+router.put('/block-user-event',blockUserEvent)
+router.put('/unblock-user-event',unblockUserEvent)
+
+router.get('/discover-events',discoverEvent);
 
 
 router.delete('/delete-event',deleteEvent);

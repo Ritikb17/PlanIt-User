@@ -58,12 +58,12 @@ module.exports = {
 
       const receiverSocketId = users.get(receiverId);
       console.log("UPDATED CHAT IS  ", updatedChat);
-      socket.emit('message-sent', { 
-      status: 'success'
-    });
+      socket.emit('message-sent', {
+        status: 'success'
+      });
 
       io.to(receiverSocketId).emit('receive-message', messageJson);
-       return {
+      return {
         status: 'success'
       };
 
@@ -113,7 +113,30 @@ module.exports = {
       }
 
       const cid = new mongoose.Types.ObjectId(chatId);
+      const currentUserId = _id.toString()
+
       const chat = await Chat.findById(cid).select('messages');
+      const updatedChat = await Chat.findOneAndUpdate(
+        {
+          _id: new mongoose.Types.ObjectId(cid) // Primary filter by chat ID
+        },
+        {
+          $set: {
+            "messages.$[elem].isSeen": true
+          }
+        },
+        {
+          new: true,
+          arrayFilters: [
+            {
+              "elem.isSeen": false,
+              "elem.receiver": new mongoose.Types.ObjectId(_id)
+            }
+          ]
+        }
+      );
+
+      console.log("Updated chat:", updatedChat);
 
       callback({
         status: 'success',
@@ -130,7 +153,7 @@ module.exports = {
     }
   },
 
-  handleEditMessage: async (socket,users, io, { messageId,receiverId, newMessage, chatId },callback) => {
+  handleEditMessage: async (socket, users, io, { messageId, receiverId, newMessage, chatId }, callback) => {
     try {
       const _id = socket.user._id;
       // const rec_id = receiverId;
@@ -153,13 +176,13 @@ module.exports = {
       // if (!chatId) {
       //   throw new Error("Chat not found");
       // }
-   
+
 
       const chatObjectId = new mongoose.Types.ObjectId(chatId);
       const messageObjectId = new mongoose.Types.ObjectId(messageId);
       const userObjectId = new mongoose.Types.ObjectId(_id);
 
-      console.log("messageId", messageId, "chatId is ", chatId, "newMessage", newMessage ,"userId is ",userObjectId);
+      console.log("messageId", messageId, "chatId is ", chatId, "newMessage", newMessage, "userId is ", userObjectId);
       const updatedChat = await Chat.findOneAndUpdate(
         {
           _id: chatObjectId,
@@ -206,7 +229,7 @@ module.exports = {
     }
   },
 
-  handleDeleteMessage: async (socket,users ,io, { messageId,receiverId ,chatId }, callback) => {
+  handleDeleteMessage: async (socket, users, io, { messageId, receiverId, chatId }, callback) => {
     try {
       const _id = socket.user._id;
 
@@ -231,7 +254,7 @@ module.exports = {
       // if (!chatId) {
       //   throw new Error("Chat ID not found");
       // }
-     
+
       const updatedChat = await Chat.findOneAndUpdate(
         {
           _id: chatId,

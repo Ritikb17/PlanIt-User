@@ -13,67 +13,74 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState(''); // State for search input
   const [searchResults, setSearchResults] = useState([]); // State for search results
   const [notifications, setNotifications] = useState([]);
+  const [glbSocket, setGlbSocket] = useState();
+  const [totalNewNotification, setTotalNewNotification] = useState();
 
   const navigate = useNavigate(); // Use useNavigate for navigation
 
 
   useEffect(() => {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    console.error('No token found in localStorage');
-    return;
-  }
-
-  // Initialize socket connection
-  const socket = io('http://localhost:5000', {
-    auth: { token },
-    transports: ['websocket'] // Force WebSocket only
-  });
-
-  // Join notification room on connection
-  socket.on('connect', () => {
-    const userId = JSON.parse(atob(localStorage.getItem('token').split('.')[1])).id;
-
-    socket.emit('join-notification', { userId });
-  });
-
-  // Notification event handlers
-  socket.on('join-success', (data) => {
-    console.log('Joined notification room:', data.eventId);
-  });
-
-  socket.on('join-error', (error) => {
-    console.error('Failed to join room:', error.message);
-  });
-
-  // Handle incoming notifications
-  socket.on('new-notification', (notification) => {
-    setNotifications(prev => [notification, ...prev]);
-  });
-
-  // Request initial notifications
-  socket.emit('get-notification', {}, (response) => {
-    if (response.success) {
-      setNotifications(response.notifications[0].notification);
-      console.log("success in getting notfication ",response.notifications[0].notification);
-    } else {
-      console.error('Error fetching notifications:', response.error);
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No token found in localStorage');
+      return;
     }
-  });
 
-  // Error handling
-  socket.on('connect_error', (err) => {
-    console.error('Connection error:', err.message);
-  });
+    // Initialize socket connection
+    const socket = io('http://localhost:5000', {
+      auth: { token },
+      transports: ['websocket'] // Force WebSocket only
+    });
 
-  // Cleanup on unmount
-  return () => {
-    socket.off('new-notification');
-    socket.off('join-success');
-    socket.off('join-error');
-    socket.disconnect();
-  };
-}, []); // Empty dependency array to run only once
+    setGlbSocket(socket);
+    // Join notification room on connection
+    socket.on('connect', () => {
+      const userId = JSON.parse(atob(localStorage.getItem('token').split('.')[1])).id;
+
+      socket.emit('join-notification', { userId });
+    });
+
+    // Notification event handlers
+    socket.on('join-success', (data) => {
+      console.log('Joined notification room:', data.eventId);
+    });
+
+    socket.on('join-error', (error) => {
+      console.error('Failed to join room:', error.message);
+    });
+
+    // Handle incoming notifications
+    socket.on('new-notification', (notification) => {
+      setNotifications(prev => [notification, ...prev]);
+    });
+
+    // Request initial notifications
+    socket.emit('get-notification', {}, (response) => {
+      if (response.success) {
+        setNotifications(response.notifications[0].notification);
+        console.log("success in getting notfication ", response.notifications[0].notification);
+        console.log("success in to notfication ", response.totalNewNotifications);
+        setTotalNewNotification(response.totalNewNotifications);
+      } else {
+        console.error('Error fetching notifications:', response.error);
+      }
+    });
+
+
+
+    // Error handling
+    socket.on('connect_error', (err) => {
+      console.error('Connection error:', err.message);
+    });
+
+    // Cleanup on unmount
+    return () => {
+      socket.off('new-notification');
+      socket.off('join-success');
+      socket.off('join-error');
+      socket.disconnect();
+    };
+  }, []); // Empty dependency array to run only once
 
   // Refs for dropdown menus
   const dropdownRef = useRef(null);
@@ -138,7 +145,7 @@ const Navbar = () => {
   };
 
   // Close dropdowns when clicking outside
-  useEffect(() => {
+ useEffect(() => {
     const handleClickOutside = (event) => {
       // Close profile dropdown
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -164,6 +171,31 @@ const Navbar = () => {
   }, []);
 
   // Handle logout
+  const markNotification = () => {
+    const userId = JSON.parse(atob(localStorage.getItem('token').split('.')[1])).id;
+    glbSocket.emit('set-notification-isSeen', { userId: userId }, (response) => {
+    glbSocket.emit('get-notification', {}, (response) => {
+      if (response.success) {
+        setNotifications(response.notifications[0].notification);
+        console.log("success in getting notfication again  ", response.notifications[0].notification);
+        setTotalNewNotification(response.totalNewNotifications);
+      } else {
+        console.error('Error fetching notifications:', response.error);
+      }
+    });
+
+
+
+      // if (response && response.success) {
+      //   setNotifications(prevNotifications =>
+      //     prevNotifications.map(notification => ({
+      //       ...notification,
+      //       isSeen: true
+      //     }))
+      //   );
+      // }
+    });
+  }
   const handleLogout = () => {
     localStorage.removeItem('token');
     navigate('/login'); // Redirect after logout
@@ -171,23 +203,30 @@ const Navbar = () => {
 
   // Handle notification click
   const handleNotificationClick = (type) => {
-    console.log("notification type ",type)
-    handlesSetNotificationIsSeenTrue();
+    console.log("notification type ", type);
 
-switch (type) {
-  case 'channel':
-    navigate('/channel-requests');
-    break;
-  case 'post':
-    navigate('/');
-    break;
-  case 'follow':
-    navigate('/followers');
-    break;
-  default:
-    console.log('Unknown notification type ');
-}
+    // Check if socket is available
+    if (!glbSocket) {
+      console.error('Socket connection not established');
+      return;
+    }
 
+
+
+    // Navigate based on notification type
+    switch (type) {
+      case 'channel':
+        navigate('/channel-requests');
+        break;
+      case 'post':
+        navigate('/');
+        break;
+      case 'follow':
+        navigate('/followers');
+        break;
+      default:
+        console.log('Unknown notification type');
+    }
   };
 
   // Handle block user
@@ -276,11 +315,10 @@ switch (type) {
             title="Notifications"
             onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
           >
-            <i className="fas fa-bell"></i>
+            <i className="fas fa-bell" onClick={markNotification}></i>
+            {totalNewNotification}
             {/* Notification Badge */}
-            {notifications.length > 0 && (
-              <span className="notification-badge">{notifications.length}</span>
-            )}
+
           </div>
           {isNotificationsOpen && (
             <div className="dropdown-menu">

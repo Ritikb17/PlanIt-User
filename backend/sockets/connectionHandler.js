@@ -166,58 +166,55 @@ module.exports = (io) => {
       eventMessageController.handleEventEditMessage(socket, userId, io, data, users, callback);
     })
 
-////////////////////////////NOTIFICATION ///////////////////////////
+    ////////////////////////////NOTIFICATION ///////////////////////////
     socket.on("join-notification", (data) => {
-  try {
-    // Validate incoming data
-    if (!data) {
-      throw new Error("No data received in join-notification");
-    }
-    
-    if (!data.userId) {
-      throw new Error("eventId is required in join-notification data");
-    }
+      try {
+        // Validate incoming data
+        if (!data) {
+          throw new Error("No data received in join-notification");
+        }
 
-    console.log("JOIN NOTIFICATION", data);
-    
-   
-    socket.join(data.eventId, (error) => {
-      if (error) {
-        console.error("Error joining room:", error.message);
-        socket.emit("join-error", {
-          eventId: data.eventId,
-          message: "Failed to join notification room"
+        if (!data.userId) {
+          throw new Error("eventId is required in join-notification data");
+        }
+
+        console.log("JOIN NOTIFICATION", data);
+
+
+        socket.join(data.eventId, (error) => {
+          if (error) {
+            console.error("Error joining room:", error.message);
+            socket.emit("join-error", {
+              eventId: data.eventId,
+              message: "Failed to join notification room"
+            });
+          } else {
+            console.log(`Successfully joined room: ${data.eventId}`);
+            // Optional: emit success message back to client
+            socket.emit("join-success", {
+              eventId: data.userId,
+              message: "Successfully joined notification room"
+            });
+          }
         });
-      } else {
-        console.log(`Successfully joined room: ${data.eventId}`);
-        // Optional: emit success message back to client
-        socket.emit("join-success", {
-          eventId: data.userId,
-          message: "Successfully joined notification room"
+
+      } catch (error) {
+        console.error("Error in join-notification handler:", error.message);
+        // Emit error details to client if needed
+        socket.emit("join-error", {
+          eventId: data?.eventId || "unknown",
+          message: error.message
         });
       }
     });
-    
-  } catch (error) {
-    console.error("Error in join-notification handler:", error.message);
-    // Emit error details to client if needed
-    socket.emit("join-error", {
-      eventId: data?.eventId || "unknown",
-      message: error.message
-    });
-  }
-    });
-    socket.on("get-notification",(data,callback)=>
-    {
+    socket.on("get-notification", (data, callback) => {
       console.log("IN THE GET NOTIFICATION HANDLER OF THE EVENT  ", data);
       notificationController.getNotifications(socket, data, callback);
     })
-    socket.on("set-notification-isSeen",(data,callback)=>
-    {
+    socket.on("set-notification-isSeen", (data, callback) => {
       console.log("IN THE SETISSEEN HANDLER OF THE EVENT  ", data);
-      notificationController.setNotificationIsSeenTrue, data, callback);
-    })
-
+      notificationController.setNotificationIsSeenTrue(data, socket, callback);
+    });
 
 
 

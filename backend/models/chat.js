@@ -8,7 +8,7 @@ const chatSchema = new Schema({
   receiver: { type: Schema.Types.ObjectId, ref: 'User', required: true }, 
   message: { type: String},
   timestamp: { type: Date, default: Date.now },
-  isRead: { type: Boolean, default: false } ,
+  isSeen: { type: Boolean, default: false } ,
   isEdited: { type: Boolean, default: false } ,
   isDeleted: { type: Boolean, default: false } 
   
