@@ -7,6 +7,7 @@ const channel = new Schema({
     isPrivate: { type: Boolean, require: true, default: false },
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
     sendRequest: [{ type: Schema.Types.ObjectId, ref: "User"}],
+    blockedUsers: [{ type: Schema.Types.ObjectId, ref: "User"}],
     recivedRequest: [{ type: Schema.Types.ObjectId, ref: "User" }],
     messages: [{
         sender: { type: Schema.Types.ObjectId, ref: "User" },

@@ -905,7 +905,6 @@ const getEventConnectionRequestListToEvents = async (req, res) => {
         return res.status(500).json({ error: error })
     }
 }
-
 //get the list of event request a user get 
 const getEventConnectionRequestListToUser = async (req, res) => {
     const _id = req.user._id;
@@ -919,7 +918,6 @@ const getEventConnectionRequestListToUser = async (req, res) => {
         return res.status(500).json({ error: error })
     }
 }
-
 // leave the event
 const leaveEvent = async (req, res) => {
     const _id = req.user._id;
@@ -984,7 +982,6 @@ const leaveEvent = async (req, res) => {
         return res.status(500).json({ error: error })
     }
 }
-
 const getConnectionForEventConnectionRequest = async (req, res) => {
     const self_id = req.user._id;
     const eventId = req.params.eventId;
@@ -1119,7 +1116,6 @@ const getSuggestionsForEventConnectionRequest = async (req, res) => {
         res.status(500).json({ message: "Cannot fetch connections.", error: error.message });
     }
 };
-
 const discoverEvent = async (req, res) => {
     try {
         const userId = req.user._id;
@@ -1137,9 +1133,8 @@ const discoverEvent = async (req, res) => {
 
     }
 }
-
 const blockUserEvent = async (req, res) => {
-    console.log("hitting the api ")
+
     try {
         const userId = req.user._id;
         console.log("the request is ", req.body.eventId, req.body.otherUserId);
@@ -1149,13 +1144,12 @@ const blockUserEvent = async (req, res) => {
         const obj_sender_id = new ObjectId(otherUserId);
 
 
-      
+
         const event = await Event.findById(eventId);
         const otherUser = await User.findById(otherUserId)
         console.log("the event and user  ", event, otherUser)
-        if(otherUser.equals(userId))
-        {
-            return res.status(403).json({message:"you cant block yourself "})
+        if (otherUser.equals(userId)) {
+            return res.status(403).json({ message: "you cant block yourself " })
         }
         if (!event) {
             return res.status(400).json({ message: "the event is not found " })
@@ -1178,6 +1172,7 @@ const blockUserEvent = async (req, res) => {
             return res.status(400).json({ message: "already blocked" });
         }
         event.blockedUsers.push(otherUserId);
+        event.members.pull(otherUserId)
         otherUser.blockEvents.push(eventId);
         await otherUser.save();
         await event.save();
@@ -1185,12 +1180,12 @@ const blockUserEvent = async (req, res) => {
 
 
     } catch (error) {
-        console.log("the error is ",error)
+        console.log("the error is ", error)
         res.status(500).json({ error: error })
     }
 }
 const unblockUserEvent = async (req, res) => {
-    console.log("Unblock user API hit");
+
     try {
         const userId = req.user._id; // The user making the request (event owner)
         const { eventId, otherUserId } = req.body;
@@ -1201,8 +1196,8 @@ const unblockUserEvent = async (req, res) => {
         }
 
         // Convert to ObjectId
-        const eventObjId = new mongoose.Types.ObjectId(eventId);
-        const otherUserObjId = new mongoose.Types.ObjectId(otherUserId);
+        const eventObjId = new ObjectId(eventId);
+        const otherUserObjId = new ObjectId(otherUserId);
 
         // Find the event and user
         const event = await Event.findById(eventObjId);
@@ -1247,6 +1242,85 @@ const unblockUserEvent = async (req, res) => {
     }
 };
 
+const removeUserFromEvent = async (req, res) => {
+    try {
+        const userId= req.user._id;
+        const eventId = req.body.eventId;
+        const otherUserId = req.body.otherUserId;
+        const otherUserObjId = new ObjectId(otherUserId);
+        const eventObjectId = new ObjectId(eventId);
+        const event = await Event.findById(eventId);
+        const otherUser = await User.findById(otherUserObjId);
+        
+        if(!event)
+        {
+            return res.status(403).json({message:"Event not found"});
+        }
 
-module.exports = { createEvent, getMyEvents, updateEventInfo, deleteEvent, sendEventConnectionRequest, sendEventConnectionRequestByOtherUser, unsendEventConnectionRequestByOtherUser, leaveEvent, unsendEventConnectionRequest, acceptEventConnectionRequestSendByOtherUser, rejectEventConnectionRequestSendByOtherUser, rejectEventConnectionRequestSendByCreator, getEventConnectionRequestListToEvents, getEventConnectionRequestListToUser, acceptEventConnectionRequestSendByCreator, getEventRequests, getConnectionForEventConnectionRequest, getSuggestionsForEventConnectionRequest, discoverEvent, blockUserEvent, unblockUserEvent };
+        if(!userId.equals(event.createdBy))
+        {
+            return res.status(401).json({message: "you are not the owner of the event"})
+        }
+
+        if(userId.equals(otherUserObjId))
+        {
+            return res.status(401).json({message: "you can`t remve yourself from the event "})
+        }
+
+        if(!event.members.includes(otherUserObjId))
+        {
+            return res.status(401).json({message: "not the member of the event "})
+        }
+        
+
+       if(!await User.findById(userId))
+       {
+        return res.status(403).json({message:"User not found"});
+       }
+
+       event.members = event.members.filter(id => !id.equals(otherUserObjId));
+       otherUser.connectedEvents = otherUser.connectedEvents.filter(id => !id.equals(eventObjectId));
+       await event.save();
+       await otherUser.save();
+       return res.status(200).json({message:"successfully removes the user from the event"})
+       
+
+    } catch (error) {
+        console.log(error)
+        return res.stsus(500).json({ messsage: "internal server error " })
+    }
+}
+const getConnectedUsersEvent = async (req, res) => {
+    const eventId = req.body.eventId;
+    const userId = req.body.userId;
+    try {
+        const event = await Event.findById(eventId)
+            .populate({
+                path: 'members',
+                select: 'name username',
+                model: 'User'
+            }).select("members");
+
+        if (!event) {
+            return res.status(404).json({ message: "Event not found" });
+        }
+        if(event.members.includes(userId))
+        {
+            return res.status(200).json({ message: "not the member of the event" });
+        }
+        return res.status(200).json({
+            message: "successfuly get the event  connected users",
+            users: event
+        })
+
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({ message: "intetnal server error" })
+
+    }
+}
+
+
+
+module.exports = { createEvent, getMyEvents, updateEventInfo, deleteEvent, sendEventConnectionRequest, sendEventConnectionRequestByOtherUser, unsendEventConnectionRequestByOtherUser, leaveEvent, unsendEventConnectionRequest, acceptEventConnectionRequestSendByOtherUser, rejectEventConnectionRequestSendByOtherUser, rejectEventConnectionRequestSendByCreator, getEventConnectionRequestListToEvents, getEventConnectionRequestListToUser, acceptEventConnectionRequestSendByCreator, getEventRequests, getConnectionForEventConnectionRequest, getSuggestionsForEventConnectionRequest, discoverEvent, blockUserEvent, unblockUserEvent, getConnectedUsersEvent,removeUserFromEvent };
 

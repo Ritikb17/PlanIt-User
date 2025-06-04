@@ -11,15 +11,15 @@ const createChannel = async (req, res) => {
     try {
 
         const user = await User.findById(_id);
-        console.log("new channel is ",user);
-    
+        console.log("new channel is ", user);
+
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-          const userWithChannels = await User.findById(_id).populate('channels');
-          console.log("User with channels ",userWithChannels);
-              const nameCheck = userWithChannels.channels.some(channel => channel.name === nameOfChannel);
+        const userWithChannels = await User.findById(_id).populate('channels');
+        console.log("User with channels ", userWithChannels);
+        const nameCheck = userWithChannels.channels.some(channel => channel.name === nameOfChannel);
         if (nameCheck) {
             return res.status(400).json({ message: "Channel with the same name already exists" });
         }
@@ -29,9 +29,9 @@ const createChannel = async (req, res) => {
             description: bio,
             isPrivate: req.body.isPrivate,
             createdBy: _id,
-            members:[_id],
+            members: [_id],
         });
-        console.log("new channel is ",newChannel);
+        console.log("new channel is ", newChannel);
         if (newChannel) {
             console.log("new channel is being created ")
             const newC = { _id: newChannel._id, name: nameOfChannel };
@@ -142,10 +142,9 @@ const sendChannelConnectionRequest = async (req, res) => {
         // Validate the channel
         const channel = await Channel.findById(channel_id);
 
-        const check1 =   channel.members.includes(sender_id);
-        if(check1)
-        {
-            return res.status(400).json({message:"already member of this channel"});
+        const check1 = channel.members.includes(sender_id);
+        if (check1) {
+            return res.status(400).json({ message: "already member of this channel" });
         }
 
 
@@ -333,7 +332,7 @@ const acceptChannelConnectionRequest = async (req, res) => {
 
 
         const user = await User.findById(_id);
-       
+
         if (!user || !channel) {
             return res.status(404).json({ message: "User or channel not found" });
         }
@@ -399,7 +398,7 @@ const acceptChannelConnectionRequest = async (req, res) => {
             }
         );
 
-        return res.status(200).json({ message: "Request accepted successfully" ,notificationVerification:notificationVerification});
+        return res.status(200).json({ message: "Request accepted successfully", notificationVerification: notificationVerification });
 
     } catch (error) {
         console.error("Error accepting channel request:", error);
@@ -464,7 +463,7 @@ const leaveChannel = async (req, res) => {
         const removingIdFromUser = await User.findByIdAndUpdate(_id, { $pull: { connectedChannels: channel__id } },
             { new: true }
         )
-      
+
 
         if (!removingIdFromUser) {
             res.status(400).json({ error: "cannnot remove id ffromm user " });
@@ -481,41 +480,247 @@ const leaveChannel = async (req, res) => {
     }
 }
 
-const getRequestChannels= async (req,res)=>
-{
+const getRequestChannels = async (req, res) => {
     const _id = req.user._id;
     try {
-        const data =await  User.findById(_id).select("receivedChannelRequest email").populate("receivedChannelRequest")
-        if(!data){
-            return res.status(400).json({message:"error in in Query"});
+        const data = await User.findById(_id).select("receivedChannelRequest email").populate("receivedChannelRequest")
+        if (!data) {
+            return res.status(400).json({ message: "error in in Query" });
         }
-        console.log("data from the DB ",data);
+        console.log("data from the DB ", data);
         res.status(200).json(data);
     } catch (error) {
-        return res.status(400).json({error:error});   
+        return res.status(400).json({ error: error });
     }
 }
 const getDiscoverChannels = async (req, res) => {
     const _id = req.user._id;
     try {
-       
+
         const userChannels = await Channel.find({ members: _id }).select('_id');
         const userChannelIds = userChannels.map(ch => ch._id);
 
-    
-        const data = await Channel.find({ 
+
+        const data = await Channel.find({
             createdBy: { $ne: _id },
             _id: { $nin: userChannelIds }
         }).select('');
-        
+
         if (!data) {
             return res.status(404).json({ message: "No channels found" });
         }
-        
+
         res.status(200).json({ data: data });
 
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
 }
-module.exports = { getRequestChannels,createChannel, deleteChannel, sendChannelConnectionRequest, removeChannelConnectionRequest, unsendChannelConnectionRequest, acceptChannelConnectionRequest, getMyChannels, updateChannelInfo, leaveChannel ,getDiscoverChannels,getOtherUserChannels}
+const getConnectedUsersChannel = async (req, res) => {
+    const channelId = req.body.channelId;
+    const userId = req.user._id;
+    const objChannelId = new ObjectId(channelId);
+
+    try {
+
+        const channel = await Channel.findById(objChannelId).populate({
+            path: 'members',
+            select: 'name email _id'
+        }).select("members")
+        if (channel.members.includes(userId)) {
+            return res.status(403).json({ message: "not the member of the channel" });
+        }
+        return res.status(200).json({ message: "successfully get the channel", data: channel });
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ message: "internal server error " })
+    }
+}
+const blockUserChannel = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { channelId, otherUserId } = req.body;
+
+        // Validate input
+        if (!channelId || !otherUserId) {
+            return res.status(400).json({ message: "channelId and otherUserId are required" });
+        }
+
+        // Convert to ObjectId
+        const channelObjId = new mongoose.Types.ObjectId(channelId);
+        const otherUserObjId = new mongoose.Types.ObjectId(otherUserId);
+
+        // Find channel and user
+        const [channel, otherUser] = await Promise.all([
+            Channel.findById(channelObjId),
+            User.findById(otherUserObjId)
+        ]);
+
+        // Validation checks
+        if (!channel) {
+            return res.status(404).json({ message: "Channel not found" });
+        }
+        if (!otherUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        if (otherUserObjId.equals(userId)) {
+            return res.status(403).json({ message: "You can't block yourself" });
+        }
+        if (!channel.createdBy.equals(userId)) {
+            return res.status(403).json({ 
+                message: "Only channel creator can block users" 
+            });
+        }
+        if (channel.blockedUsers.some(id => id.equals(otherUserObjId))) {
+            return res.status(400).json({ message: "User is already blocked" });
+        }
+
+        // Perform blocking
+        channel.blockedUsers.push(otherUserObjId);
+        channel.members.pull(otherUserObjId)
+        otherUser.blockChannels.push(channelObjId);
+        
+        await Promise.all([channel.save(), otherUser.save()]);
+        
+        return res.status(200).json({ 
+            message: "User blocked successfully",
+            channelId,
+            blockedUserId: otherUserId
+        });
+
+    } catch (error) {
+        console.error("Block user error:", error);
+        return res.status(500).json({ 
+            error: "Internal server error",
+            details: error.message 
+        });
+    }
+};
+const unblockUserChannel = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { channelId, otherUserId } = req.body;
+
+        // Validate input
+        if (!channelId || !otherUserId) {
+            return res.status(400).json({ message: "channelId and otherUserId are required" });
+        }
+
+        // Convert to ObjectId
+        const channelObjId = new mongoose.Types.ObjectId(channelId);
+        const otherUserObjId = new mongoose.Types.ObjectId(otherUserId);
+
+        // Find channel and user
+        const [channel, otherUser] = await Promise.all([
+            Channel.findById(channelObjId),
+            User.findById(otherUserObjId)
+        ]);
+
+        // Validation checks
+        if (!channel) {
+            return res.status(404).json({ message: "Channel not found" });
+        }
+        if (!otherUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        if (!channel.createdBy.equals(userId)) {
+            return res.status(403).json({ 
+                message: "Only channel creator can unblock users" 
+            });
+        }
+
+        // Check if user is actually blocked
+        const userIsBlocked = channel.blockedUsers.some(id => id.equals(otherUserObjId));
+        if (!userIsBlocked) {
+            return res.status(400).json({ message: "User is not blocked in this channel" });
+        }
+
+        // Perform unblocking
+        channel.blockedUsers = channel.blockedUsers.filter(id => !id.equals(otherUserObjId));
+        otherUser.blockChannels = otherUser.blockChannels.filter(id => !id.equals(channelObjId));
+        channel.members.push(otherUserId);
+        await Promise.all([channel.save(), otherUser.save()]);
+        
+        return res.status(200).json({ 
+            message: "User unblocked successfully",
+            channelId,
+            unblockedUserId: otherUserId
+        });
+
+    } catch (error) {
+        console.error("Unblock user error:", error);
+        return res.status(500).json({ 
+            error: "Internal server error",
+            details: error.message 
+        });
+    }
+};
+const removeUserFromChannel = async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { channelId, otherUserId } = req.body;
+
+        // Validate input
+        if (!channelId || !otherUserId) {
+            return res.status(400).json({ message: "channelId and otherUserId are required" });
+        }
+
+        // Convert to ObjectId
+        const channelObjId = new mongoose.Types.ObjectId(channelId);
+        const otherUserObjId = new mongoose.Types.ObjectId(otherUserId);
+
+        // Find channel and user
+        const [channel, otherUser] = await Promise.all([
+            Channel.findById(channelObjId),
+            User.findById(otherUserObjId)
+        ]);
+
+        // Validation checks
+        if (!channel) {
+            return res.status(404).json({ message: "Channel not found" });
+        }
+        if (!otherUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        if (!channel.createdBy.equals(userId)) {
+            return res.status(403).json({ 
+                message: "Only channel creator can remove users" 
+            });
+        }
+        if (userId.equals(otherUserObjId)) {
+            return res.status(400).json({ 
+                message: "You can't remove yourself from the channel" 
+            });
+        }
+        if (!channel.members.some(id => id.equals(otherUserObjId))) {
+            return res.status(400).json({ 
+                message: "User is not a member of this channel" 
+            });
+        }
+
+        // Perform removal
+        channel.members = channel.members.filter(id => !id.equals(otherUserObjId));
+        otherUser.connectedChannels = otherUser.connectedChannels?.filter(id => !id.equals(channelObjId)) || [];
+
+        await Promise.all([channel.save(), otherUser.save()]);
+        
+        return res.status(200).json({ 
+            message: "User removed from channel successfully",
+            channelId,
+            removedUserId: otherUserId
+        });
+
+    } catch (error) {
+        console.error("Remove user error:", error);
+        return res.status(500).json({ 
+            error: "Internal server error",
+            details: error.message 
+        });
+    }
+};
+module.exports = { getRequestChannels, createChannel, deleteChannel,
+     sendChannelConnectionRequest, removeChannelConnectionRequest, 
+     unsendChannelConnectionRequest, acceptChannelConnectionRequest,
+      getMyChannels, updateChannelInfo, leaveChannel, getDiscoverChannels, 
+      getOtherUserChannels,getConnectedUsersChannel,unblockUserChannel,
+      blockUserChannel,removeUserFromChannel }

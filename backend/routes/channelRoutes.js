@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const {createChannel,deleteChannel,sendChannelConnectionRequest,removeChannelConnectionRequest,unsendChannelConnectionRequest,acceptChannelConnectionRequest,updateChannelInfo,getMyChannels,leaveChannel,getRequestChannels,getDiscoverChannels,getOtherUserChannels} = require('../controllers/channelController');
+const {createChannel,deleteChannel,sendChannelConnectionRequest,
+    removeChannelConnectionRequest,unsendChannelConnectionRequest,
+    acceptChannelConnectionRequest,updateChannelInfo,getMyChannels,
+    leaveChannel,getRequestChannels,getDiscoverChannels,getOtherUserChannels
+    ,getConnectedUsersChannel,unblockUserChannel,blockUserChannel,removeUserFromChannel} = require('../controllers/channelController');
 
 router.get('/get-my-channels',getMyChannels);
 router.get('/get-other-user-channels',getOtherUserChannels);
@@ -21,5 +25,11 @@ router.delete('/leave-channel/:channelId',leaveChannel);
 router.put('/accept-channel-connection-request-by-other-user',acceptChannelConnectionRequest)
 // router.delete('/delete-channel',deleteChannel);
 router.patch('/update-channel-info/:channelId',updateChannelInfo)
+
+
+router.get('/get-channel-users',getConnectedUsersChannel)
+router.post('/unblock-channel-user', unblockUserChannel);
+router.post('/block-channel-user', blockUserChannel);
+router.post('remove-user-from-channel', removeUserFromChannel);
 
 module.exports = router;
