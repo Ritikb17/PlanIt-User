@@ -1,4 +1,6 @@
 const mongoose = require('mongoose')
+const { ObjectId } = require('mongodb'); // or mongoose.mongo.ObjectId
+
 const User = require('../models/User')
 
 console.log('User import:', User);  // Should show Mongoose model functions
@@ -230,7 +232,7 @@ const sendEventConnectionRequest = async (req, res) => {
         if (check1) {
             return res.status(400).json({ message: "already member of this channel" });
         }
-         if (event.blockedUsers.includes(_id)) {
+        if (event.blockedUsers.includes(_id)) {
             return res.status(400).json({ message: "CANNOT SEND THE REQUEST " })
         }
         const creatorId = event.createdBy;
@@ -1122,12 +1124,12 @@ const discoverEvent = async (req, res) => {
     try {
         const userId = req.user._id;
         console.log("user id ", userId.toString());
-         const eventList = await Event.find({ 
-            blockedUsers: { $nin: [userId] } 
+        const eventList = await Event.find({
+            blockedUsers: { $nin: [userId] }
         })
-        .select("name description createdAt")
-        .sort({ createdAt: -1 }) 
-        .lean(); 
+            .select("name description createdAt")
+            .sort({ createdAt: -1 })
+            .lean();
         res.status(200).json({ eventList });
     } catch (error) {
         res.status(500).json({ message: "Cannot fetch events.", error: error.message });
@@ -1137,22 +1139,36 @@ const discoverEvent = async (req, res) => {
 }
 
 const blockUserEvent = async (req, res) => {
+    console.log("hitting the api ")
     try {
         const userId = req.user._id;
-        const eventId = new mongoose.Types.ObjectId(req.body.eventId);
-        const otherUserId = new mongoose.Types.ObjectId(req.body.otherUserId);
-        const event = await Event.findOne({ _id: eventId });
-        const otherUser = await User.findOne({ _id: otherUser });
+        console.log("the request is ", req.body.eventId, req.body.otherUserId);
+        const { eventId, otherUserId } = req.body;
 
+        const obj_event_id = new ObjectId(eventId);
+        const obj_sender_id = new ObjectId(otherUserId);
+
+
+      
+        const event = await Event.findById(eventId);
+        const otherUser = await User.findById(otherUserId)
+        console.log("the event and user  ", event, otherUser)
+        if(otherUser.equals(userId))
+        {
+            return res.status(403).json({message:"you cant block yourself "})
+        }
         if (!event) {
-            console.log("eroroooo")
-            throw new Error("Event not found");
+            return res.status(400).json({ message: "the event is not found " })
+        }
+        if (!eventId) {
+            console.log("user  not found.")
+            return res.status(404).json({ message: "Event not found." });
         }
         if (!otherUser) {
-            console.log("eroroooo")
-            throw new Error("User not found");
+            console.log("user  not found.")
+            return res.status(404).json({ message: "user  not found." });
         }
-    
+
         if (!event.createdBy.equals(userId)) {
             return res.status(403).json({
                 message: "You can't block an event you didn't have authority to block."
@@ -1162,79 +1178,75 @@ const blockUserEvent = async (req, res) => {
             return res.status(400).json({ message: "already blocked" });
         }
         event.blockedUsers.push(otherUserId);
-        // otherUser.blockEvents.push(eventId);
-        // await otherUser.save();
+        otherUser.blockEvents.push(eventId);
+        await otherUser.save();
         await event.save();
         res.status(200).json({ message: "User blocked successfully." });
 
 
     } catch (error) {
-        res.status(500).json({error:error})
+        console.log("the error is ",error)
+        res.status(500).json({ error: error })
     }
 }
 const unblockUserEvent = async (req, res) => {
+    console.log("Unblock user API hit");
     try {
-        const userId = req.user._id;
-        const eventId = new mongoose.Types.ObjectId(req.body.eventId);
-        const otherUserId = new mongoose.Types.ObjectId(req.body.otherUserId);
-        
-        // Find both the event and the user to unblock
-        const event = await Event.findOne({ _id: eventId });
-        const otherUser = await User.findOne({ _id: otherUserId }); // Changed to User model
+        const userId = req.user._id; // The user making the request (event owner)
+        const { eventId, otherUserId } = req.body;
 
-        // Validation checks
+        // Validate input
+        if (!eventId || !otherUserId) {
+            return res.status(400).json({ message: "eventId and otherUserId are required" });
+        }
+
+        // Convert to ObjectId
+        const eventObjId = new mongoose.Types.ObjectId(eventId);
+        const otherUserObjId = new mongoose.Types.ObjectId(otherUserId);
+
+        // Find the event and user
+        const event = await Event.findById(eventObjId);
+        const otherUser = await User.findById(otherUserObjId);
+
+        // Check if they exist
         if (!event) {
-            throw new Error("Event not found");
+            return res.status(404).json({ message: "Event not found" });
         }
         if (!otherUser) {
-            throw new Error("User not found");
+            return res.status(404).json({ message: "User not found" });
         }
 
-        // Authorization check
+        // Check if the requester is the event owner
         if (!event.createdBy.equals(userId)) {
             return res.status(403).json({
-                message: "You don't have permission to unblock users from this event"
+                message: "Only the event owner can unblock users"
             });
         }
 
-        // Check if user is actually blocked
-        if (!event.blockedUsers.some(id => id.equals(otherUserId))) {
-            return res.status(400).json({ 
-                message: "User is not blocked from this event" 
-            });
+        // Check if the user is actually blocked
+        if (!event.blockedUsers.includes(otherUserObjId)) {
+            return res.status(400).json({ message: "User is not blocked" });
         }
 
-        // Check if event is in user's block list
-        const isEventBlocked = otherUser.blockEvents.some(id => id.equals(eventId));
-        if (!isEventBlocked) {
-            return res.status(400).json({ 
-                message: "This event isn't blocked by the specified user" 
-            });
-        }
+        // Remove from blockedUsers array (event side)
+        event.blockedUsers = event.blockedUsers.filter(id => !id.equals(otherUserObjId));
 
-        // Remove from both collections
-        event.blockedUsers = event.blockedUsers.filter(id => !id.equals(otherUserId));
-        otherUser.blockEvents = otherUser.blockEvents.filter(id => !id.equals(eventId));
+        // Remove from blockEvents array (user side)
+        otherUser.blockEvents = otherUser.blockEvents.filter(id => !id.equals(eventObjId));
 
         // Save changes
         await Promise.all([event.save(), otherUser.save()]);
 
-        res.status(200).json({ 
-            message: "User unblocked from event successfully",
-            unblockedUserId: otherUserId,
-            eventId: eventId
-        });
+        return res.status(200).json({ message: "User unblocked successfully" });
 
     } catch (error) {
         console.error("Unblock error:", error);
-        res.status(500).json({ 
-            success: false,
-            message: "Failed to unblock user",
-            error: error.message 
+        return res.status(500).json({
+            error: error.message || "Internal server error"
         });
     }
 };
 
 
-module.exports = { createEvent, getMyEvents, updateEventInfo, deleteEvent, sendEventConnectionRequest, sendEventConnectionRequestByOtherUser, unsendEventConnectionRequestByOtherUser, leaveEvent, unsendEventConnectionRequest, acceptEventConnectionRequestSendByOtherUser, rejectEventConnectionRequestSendByOtherUser, rejectEventConnectionRequestSendByCreator, getEventConnectionRequestListToEvents, getEventConnectionRequestListToUser, acceptEventConnectionRequestSendByCreator, getEventRequests, getConnectionForEventConnectionRequest, getSuggestionsForEventConnectionRequest, discoverEvent, blockUserEvent ,unblockUserEvent};
+module.exports = { createEvent, getMyEvents, updateEventInfo, deleteEvent, sendEventConnectionRequest, sendEventConnectionRequestByOtherUser, unsendEventConnectionRequestByOtherUser, leaveEvent, unsendEventConnectionRequest, acceptEventConnectionRequestSendByOtherUser, rejectEventConnectionRequestSendByOtherUser, rejectEventConnectionRequestSendByCreator, getEventConnectionRequestListToEvents, getEventConnectionRequestListToUser, acceptEventConnectionRequestSendByCreator, getEventRequests, getConnectionForEventConnectionRequest, getSuggestionsForEventConnectionRequest, discoverEvent, blockUserEvent, unblockUserEvent };
 
