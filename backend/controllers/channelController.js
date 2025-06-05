@@ -567,8 +567,8 @@ const blockUserChannel = async (req, res) => {
             return res.status(403).json({ message: "You can't block yourself" });
         }
         if (!channel.createdBy.equals(userId)) {
-            return res.status(403).json({ 
-                message: "Only channel creator can block users" 
+            return res.status(403).json({
+                message: "Only channel creator can block users"
             });
         }
         if (channel.blockedUsers.some(id => id.equals(otherUserObjId))) {
@@ -579,10 +579,10 @@ const blockUserChannel = async (req, res) => {
         channel.blockedUsers.push(otherUserObjId);
         channel.members.pull(otherUserObjId)
         otherUser.blockChannels.push(channelObjId);
-        
+
         await Promise.all([channel.save(), otherUser.save()]);
-        
-        return res.status(200).json({ 
+
+        return res.status(200).json({
             message: "User blocked successfully",
             channelId,
             blockedUserId: otherUserId
@@ -590,9 +590,9 @@ const blockUserChannel = async (req, res) => {
 
     } catch (error) {
         console.error("Block user error:", error);
-        return res.status(500).json({ 
+        return res.status(500).json({
             error: "Internal server error",
-            details: error.message 
+            details: error.message
         });
     }
 };
@@ -624,8 +624,8 @@ const unblockUserChannel = async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
         if (!channel.createdBy.equals(userId)) {
-            return res.status(403).json({ 
-                message: "Only channel creator can unblock users" 
+            return res.status(403).json({
+                message: "Only channel creator can unblock users"
             });
         }
 
@@ -640,8 +640,8 @@ const unblockUserChannel = async (req, res) => {
         otherUser.blockChannels = otherUser.blockChannels.filter(id => !id.equals(channelObjId));
         channel.members.push(otherUserId);
         await Promise.all([channel.save(), otherUser.save()]);
-        
-        return res.status(200).json({ 
+
+        return res.status(200).json({
             message: "User unblocked successfully",
             channelId,
             unblockedUserId: otherUserId
@@ -649,9 +649,9 @@ const unblockUserChannel = async (req, res) => {
 
     } catch (error) {
         console.error("Unblock user error:", error);
-        return res.status(500).json({ 
+        return res.status(500).json({
             error: "Internal server error",
-            details: error.message 
+            details: error.message
         });
     }
 };
@@ -683,18 +683,18 @@ const removeUserFromChannel = async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
         if (!channel.createdBy.equals(userId)) {
-            return res.status(403).json({ 
-                message: "Only channel creator can remove users" 
+            return res.status(403).json({
+                message: "Only channel creator can remove users"
             });
         }
         if (userId.equals(otherUserObjId)) {
-            return res.status(400).json({ 
-                message: "You can't remove yourself from the channel" 
+            return res.status(400).json({
+                message: "You can't remove yourself from the channel"
             });
         }
         if (!channel.members.some(id => id.equals(otherUserObjId))) {
-            return res.status(400).json({ 
-                message: "User is not a member of this channel" 
+            return res.status(400).json({
+                message: "User is not a member of this channel"
             });
         }
 
@@ -703,8 +703,8 @@ const removeUserFromChannel = async (req, res) => {
         otherUser.connectedChannels = otherUser.connectedChannels?.filter(id => !id.equals(channelObjId)) || [];
 
         await Promise.all([channel.save(), otherUser.save()]);
-        
-        return res.status(200).json({ 
+
+        return res.status(200).json({
             message: "User removed from channel successfully",
             channelId,
             removedUserId: otherUserId
@@ -712,15 +712,44 @@ const removeUserFromChannel = async (req, res) => {
 
     } catch (error) {
         console.error("Remove user error:", error);
-        return res.status(500).json({ 
+        return res.status(500).json({
             error: "Internal server error",
-            details: error.message 
+            details: error.message
         });
     }
 };
-module.exports = { getRequestChannels, createChannel, deleteChannel,
-     sendChannelConnectionRequest, removeChannelConnectionRequest, 
-     unsendChannelConnectionRequest, acceptChannelConnectionRequest,
-      getMyChannels, updateChannelInfo, leaveChannel, getDiscoverChannels, 
-      getOtherUserChannels,getConnectedUsersChannel,unblockUserChannel,
-      blockUserChannel,removeUserFromChannel }
+const getBlockUsersOFChannel = async (req, res) => {
+    const { channelId } = req.body;
+    const objChannelId = new ObjectId(channelId);
+
+    const userId = req.user._id;
+    try {
+        const channel = await Channel.findById(objChannelId).populate({
+            path: 'blockedUsers',
+            select: 'name email _id'
+        }).select("blockedUsers")
+        console.log("the channel is ",channel )
+        if (userId.equals(channel.createdBy)) {
+            return res.status(403).json({ message: "you are not the creator of the channel " })
+        }
+        if (!channel) {
+            return res.staus(403).json({ message: "channel not found " })
+        }
+        return res.status(200).json({
+            message: "successfully get the block users",
+            data: channel
+        })
+
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({ message: "internal server error" })
+    }
+}
+module.exports = {
+    getRequestChannels, createChannel, deleteChannel,
+    sendChannelConnectionRequest, removeChannelConnectionRequest,
+    unsendChannelConnectionRequest, acceptChannelConnectionRequest,
+    getMyChannels, updateChannelInfo, leaveChannel, getDiscoverChannels,
+    getOtherUserChannels, getConnectedUsersChannel, unblockUserChannel,
+    blockUserChannel, removeUserFromChannel, getBlockUsersOFChannel
+}

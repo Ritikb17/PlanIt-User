@@ -1320,7 +1320,44 @@ const getConnectedUsersEvent = async (req, res) => {
     }
 }
 
+const getBlockUserOfEvent = async (req,res)=>
+{
+    const { eventId } = req.body;
+    const objEventId = new ObjectId(eventId);
+
+    const userId = req.user._id;
+    try {
+        const event = await Event.findById(objEventId).populate({
+            path: 'blockedUsers',
+            select: 'name email _id'
+        }).select("blockedUsers")
+   
+        if (userId.equals(event.createdBy)) {
+            return res.status(403).json({ message: "you are not the creator of the channel " })
+        }
+        if (!event) {
+            return res.staus(403).json({ message: "channel not found " })
+        }
+        return res.status(200).json({
+            message: "successfully get the block users",
+            data: event
+        })
+
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({ message: "internal server error" })
+
+    }
+}
 
 
-module.exports = { createEvent, getMyEvents, updateEventInfo, deleteEvent, sendEventConnectionRequest, sendEventConnectionRequestByOtherUser, unsendEventConnectionRequestByOtherUser, leaveEvent, unsendEventConnectionRequest, acceptEventConnectionRequestSendByOtherUser, rejectEventConnectionRequestSendByOtherUser, rejectEventConnectionRequestSendByCreator, getEventConnectionRequestListToEvents, getEventConnectionRequestListToUser, acceptEventConnectionRequestSendByCreator, getEventRequests, getConnectionForEventConnectionRequest, getSuggestionsForEventConnectionRequest, discoverEvent, blockUserEvent, unblockUserEvent, getConnectedUsersEvent,removeUserFromEvent };
+module.exports = { createEvent, getMyEvents, updateEventInfo, 
+    deleteEvent, sendEventConnectionRequest, sendEventConnectionRequestByOtherUser
+    , unsendEventConnectionRequestByOtherUser, leaveEvent, 
+    unsendEventConnectionRequest, acceptEventConnectionRequestSendByOtherUser,
+     rejectEventConnectionRequestSendByOtherUser, rejectEventConnectionRequestSendByCreator,
+      getEventConnectionRequestListToEvents, getEventConnectionRequestListToUser,
+       acceptEventConnectionRequestSendByCreator, getEventRequests, getConnectionForEventConnectionRequest,
+        getSuggestionsForEventConnectionRequest, discoverEvent, blockUserEvent,
+         unblockUserEvent, getConnectedUsersEvent,removeUserFromEvent ,getBlockUserOfEvent};
 
