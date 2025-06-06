@@ -408,12 +408,7 @@ const sendEventConnectionRequestByOtherUser = async (req, res) => {
         if (isSenderBlockes) {
             return res.status(400).json({ message: "you cannnot send request to the event  contact the owner of the event " })
         }
-        if (event.isPrivate) {
-            if (!senderUser.connections.includes(_id)) {
-                return res.status(400).json({ message: "this is a private event  , cannot send the request " })
-            }
-        }
-
+    
         if (sender_id === creatorId) {
             return res.status(400).json({ message: "You cannot send a request to yourself" });
         }

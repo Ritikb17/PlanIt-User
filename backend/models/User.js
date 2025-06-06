@@ -33,6 +33,9 @@ const UserSchema = new Schema({
   receivedChannelRequest: [ 
     { type: Schema.Types.ObjectId, ref: "Channel" } 
   ],
+  sendChannelRequest: [ 
+    { type: Schema.Types.ObjectId, ref: "Channel" } 
+  ],
   
   blockChannels: [
     { type: Schema.Types.ObjectId, ref: "Channel" } 

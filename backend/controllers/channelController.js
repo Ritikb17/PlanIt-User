@@ -479,7 +479,6 @@ const leaveChannel = async (req, res) => {
         res.status(400).json({ error: error });
     }
 }
-
 const getRequestChannels = async (req, res) => {
     const _id = req.user._id;
     try {
@@ -499,12 +498,11 @@ const getDiscoverChannels = async (req, res) => {
 
         const userChannels = await Channel.find({ members: _id }).select('_id');
         const userChannelIds = userChannels.map(ch => ch._id);
-
-
         const data = await Channel.find({
             createdBy: { $ne: _id },
             _id: { $nin: userChannelIds }
-        }).select('');
+
+        }).where('isPrivate').equals(false).select('');
 
         if (!data) {
             return res.status(404).json({ message: "No channels found" });
@@ -523,10 +521,13 @@ const getConnectedUsersChannel = async (req, res) => {
 
     try {
 
-        const channel = await Channel.findById(objChannelId).populate({
-            path: 'members',
-            select: 'name email _id'
-        }).select("members")
+        const channel = await Channel.findById(objChannelId)
+
+            .populate({
+                path: 'members',
+                select: 'name email _id'
+            })
+            .select("members");
         if (channel.members.includes(userId)) {
             return res.status(403).json({ message: "not the member of the channel" });
         }
@@ -728,7 +729,7 @@ const getBlockUsersOFChannel = async (req, res) => {
             path: 'blockedUsers',
             select: 'name email _id'
         }).select("blockedUsers")
-        console.log("the channel is ",channel )
+        console.log("the channel is ", channel)
         if (userId.equals(channel.createdBy)) {
             return res.status(403).json({ message: "you are not the creator of the channel " })
         }
@@ -745,11 +746,166 @@ const getBlockUsersOFChannel = async (req, res) => {
         return res.status(500).json({ message: "internal server error" })
     }
 }
-module.exports = {
-    getRequestChannels, createChannel, deleteChannel,
-    sendChannelConnectionRequest, removeChannelConnectionRequest,
-    unsendChannelConnectionRequest, acceptChannelConnectionRequest,
-    getMyChannels, updateChannelInfo, leaveChannel, getDiscoverChannels,
-    getOtherUserChannels, getConnectedUsersChannel, unblockUserChannel,
-    blockUserChannel, removeUserFromChannel, getBlockUsersOFChannel
+//(for other user send the connection request )
+const sendChannelConnectionRequestByOtherUser = async (req, res) => {
+    const { channelId } = req.body;
+    const userId = req.user._id;
+    try {
+
+        const channel = await Channel.findById(channelId);
+        if (!channel) {
+            return res.status(403).json({ message: "channel not found" })
+        }
+        if (channel.members.includes(userId)) {
+            return res.status(403).json({ message: "you are already a member of the channel" })
+        }
+        if (channel.blockedUsers.includes(userId)) {
+            return res.status(403).json({ message: "you are blocked by the channel creator" })
+        }
+        if (channel.recivedRequest.includes(userId)) {
+            return res.status(403).json({ message: "request is being already send " })
+        }
+        await Channel.findByIdAndUpdate(channelId, {
+            $push: {
+                "recivedRequest": userId
+            }
+
+        });
+
+        await User.findByIdAndUpdate(userId, {
+            $push: {
+                "sendChannelRequest": channelId
+            }
+        })
+        res.status(200).json({ message: "successfully send te request " })
+
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({ message: "internal server error" })
+    }
 }
+//unsend the request send by othe other user 
+const unsendChannelConnectionRequestByOtherUser = async (req, res) => {
+    const userId = req.user._id;
+    const { channelId } = req.body;
+
+    try {
+        const channel = await Channel.findById(channelId);
+        if (!channel) {
+            return res.status(403).json({ message: "channel not found" })
+        }
+        if (channel.members.includes(userId)) {
+            return res.status(403).json({ message: "you are already a member of the channel" });
+        }
+        if (!channel.recivedRequest.includes(userId)) {
+            return res.status(403).json({ message: "Request is being not found in the channel " })
+        }
+        await Channel.findByIdAndUpdate(channelId, {
+            $pull:
+            {
+                "recivedRequest": userId
+            }
+        })
+        await User.findByIdAndUpdate(userId, {
+            $pull: {
+                "sendChannelRequest": channelId
+            }
+        })
+        res.status(200).json({ message: "successfully unsend the request " })
+
+    } catch (error) {
+        console.log(error)
+
+    }
+}
+
+const removeChannelConnectionRequestByCreator = async (req, res) => {
+    const userId = req.user._id;
+    const { channelId, otherUserId } = req.body;
+
+    try {
+        const channel = await Channel.findById(channelId);
+        if (!channel) {
+            return res.status(403).json({ message: "channel is not found " })
+        }
+        if (!userId.equals(channel.createdBy)) {
+            return res.status(403).json({ message: "The channel is not created by you " })
+        }
+        if (!channel.recivedRequest.includes(otherUserId)) {
+            return res.status(403).json({ message: "the request in not found in the channel " })
+        }
+        await Channel.findByIdAndUpdate(channelId, {
+            $pull: {
+                "recivedRequest": otherUserId
+            }
+        })
+        await User.findByIdAndUpdate(otherUserId, {
+            $pull: {
+                "sendChannelRequest": channelId
+
+            }
+        })
+        return res.status(200).json({ message: "The request is being successfully removed " })
+
+
+
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({ message: "Internal Server error " })
+
+    }
+}
+
+const acceptChannelConnectionRequestByCreator = async (req, res) => {
+    const userId = req.user._id;
+    const { channelId, otherUserId } = req.body;
+    try {
+        const channel = await Channel.findById(channelId);
+        if (!channel) {
+            return res.status(403).json({ message: "channel is not found " })
+        }
+        if (!userId.equals(channel.createdBy)) {
+            return res.status(403).json({ message: "The channel is not created by you " })
+        }
+        if (!channel.recivedRequest.includes(otherUserId)) {
+            return res.status(403).json({ message: "the request in not found in the channel " })
+        }
+        if(channel.members.includes(otherUserId))
+        {
+            return res.status(403).json({message:"already member of the channel "})
+        }
+
+        await Channel.findByIdAndUpdate(channelId, {
+            $pull: {
+                "recivedRequest": otherUserId
+            },
+            $push: {
+                "members": otherUserId
+            }
+        })
+        await User.findByIdAndUpdate(otherUserId, {
+            $pull:{
+                "sendChannelRequest": channelId
+            },
+            $push:{
+                "connectedChannels": channelId
+            }
+        }
+        )
+    return res.status(200).json({message:"successfully accecpt the request"});
+    }
+    catch (error) {
+            console.log(error)
+            return res.status(500).json({message: "Internal server error "})
+        }
+    }
+module.exports = {
+        getRequestChannels, createChannel, deleteChannel,
+        sendChannelConnectionRequest, removeChannelConnectionRequest,
+        unsendChannelConnectionRequest, acceptChannelConnectionRequest,
+        getMyChannels, updateChannelInfo, leaveChannel, getDiscoverChannels,
+        getOtherUserChannels, getConnectedUsersChannel, unblockUserChannel,
+        blockUserChannel, removeUserFromChannel, getBlockUsersOFChannel,
+        sendChannelConnectionRequestByOtherUser, unsendChannelConnectionRequestByOtherUser,
+        removeChannelConnectionRequestByCreator, acceptChannelConnectionRequestByCreator
+    }

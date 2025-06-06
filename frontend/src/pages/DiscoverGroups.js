@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import './DiscoverGroups.css'; // Create this CSS file
+import './DiscoverGroups.css';
 import Navbar from '../components/Navbar';
 
 const DiscoverGroups = () => {
@@ -25,6 +25,7 @@ const DiscoverGroups = () => {
         }
       });
       
+      // Properly handle the nested data structure
       setChannels(response.data.data || []);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
@@ -44,7 +45,6 @@ const DiscoverGroups = () => {
           }
         }
       );
-      // Refresh the list after joining
       fetchDiscoverGroups();
       alert('Join request sent successfully');
     } catch (err) {
@@ -52,16 +52,15 @@ const DiscoverGroups = () => {
     }
   };
 
-  const filteredChannels = channels.filter(channel =>
-    channel.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Safely filter channels
+  const filteredChannels = Array.isArray(channels) 
+    ? channels.filter(channel =>
+        channel.name.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : [];
 
   if (loading) {
-    return (
-      <div className="loading-container">
-        <div>Loading channels...</div>
-      </div>
-    );
+    return <div className="loading-container">Loading channels...</div>;
   }
 
   if (error) {
@@ -100,8 +99,8 @@ const DiscoverGroups = () => {
                     <span className="members-count">{channel.members.length} members</span>
                   </div>
                   <p className="channel-description">
-                    {channel.message.length > 0 
-                      ? `${channel.message.length} messages` 
+                    {channel.messages?.length > 0 
+                      ? `${channel.messages.length} messages` 
                       : 'No messages yet'}
                   </p>
                 </div>
@@ -110,7 +109,7 @@ const DiscoverGroups = () => {
                     className={`join-btn ${channel.isPrivate ? 'private' : 'public'}`}
                     onClick={() => handleJoinRequest(channel._id)}
                   >
-                    {channel.isPrivate ? 'Request to Join' : 'Join Channel'}
+                    Request to Join
                   </button>
                 </div>
               </div>
