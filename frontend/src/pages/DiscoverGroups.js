@@ -24,8 +24,6 @@ const DiscoverGroups = () => {
           'Authorization': `Bearer ${token}`
         }
       });
-      
-      // Properly handle the nested data structure
       setChannels(response.data.data || []);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
@@ -36,23 +34,42 @@ const DiscoverGroups = () => {
 
   const handleJoinRequest = async (channelId) => {
     try {
-      await axios.post(
-        `http://localhost:5000/api/channel/join-channel/${channelId}`,
-        {},
+      await axios.put(
+        'http://localhost:5000/api/channel/send-channel-connection-request-by-other-user',
+        { channelId },
         {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
           }
         }
       );
       fetchDiscoverGroups();
-      alert('Join request sent successfully');
+      alert('Connection request sent successfully');
     } catch (err) {
-      alert(err.response?.data?.message || 'Failed to send join request');
+      alert(err.response?.data?.message || 'Failed to send connection request');
     }
   };
 
-  // Safely filter channels
+  const handleUnsendRequest = async (channelId) => {
+    try {
+      await axios.put(
+        'http://localhost:5000/api/channel/unsend-channel-connection-request-by-other-user',
+        { channelId },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      fetchDiscoverGroups();
+      alert('Request unsent successfully');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to unsend request');
+    }
+  };
+
   const filteredChannels = Array.isArray(channels) 
     ? channels.filter(channel =>
         channel.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -96,7 +113,7 @@ const DiscoverGroups = () => {
                   <h3>{channel.name}</h3>
                   <div className="channel-meta">
                     {channel.isPrivate && <span className="private-badge">Private</span>}
-                    <span className="members-count">{channel.members.length} members</span>
+                    <span className="members-count">{channel.members?.length || 0} members</span>
                   </div>
                   <p className="channel-description">
                     {channel.messages?.length > 0 
@@ -105,12 +122,21 @@ const DiscoverGroups = () => {
                   </p>
                 </div>
                 <div className="channel-actions">
-                  <button
-                    className={`join-btn ${channel.isPrivate ? 'private' : 'public'}`}
-                    onClick={() => handleJoinRequest(channel._id)}
-                  >
-                    Request to Join
-                  </button>
+                  {channel.alreadySend ? (
+                    <button
+                      className="unsend-btn"
+                      onClick={() => handleUnsendRequest(channel._id)}
+                    >
+                      Unsend Request
+                    </button>
+                  ) : (
+                    <button
+                      className={`join-btn ${channel.isPrivate ? 'private' : 'public'}`}
+                      onClick={() => handleJoinRequest(channel._id)}
+                    >
+                      Request to Join
+                    </button>
+                  )}
                 </div>
               </div>
             ))

@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
 const Channel = require('../models/channel');
 const User = require('../models/User');
-const Notification = require('../models/notification')
+const Notification = require('../models/notification');
+const notification = require('../models/notification');
 const ObjectId = mongoose.Types.ObjectId;
 //for channel creator( create new channel)
 const createChannel = async (req, res) => {
@@ -498,11 +499,37 @@ const getDiscoverChannels = async (req, res) => {
 
         const userChannels = await Channel.find({ members: _id }).select('_id');
         const userChannelIds = userChannels.map(ch => ch._id);
-        const data = await Channel.find({
-            createdBy: { $ne: _id },
-            _id: { $nin: userChannelIds }
-
-        }).where('isPrivate').equals(false).select('');
+      const data = await Channel.aggregate([
+    {
+        $match: {
+            createdBy: { $ne: _id },  // Channels not created by the current user
+            _id: { $nin: userChannelIds },  // Channels the user hasn't joined
+            isPrivate: false  // Only public channels
+        }
+    },
+    {
+        $addFields: {
+            // Ensure `receiveRequest` is an array (default to empty array if missing)
+            receiveRequest: { $ifNull: ["$recivedRequest", []] },
+            // Check if the user's ID is in `receiveRequest`
+            alreadySend: {
+                $cond: {
+                    if: { $in: [_id, "$recivedRequest"] },  // Check if `_id` is in the array
+                    then: true,
+                    else: false
+                }
+            }
+        }
+    },
+    {
+        $project: {
+            name: 1,
+            description: 1,
+            alreadySend: 1,
+            // Include other fields you need
+        }
+    }
+]);
 
         if (!data) {
             return res.status(404).json({ message: "No channels found" });
@@ -511,6 +538,7 @@ const getDiscoverChannels = async (req, res) => {
         res.status(200).json({ data: data });
 
     } catch (error) {
+        console.log(error)
         res.status(400).json({ error: error.message });
     }
 }
@@ -776,8 +804,28 @@ const sendChannelConnectionRequestByOtherUser = async (req, res) => {
             $push: {
                 "sendChannelRequest": channelId
             }
+
         })
-        res.status(200).json({ message: "successfully send te request " })
+
+        const notificationVerification = await Notification.findOneAndUpdate(
+            { user: channel.createdBy },
+            {
+                $push: {
+                    notification: {
+                        message: `${user} SEND YOUR CHANNEL CONNECTION REQUEST ${channel.name} `,
+                        type: "channel", // Changed to match your schema enum
+                        // isSeen will default to false as per your schema
+                    },
+                },
+            },
+            {
+                new: true,
+                upsert: true,
+                setDefaultsOnInsert: true // Ensures defaults are set on new documents
+            }
+        );
+       console.log("the notificatio verificatio is ",notificationVerification)
+         return res.status(200).json({ message: "successfully send te request " })
 
     } catch (error) {
         console.log(error)
@@ -870,9 +918,8 @@ const acceptChannelConnectionRequestByCreator = async (req, res) => {
         if (!channel.recivedRequest.includes(otherUserId)) {
             return res.status(403).json({ message: "the request in not found in the channel " })
         }
-        if(channel.members.includes(otherUserId))
-        {
-            return res.status(403).json({message:"already member of the channel "})
+        if (channel.members.includes(otherUserId)) {
+            return res.status(403).json({ message: "already member of the channel " })
         }
 
         await Channel.findByIdAndUpdate(channelId, {
@@ -884,28 +931,59 @@ const acceptChannelConnectionRequestByCreator = async (req, res) => {
             }
         })
         await User.findByIdAndUpdate(otherUserId, {
-            $pull:{
+            $pull: {
                 "sendChannelRequest": channelId
             },
-            $push:{
+            $push: {
                 "connectedChannels": channelId
             }
         }
         )
-    return res.status(200).json({message:"successfully accecpt the request"});
+        return res.status(200).json({ message: "successfully accecpt the request" });
     }
     catch (error) {
-            console.log(error)
-            return res.status(500).json({message: "Internal server error "})
+        console.log(error)
+        return res.status(500).json({ message: "Internal server error " })
+    }
+}
+//this controller return the list of the users who have sent a request to the channel
+const getRequestToChannelsSendOtherUser = async (req, res) =>{
+    const userId = req.user._id;
+    const channelId = req.body.channelId;
+    
+    try {
+        const channel = await Channel.findById(channelId).populate({
+            path: "recivedRequest",
+            select: "name  username email",
+
+        });
+        console.log("channel is ",channel);
+
+
+        if(!channel.createdBy.equals(userId))
+        {
+            return res.status(403).json({message:"you are not the creator of the channel "})
         }
+        const pendingRequest = channel.recivedRequest;
+        console.log("The request ot this channel is ", pendingRequest);
+        
+        return res.status(200).json({message:"successfully get the request ", data:pendingRequest})
+
+        
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({message:"internal Server Error"})
+        
     }
+}
 module.exports = {
-        getRequestChannels, createChannel, deleteChannel,
-        sendChannelConnectionRequest, removeChannelConnectionRequest,
-        unsendChannelConnectionRequest, acceptChannelConnectionRequest,
-        getMyChannels, updateChannelInfo, leaveChannel, getDiscoverChannels,
-        getOtherUserChannels, getConnectedUsersChannel, unblockUserChannel,
-        blockUserChannel, removeUserFromChannel, getBlockUsersOFChannel,
-        sendChannelConnectionRequestByOtherUser, unsendChannelConnectionRequestByOtherUser,
-        removeChannelConnectionRequestByCreator, acceptChannelConnectionRequestByCreator
-    }
+    getRequestChannels, createChannel, deleteChannel,
+    sendChannelConnectionRequest, removeChannelConnectionRequest,
+    unsendChannelConnectionRequest, acceptChannelConnectionRequest,
+    getMyChannels, updateChannelInfo, leaveChannel, getDiscoverChannels,
+    getOtherUserChannels, getConnectedUsersChannel, unblockUserChannel,
+    blockUserChannel, removeUserFromChannel, getBlockUsersOFChannel,
+    sendChannelConnectionRequestByOtherUser, unsendChannelConnectionRequestByOtherUser,
+    removeChannelConnectionRequestByCreator, acceptChannelConnectionRequestByCreator
+    ,getRequestToChannelsSendOtherUser
+}
