@@ -542,8 +542,8 @@ const getDiscoverChannels = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 }
-const getConnectedUsersChannel = async (req, res) => {
-    const channelId = req.body.channelId;
+const getConnectedInfoChannel = async (req, res) => {
+    const channelId = req.query.channelId;
     const userId = req.user._id;
     const objChannelId = new ObjectId(channelId);
 
@@ -555,7 +555,7 @@ const getConnectedUsersChannel = async (req, res) => {
                 path: 'members',
                 select: 'name email _id'
             })
-            .select("members");
+            .select("members createdBy description");
         if (channel.members.includes(userId)) {
             return res.status(403).json({ message: "not the member of the channel" });
         }
@@ -987,7 +987,7 @@ module.exports = {
     sendChannelConnectionRequest, removeChannelConnectionRequest,
     unsendChannelConnectionRequest, acceptChannelConnectionRequest,
     getMyChannels, updateChannelInfo, leaveChannel, getDiscoverChannels,
-    getOtherUserChannels, getConnectedUsersChannel, unblockUserChannel,
+    getOtherUserChannels, getConnectedInfoChannel, unblockUserChannel,
     blockUserChannel, removeUserFromChannel, getBlockUsersOFChannel,
     sendChannelConnectionRequestByOtherUser, unsendChannelConnectionRequestByOtherUser,
     removeChannelConnectionRequestByCreator, acceptChannelConnectionRequestByCreator

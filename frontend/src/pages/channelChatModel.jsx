@@ -8,8 +8,30 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState('');
   const [isConnected, setIsConnected] = useState(false);
+  const [showChannelInfo, setShowChannelInfo] = useState(false);
+  const [channelDetails, setChannelDetails] = useState(null);
   const messagesEndRef = useRef(null);
   const socketRef = useRef(null);
+
+  // Fetch channel details
+  const fetchChannelInfo = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/channel/get-channel-info?channelId=${channel._id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      const data = await response.json();
+      if (data.data) {
+        setChannelDetails(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching channel info:', error);
+    }
+  };
 
   // Initialize socket connection
   useEffect(() => {
@@ -50,20 +72,16 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
 
     // Message event handlers
     const handleNewMessage = (data) => {
-
-
-      // console.log("new message is coming",data);
-      // // setMessages(data.message.message.messages);
       socket.emit('get-message-of-the-channel', 
-      { channelId: channel._id }, 
-      (response) => {
-        if (response?.status === 'success') {
-          setMessages(response.messages || []);
-        } else {
-          console.error('Failed to get messages:', response?.message);
+        { channelId: channel._id }, 
+        (response) => {
+          if (response?.status === 'success') {
+            setMessages(response.messages || []);
+          } else {
+            console.error('Failed to get messages:', response?.message);
+          }
         }
-      }
-    );
+      );
     };
 
     const handleMessageEdited = (data) => {
@@ -128,11 +146,6 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
       if (response.status === 'success') {
         setEditingId(null);
         setEditText('');
-        
-        
-        
-
-
       }
     });
   };
@@ -167,18 +180,17 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
       if (response.status !== 'success') {
         console.log("Failed to delete message");
       }
-      else
-      {
+      else {
         socketRef.current.emit('get-message-of-the-channel', 
-      { channelId: channel._id }, 
-      (response) => {
-        if (response?.status === 'success') {
-          setMessages(response.messages || []);
-        } else {
-          console.error('Failed to get messages:', response?.message);
-        }
-      }
-    );
+          { channelId: channel._id }, 
+          (response) => {
+            if (response?.status === 'success') {
+              setMessages(response.messages || []);
+            } else {
+              console.error('Failed to get messages:', response?.message);
+            }
+          }
+        );
       }
     });
   };
@@ -201,11 +213,23 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
     });
   };
 
+  const toggleChannelInfo = async () => {
+    if (!showChannelInfo) {
+      await fetchChannelInfo();
+    }
+    setShowChannelInfo(!showChannelInfo);
+  };
+
   return (
     <div className="channel-chat-modal-overlay">
       <div className="channel-chat-modal">
         <div className="channel-chat-header">
-          <h2>#{channel.name}</h2>
+          <div className="channel-header-left" onClick={toggleChannelInfo}>
+            <h2>#{channel.name}</h2>
+            <button className="info-button" >
+              ℹ️
+            </button>
+          </div>
           <div className="connection-status">
             {isConnected ? '🟢 Online' : '🔴 Offline'}
           </div>
@@ -213,6 +237,31 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
             &times;
           </button>
         </div>
+
+        {showChannelInfo && channelDetails && (
+          <div className="channel-info-dialog">
+            <div className="channel-info-header">
+              <h3>Channel Information</h3>
+              <button onClick={() => setShowChannelInfo(false)}>×</button>
+            </div>
+            <div className="channel-info-content">
+              <p><strong>Description:</strong> {channelDetails.description || 'No description'}</p>
+              <p><strong>Created by:</strong> {channelDetails.members.find(m => m._id === channelDetails.createdBy)?.name || 'Unknown'}</p>
+              
+              <div className="members-list">
+                <h4>Members ({channelDetails.members.length}):</h4>
+                <ul>
+                  {channelDetails.members.map(member => (
+                    <li key={member._id}>
+                      {member.name} ({member.email})
+                      {member._id === channelDetails.createdBy && ' (Creator)'}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="channel-chat-body">
           {messages.length === 0 ? (

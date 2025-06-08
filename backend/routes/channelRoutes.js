@@ -4,7 +4,7 @@ const { createChannel, deleteChannel, sendChannelConnectionRequest,
     removeChannelConnectionRequest, unsendChannelConnectionRequest,
     acceptChannelConnectionRequest, updateChannelInfo, getMyChannels,
     leaveChannel, getRequestChannels, getDiscoverChannels, getOtherUserChannels
-    , getConnectedUsersChannel, unblockUserChannel, blockUserChannel,
+    , getConnectedInfoChannel, unblockUserChannel, blockUserChannel,
     removeUserFromChannel, getBlockUsersOFChannel, sendChannelConnectionRequestByOtherUser,
     unsendChannelConnectionRequestByOtherUser, removeChannelConnectionRequestByCreator,
     acceptChannelConnectionRequestByCreator, getRequestToChannelsSendOtherUser
@@ -42,7 +42,7 @@ router.put('/reject-channel-connection-request-by-creator', removeChannelConnect
 router.put('/accept-channel-connection-request-by-creator', acceptChannelConnectionRequestByCreator)
 
 
-router.get('/get-channel-users', getConnectedUsersChannel)
+router.get('/get-channel-info/:channelId?', getConnectedInfoChannel)
 router.get('/get-channel-block-users', getBlockUsersOFChannel)
 router.get('/get-request-to-the-channel-send-by-other-user/:channelId?', getRequestToChannelsSendOtherUser); 
 router.post('/unblock-user-from-channel', unblockUserChannel);
