@@ -39,7 +39,7 @@ const EventPage = () => {
 
   const navigate = useNavigate();
   // const userId = JSON.parse(atob(localStorage.getItem('token').split('.')[1])?.id;
-    const userId = JSON.parse(atob(localStorage.getItem('token').split('.')[1])).id;
+  const userId = JSON.parse(atob(localStorage.getItem('token').split('.')[1])).id;
   const token = localStorage.getItem('token');
 
   useEffect(() => {
@@ -47,40 +47,40 @@ const EventPage = () => {
     fetchEventRequests();
   }, []);
 
-const fetchMyEvents = async () => {
-  if (!token) {
-    console.error("No token available");
-    return;
-  }
-
-  try {
-    setLoading(true);
-    console.log("Making request with token:", token); // Debug token
-    
-    const response = await axios.get('http://localhost:5000/api/events/get-my-events', {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    console.log("Full API response:", response.data.events.connectedEvents); // Debug full response
-    
-    const events = response.data.events.connectedEvents;  
-    console.log("Processed events:", events); // Debug processed data
-    
-    if (events.length === 0) {
-      console.warn("Received empty events array");
+  const fetchMyEvents = async () => {
+    if (!token) {
+      console.error("No token available");
+      return;
     }
-    
-    setMyEvents(events);
-  } catch (err) {
-    const errorMsg = err.response?.data?.message || err.message;
-    console.error("API Error:", err.response?.data || err); // More detailed error
-    setError(errorMsg);
-  } finally {
-    setLoading(false);
-  }
-};
+
+    try {
+      setLoading(true);
+      console.log("Making request with token:", token); // Debug token
+
+      const response = await axios.get('http://localhost:5000/api/events/get-my-events', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      console.log("Full API response:", response.data.events.connectedEvents); // Debug full response
+
+      const events = response.data.events.connectedEvents;
+      console.log("Processed events:", events); // Debug processed data
+
+      if (events.length === 0) {
+        console.warn("Received empty events array");
+      }
+
+      setMyEvents(events);
+    } catch (err) {
+      const errorMsg = err.response?.data?.message || err.message;
+      console.error("API Error:", err.response?.data || err); // More detailed error
+      setError(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchEventRequests = async () => {
     try {
@@ -119,24 +119,24 @@ const fetchMyEvents = async () => {
     }
   };
   const handleDeleteEvent = async (eventId) => {
-  try {
-    const token = localStorage.getItem('token');
-    await axios.delete(
-      'http://localhost:5000/api/events/delete-event',
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        data: { eventId }  // Send data in the 'data' property for DELETE requests
-      }
-    );
-    fetchMyEvents();
-    alert('Event deleted successfully');
-  } catch (err) {
-    alert(err.response?.data?.message || 'Failed to delete event');
-  }
-};
+    try {
+      const token = localStorage.getItem('token');
+      await axios.delete(
+        'http://localhost:5000/api/events/delete-event',
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          data: { eventId }  // Send data in the 'data' property for DELETE requests
+        }
+      );
+      fetchMyEvents();
+      alert('Event deleted successfully');
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to delete event');
+    }
+  };
 
   const handleEditEvent = (event) => {
     setEventToEdit(event);
@@ -221,32 +221,32 @@ const fetchMyEvents = async () => {
       alert(err.response?.data?.message || err.message || 'Failed to fetch users');
     }
   };
- const handelAccecptInvitation = async (event) => {
+  const handelAccecptInvitation = async (event) => {
     setSelectedEvent(event);
     const event_id = event._id;
-    
-    try {
-        const response = await axios.put(
-            `http://localhost:5000/api/events/accept-event-connection-request-sendby-creator`,
-            {  // Request body/data
-                eventId: event_id,
-            },
-            {  // Config object
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            }
-        );
 
-        // Handle successful response here
-        console.log("Invitation accepted:", response.data);
-        
+    try {
+      const response = await axios.put(
+        `http://localhost:5000/api/events/accept-event-connection-request-sendby-creator`,
+        {  // Request body/data
+          eventId: event_id,
+        },
+        {  // Config object
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      // Handle successful response here
+      console.log("Invitation accepted:", response.data);
+
     } catch (err) {
-        console.error("Error accepting invitation:", err);
-        alert(err.response?.data?.message || err.message || 'Failed to accept invitation');
+      console.error("Error accepting invitation:", err);
+      alert(err.response?.data?.message || err.message || 'Failed to accept invitation');
     }
-};
+  };
 
   const handleSendRequest = async (receiverId) => {
     if (!selectedEvent) return;
@@ -281,51 +281,92 @@ const fetchMyEvents = async () => {
     }
   };
 
-  const handleCreateEvent = async () => {
+ const handleCreateEvent = async () => {
+    // Validate required fields
     if (!newEvent.name) {
-      setCreateEventError('Event name is required');
-      return;
+        setCreateEventError('Event name is required');
+        return;
+    }
+    if (!newEvent.eventDate) {
+        setCreateEventError('Event date is required');
+        return;
+    }
+    if (!newEvent.applicationDeadline) {
+        setCreateEventError('Application deadline is required');
+        return;
+    }
+
+    // Validate date logic
+    if (new Date(newEvent.applicationDeadline) >= new Date(newEvent.eventDate)) {
+        setCreateEventError('Application deadline must be before the event date');
+        return;
+    }
+
+    // Validate member limit if enabled
+    if (newEvent.isLimitedMemberEvent && (!newEvent.totalMembersAllowed || newEvent.totalMembersAllowed < 1)) {
+        setCreateEventError('Member limit must be at least 1 when enabled');
+        return;
     }
 
     try {
-      const response = await axios.post(
-        'http://localhost:5000/api/events/create-event',
-        {
-          name: newEvent.name,
-          description: newEvent.description,
-          isPrivate: newEvent.isPrivate,
-          eventDate: newEvent.eventDate
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+        const response = await axios.post(
+            'http://localhost:5000/api/events/create-event',
+            {
+                name: newEvent.name,
+                description: newEvent.description,
+                isPrivate: newEvent.isPrivate,
+                eventDate: newEvent.eventDate,
+                location: newEvent.location,
+                applicationDeadline: newEvent.applicationDeadline,
+                isLimitedMemberEvent: newEvent.isLimitedMemberEvent,
+                totalMembersAllowed: newEvent.isLimitedMemberEvent 
+                    ? newEvent.totalMembersAllowed 
+                    : -1
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
 
-      setShowCreateModal(false);
-      setNewEvent({
-        name: '',
-        description: '',
-        isPrivate: true,
-        eventDate: ''
-      });
-      setCreateEventError('');
-      fetchMyEvents();
-      alert('Event created successfully!');
+        // Reset form and state on success
+        setShowCreateModal(false);
+        setNewEvent({
+            name: '',
+            description: '',
+            location: '',
+            isPrivate: false,
+            eventDate: '',
+            applicationDeadline: '',
+            isLimitedMemberEvent: false,
+            totalMembersAllowed: -1
+        });
+        setCreateEventError('');
+        
+        // Refresh events list
+        fetchMyEvents();
+        
+        // Show success notification (consider using a toast instead of alert)
+        alert('Event created successfully!');
     } catch (err) {
-      setCreateEventError(err.response?.data?.message || 'Failed to create event');
+        console.error('Event creation error:', err);
+        setCreateEventError(
+            err.response?.data?.message || 
+            err.response?.data?.error || 
+            'Failed to create event. Please try again.'
+        );
     }
-  };
+};
 
   const renderEventList = (events, isMyEvent = false) => (
     <div className="channels-list">
       {events.length > 0 ? (
         events.map((event) => (
           <div key={event._id} className="channel-item">
-            <div 
-              className="channel-info" 
+            <div
+              className="channel-info"
               onClick={() => openChatModal(event)}
               style={{ cursor: 'pointer' }}
             >
@@ -412,8 +453,8 @@ const fetchMyEvents = async () => {
       {events.length > 0 ? (
         events.map((event) => (
           <div key={event._id} className="channel-item">
-            <div 
-              className="channel-info" 
+            <div
+              className="channel-info"
               onClick={() => openChatModal(event)}
               style={{ cursor: 'pointer' }}
             >
@@ -441,7 +482,7 @@ const fetchMyEvents = async () => {
                   handelAccecptInvitation(event)
                 }}
               >
-                Accecpt invitation 
+                Accecpt invitation
               </button>
               {isMyEvent && event.createdBy === userId && (
                 <>
@@ -565,6 +606,16 @@ const fetchMyEvents = async () => {
                 onClick={() => {
                   setShowCreateModal(false);
                   setCreateEventError('');
+                  setNewEvent({
+                    name: '',
+                    description: '',
+                    location: '',
+                    isPrivate: false,
+                    eventDate: '',
+                    applicationDeadline: '',
+                    totalMembersAllowed: -1,
+                    isLimitedMemberEvent: false
+                  });
                 }}
               >
                 &times;
@@ -600,12 +651,35 @@ const fetchMyEvents = async () => {
               </div>
 
               <div className="form-group">
-                <label htmlFor="event-date">Event Date</label>
+                <label htmlFor="event-location">Location</label>
+                <input
+                  id="event-location"
+                  type="text"
+                  value={newEvent.location}
+                  onChange={(e) => setNewEvent({ ...newEvent, location: e.target.value })}
+                  placeholder="Enter event location (optional)"
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="event-date">Event Date*</label>
                 <input
                   id="event-date"
                   type="datetime-local"
                   value={newEvent.eventDate}
                   onChange={(e) => setNewEvent({ ...newEvent, eventDate: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="application-deadline">Application Deadline*</label>
+                <input
+                  id="application-deadline"
+                  type="datetime-local"
+                  value={newEvent.applicationDeadline}
+                  onChange={(e) => setNewEvent({ ...newEvent, applicationDeadline: e.target.value })}
+                  required
                 />
               </div>
 
@@ -624,6 +698,36 @@ const fetchMyEvents = async () => {
                     : 'Anyone can join without approval'}
                 </small>
               </div>
+
+              <div className="form-group">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={newEvent.isLimitedMemberEvent}
+                    onChange={(e) => setNewEvent({
+                      ...newEvent,
+                      isLimitedMemberEvent: e.target.checked,
+                      totalMembersAllowed: e.target.checked ? 10 : -1
+                    })}
+                  />
+                  Limit Number of Members
+                </label>
+                {newEvent.isLimitedMemberEvent && (
+                  <div className="form-subgroup">
+                    <label htmlFor="total-members">Maximum Members</label>
+                    <input
+                      id="total-members"
+                      type="number"
+                      min="1"
+                      value={newEvent.totalMembersAllowed}
+                      onChange={(e) => setNewEvent({
+                        ...newEvent,
+                        totalMembersAllowed: parseInt(e.target.value) || 1
+                      })}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="modal-footer">
@@ -632,6 +736,16 @@ const fetchMyEvents = async () => {
                 onClick={() => {
                   setShowCreateModal(false);
                   setCreateEventError('');
+                  setNewEvent({
+                    name: '',
+                    description: '',
+                    location: '',
+                    isPrivate: false,
+                    eventDate: '',
+                    applicationDeadline: '',
+                    totalMembersAllowed: -1,
+                    isLimitedMemberEvent: false
+                  });
                 }}
               >
                 Cancel
@@ -639,6 +753,7 @@ const fetchMyEvents = async () => {
               <button
                 className="create-button"
                 onClick={handleCreateEvent}
+                disabled={!newEvent.name || !newEvent.eventDate || !newEvent.applicationDeadline}
               >
                 Create Event
               </button>

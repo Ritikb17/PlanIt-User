@@ -1,216 +1,3 @@
-/* Base Styles */
-.channel-page-container {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  background-color: #f5f5f5;
-}
-
-.channel-page-layout {
-  display: flex;
-  flex: 1;
-  padding-top: 60px;
-}
-
-/* Side Navigation */
-.side-navigation {
-  width: 250px;
-  background-color: #2c3e50;
-  color: white;
-  padding: 20px 0;
-  position: fixed;
-  height: calc(100vh - 60px);
-  overflow-y: auto;
-}
-
-.nav-section {
-  margin-bottom: 30px;
-}
-
-.nav-section h3 {
-  padding: 0 20px;
-  margin-bottom: 15px;
-  font-size: 1.1rem;
-  color: #ecf0f1;
-}
-
-.nav-section ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.nav-section li {
-  padding: 10px 20px;
-  transition: background-color 0.2s;
-}
-
-.nav-section li:hover {
-  background-color: #34495e;
-}
-
-.nav-section a {
-  color: #ecf0f1;
-  text-decoration: none;
-  display: block;
-}
-
-.nav-link-button {
-  background: none;
-  border: none;
-  color: #ecf0f1;
-  cursor: pointer;
-  font-size: 1rem;
-  padding: 0;
-  text-align: left;
-  width: 100%;
-}
-
-/* Main Content */
-.main-content {
-  flex: 1;
-  margin-left: 250px;
-  padding: 20px;
-  background-color: #f5f5f5;
-}
-
-.search-bar {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 30px;
-}
-
-.search-bar input {
-  width: 100%;
-  max-width: 600px;
-  padding: 12px 15px;
-  border: 1px solid #ddd;
-  border-radius: 25px;
-  font-size: 1rem;
-  outline: none;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.search-bar input:focus {
-  border-color: #3498db;
-}
-
-.channels-section {
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.channel-category {
-  margin-bottom: 30px;
-  background-color: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-}
-
-.channel-category h2 {
-  margin-top: 0;
-  margin-bottom: 20px;
-  color: #2c3e50;
-  font-size: 1.3rem;
-}
-
-/* Channel Items */
-.channels-list {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.channel-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px;
-  border: 1px solid #eee;
-  border-radius: 6px;
-  background-color: #fff;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.channel-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.channel-info h3 {
-  margin: 0 0 5px 0;
-  color: #2c3e50;
-  font-size: 1.1rem;
-}
-
-.channel-description {
-  margin: 5px 0 0 0;
-  color: #7f8c8d;
-  font-size: 0.9rem;
-}
-
-.private-badge {
-  display: inline-block;
-  background-color: #e74c3c;
-  color: white;
-  font-size: 0.7rem;
-  padding: 2px 8px;
-  border-radius: 10px;
-  margin-left: 10px;
-  vertical-align: middle;
-}
-
-/* Buttons */
-button {
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.join-btn, .leave-btn, .discover-btn {
-  padding: 8px 15px;
-  border: none;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  white-space: nowrap;
-}
-
-.join-btn {
-  background-color: #2ecc71;
-  color: white;
-}
-
-.join-btn:hover {
-  background-color: #27ae60;
-}
-
-.leave-btn {
-  background-color: #e74c3c;
-  color: white;
-}
-
-.leave-btn:hover {
-  background-color: #c0392b;
-}
-
-.discover-btn {
-  background-color: #3498db;
-  color: white;
-  margin-top: 10px;
-  padding: 10px 20px;
-}
-
-.discover-btn:hover {
-  background-color: #2980b9;
-}
-
-/* No Channels Message */
-.no-channels-message {
-  text-align: center;
-  padding: 30px;
-  color: #7f8c8d;
-}
-
 /* Modal Styles */
 .modal-overlay {
   position: fixed;
@@ -230,7 +17,10 @@ button {
   border-radius: 8px;
   width: 90%;
   max-width: 500px;
+  max-height: 90vh; /* Limit height to viewport */
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-header {
@@ -239,6 +29,7 @@ button {
   align-items: center;
   padding: 20px;
   border-bottom: 1px solid #eee;
+  flex-shrink: 0; /* Prevent header from shrinking */
 }
 
 .modal-header h2 {
@@ -261,51 +52,11 @@ button {
 
 .modal-body {
   padding: 20px;
+  overflow-y: auto; /* Make body scrollable */
+  flex-grow: 1; /* Allow body to take available space */
 }
 
-.form-group {
-  margin-bottom: 20px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-  color: #2c3e50;
-}
-
-.form-group input[type="text"],
-.form-group textarea {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-
-.form-group textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-.form-group input[type="checkbox"] {
-  margin-right: 10px;
-}
-
-.hint {
-  display: block;
-  margin-top: 5px;
-  color: #7f8c8d;
-  font-size: 0.8rem;
-}
-
-.error-message {
-  color: #e74c3c;
-  margin-bottom: 15px;
-  padding: 10px;
-  background-color: #fadbd8;
-  border-radius: 4px;
-}
+/* Rest of your existing modal styles... */
 
 .modal-footer {
   display: flex;
@@ -313,176 +64,28 @@ button {
   padding: 15px 20px;
   border-top: 1px solid #eee;
   gap: 10px;
+  flex-shrink: 0; /* Prevent footer from shrinking */
 }
 
-.cancel-button, .create-button {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-
-.cancel-button {
-  background-color: #ecf0f1;
-  color: #7f8c8d;
-}
-
-.cancel-button:hover {
-  background-color: #bdc3c7;
-}
-
-.create-button {
-  background-color: #3498db;
-  color: white;
-}
-
-.create-button:hover {
-  background-color: #2980b9;
-}
-
-/* User Selection Modal Specific Styles */
+/* For the user selection modal specifically */
 .users-list {
-  max-height: 400px;
+  max-height: 300px; /* Limit height for user list */
   overflow-y: auto;
   margin-bottom: 20px;
 }
 
-.user-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px;
-  border-bottom: 1px solid #eee;
-}
-
-.user-info {
-  flex: 1;
-}
-
-.user-info h4 {
-  margin: 0 0 5px 0;
-  color: #2c3e50;
-}
-
-.user-info p {
-  margin: 0;
-  color: #7f8c8d;
-  font-size: 0.9rem;
-}
-
-.send-request-btn {
-  padding: 8px 15px;
-  border: none;
-  border-radius: 4px;
-  background-color: #3498db;
-  color: white;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  white-space: nowrap;
-}
-
-.send-request-btn:hover:not(:disabled) {
-  background-color: #2980b9;
-}
-
-.send-request-btn:disabled {
-  background-color: #95a5a6;
-  cursor: not-allowed;
-}
-
-.send-request-btn.sent {
-  background-color: #2ecc71;
-}
-
-.send-request-btn.sent:hover {
-  background-color: #27ae60;
-}
-
-/* Loading and Error States */
-.loading-container, .error-container {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  text-align: center;
-}
-
-.error-container button {
-  margin-top: 20px;
-  padding: 10px 20px;
-  background-color: #3498db;
-  color: white;
-  border: none;
-  border-radius: 4px;
-}
-
-.error-container button:hover {
-  background-color: #2980b9;
-}
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  .channel-page-layout {
-    flex-direction: column;
-  }
-
-  .side-navigation {
-    width: 100%;
-    position: static;
-    height: auto;
-    padding: 10px 0;
-  }
-
-  .main-content {
-    margin-left: 0;
-    padding: 15px;
-  }
-
-  .nav-section {
-    margin-bottom: 15px;
-  }
-
-  .nav-section h3 {
-    padding: 0 15px;
-  }
-
-  .nav-section li {
-    padding: 8px 15px;
-  }
-
-  .channel-item {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .channel-actions {
-    margin-top: 10px;
-    align-self: flex-end;
-  }
-
-  .user-item {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .send-request-btn {
-    margin-top: 10px;
-    align-self: flex-end;
-  }
-}
-
+/* Responsive adjustments */
 @media (max-width: 480px) {
-  .search-bar input {
-    padding: 10px 15px;
-  }
-
-  .channel-category {
-    padding: 15px;
-  }
-
   .modal-content {
     width: 95%;
+    max-height: 85vh; /* Slightly smaller on mobile */
+  }
+  
+  .modal-body {
+    padding: 15px;
+  }
+  
+  .users-list {
+    max-height: 250px; /* Smaller scroll area on mobile */
   }
 }

@@ -10,6 +10,9 @@ const event = new Schema({
     sendRequest: [{ type: Schema.Types.ObjectId, ref: "User"}],
     blockedUsers: [{ type: Schema.Types.ObjectId, ref: "User"}],
     eventDate:{type:Date,require:true},
+    applicationDeadline:{type:Date,require:true},
+    totalMembersAllowed:{type :Number,default:-1},
+    isLimitedMemberEvent:{type:Boolean, default:false},
     recivedRequest: [{ type: Schema.Types.ObjectId, ref: "User" }],
     messages: [{
         sender: { type: Schema.Types.ObjectId, ref: "User" },

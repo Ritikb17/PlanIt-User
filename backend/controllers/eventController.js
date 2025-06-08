@@ -10,63 +10,112 @@ const { findByIdAndUpdate } = require('../models/channel');
 const { CgOpenCollective } = require('react-icons/cg');
 const createEvent = async (req, res) => {
     const _id = req.user._id;
-    console.log("user is", _id);
-    const { name: name, description: description, status: isPrivate, eventDate: eventDate, location: location } = req.body; // Destructure request body
+    console.log("Creating event for user:", _id);
+
+    // Destructure all required fields from request body
+    const {
+        name,
+        description,
+        isPrivate = false,
+        eventDate,
+        location,
+        applicationDeadline,
+        isLimitedMemberEvent = false,
+        totalMembersAllowed = 10
+    } = req.body;
 
     try {
+        // Validate required fields
+        if (!name || !eventDate || !applicationDeadline) {
+            return res.status(400).json({
+                message: 'Missing required fields: name, eventDate, and applicationDeadline are required'
+            });
+        }
 
-        console.log('User model:', User); // Check if this shows a Mongoose model
-        console.log('Does findById exist?', typeof User.findById);
+        // Validate dates
+        if (new Date(applicationDeadline) >= new Date(eventDate)) {
+            return res.status(400).json({
+                message: 'Application deadline must be before the event date'
+            });
+        }
 
+        // Validate member limit if enabled
+        if (isLimitedMemberEvent && (!totalMembersAllowed || totalMembersAllowed < 1)) {
+            return res.status(400).json({
+                message: 'Member limit must be at least 1 when enabled'
+            });
+        }
+
+        // Check if user exists
         const user = await User.findById(_id);
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        const userWithEvents = await User.findById(_id).populate('events');
-        const nameCheck = userWithEvents.events.some(event => event.name === name);
-        console.log("this is name check ", nameCheck);
-        if (nameCheck) {
-            return res.status(400).json({ message: "Event with the same name already exists" });
-        }
-
-        const newEvent = await Event.create({
-            name: name,
-            description: description,
-            isPrivate: req.body.isPrivate,
-            createdBy: _id,
-            location: location,
-            eventDate: eventDate,
-            members: [_id],
+        // Check for duplicate event names (case insensitive)
+        const existingEvent = await Event.findOne({
+            name: { $regex: new RegExp(`^${name}$`, 'i') },
+            createdBy: _id
         });
-        console.log("new Event is ", newEvent);
-        if (newEvent) {
-            console.log("new channel is being created ")
-            const newC = { _id: newEvent._id, name: name };
-            const addInUser = await User.findByIdAndUpdate(
-                _id,
-                {
-                    $push: {
-                        events: newEvent._id,
-                        connectedEvents: newEvent._id
-                    }
-                },
-                { new: true }
-            );
-            if (!addInUser) {
-                return res.status(400).json({ message: "Failed to update user with new event" });
-            }
-        } else {
-            return res.status(500).json({ error: "cannot create event" });
+
+        if (existingEvent) {
+            return res.status(400).json({
+                message: "You already have an event with this name"
+            });
         }
 
+        // Create the new event
+        const newEvent = await Event.create({
+            name,
+            description,
+            isPrivate,
+            createdBy: _id,
+            location,
+            eventDate,
+            applicationDeadline,
+            isLimitedMemberEvent,
+            totalMembersAllowed: isLimitedMemberEvent ?
+                Math.max(1, totalMembersAllowed) :
+                -1,
+            members: [_id],
+            sendRequest: [],
+            blockedUsers: [],
+            recivedRequest: [],
+            messages: [],
+            isDelete: false
+        });
 
+        // Update user with the new event reference
+        const updatedUser = await User.findByIdAndUpdate(
+            _id,
+            {
+                $push: {
+                    events: newEvent._id,
+                    connectedEvents: newEvent._id
+                }
+            },
+            { new: true }
+        );
 
+        if (!updatedUser) {
+            // Rollback event creation if user update fails
+            await Event.findByIdAndDelete(newEvent._id);
+            return res.status(400).json({
+                message: "Failed to update user with new event"
+            });
+        }
 
-        return res.status(201).json({ message: "event created successfully", channel: newEvent });
+        return res.status(201).json({
+            message: "Event created successfully",
+            event: newEvent
+        });
+
     } catch (error) {
-        console.error("Error creating channel:", error);
-        return res.status(500).json({ error: "Internal server error" });
+        console.error("Error creating event:", error);
+        return res.status(500).json({
+            error: "Internal server error",
+            details: error.message
+        });
     }
 };
 const getMyEvents = async (req, res) => {
@@ -1119,21 +1168,42 @@ const getDiscoverEvents = async (req, res) => {
         const data = await Event.aggregate([
             {
                 $match: {
-                    createdBy: { $ne: _id },  // Channels not created by the current user
-                    _id: { $nin: userEventsIds },  // Channels the user hasn't joined
-                    isPrivate: false  // Only public channels
+                    createdBy: { $ne: _id },
+                    _id: { $nin: userEventsIds },
+                    isPrivate: false,
+                    isDelete: false,
+                    applicationDeadline: { $gte: new Date() },
+                    $expr: {
+                        $or: [
+                            // Include unlimited member events
+                            { $eq: ["$isLimitedMemberEvent", false] },
+                            // OR limited events that haven't reached capacity
+                            {
+                                $and: [
+                                    { $eq: ["$isLimitedMemberEvent", true] },
+                                    { $lt: [{ $size: "$members" }, "$totalMembersAllowed"] }
+                                ]
+                            }
+                        ]
+                    }
                 }
             },
             {
                 $addFields: {
-                    // Ensure `receiveRequest` is an array (default to empty array if missing)
                     receiveRequest: { $ifNull: ["$recivedRequest", []] },
-                    // Check if the user's ID is in `receiveRequest`
                     alreadySend: {
                         $cond: {
-                            if: { $in: [_id, "$recivedRequest"] },  // Check if `_id` is in the array
+                            if: { $in: [_id, "$recivedRequest"] },
                             then: true,
                             else: false
+                        }
+                    },
+                    // Add a field to show available spots if limited
+                    availableSpots: {
+                        $cond: {
+                            if: { $eq: ["$isLimitedMemberEvent", true] },
+                            then: { $subtract: ["$totalMembersAllowed", { $size: "$members" }] },
+                            else: "Unlimited"
                         }
                     }
                 }
@@ -1143,12 +1213,19 @@ const getDiscoverEvents = async (req, res) => {
                     name: 1,
                     description: 1,
                     alreadySend: 1,
-                    // Include other fields you need
+                    eventDate: 1,
+                    applicationDeadline: 1,
+                    location: 1,
+                    isLimitedMemberEvent: 1,
+                    totalMembersAllowed: 1,
+                    membersCount: { $size: "$members" },
+                    availableSpots: 1
                 }
             }
         ]);
 
-        return res.status(200).json({message:"successfully get the data ",data:data})
+
+        return res.status(200).json({ message: "successfully get the data ", data: data })
 
     } catch (error) {
         console.log(error)
@@ -1367,6 +1444,29 @@ const getBlockUserOfEvent = async (req, res) => {
     }
 }
 
+const getEventInfo = async (req, res) => {
+    const eventId = req.query.eventId;
+    const userId = req.user._id;
+    const objEventId = new ObjectId(eventId);
+
+    try {
+        const event = await Event.findById(eventId).populate({
+                path: 'members',
+                select: 'name email _id'
+            })
+            .select("members createdBy description");
+
+            console.log("the event is ",event)
+        if (event.members.includes(userId)) {
+            return res.status(403).json({ message: "not the member of the channel" });
+        }
+        return res.status(200).json({ message: "successfully get the channel", data: event });
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ message: "internal server error " })
+    }
+}
+
 
 module.exports = {
     createEvent, getMyEvents, updateEventInfo,
@@ -1377,6 +1477,6 @@ module.exports = {
     getEventConnectionRequestListToEvents, getEventConnectionRequestListToUser,
     acceptEventConnectionRequestSendByCreator, getEventRequests, getConnectionForEventConnectionRequest,
     getSuggestionsForEventConnectionRequest, getDiscoverEvents, blockUserEvent,
-    unblockUserEvent, getConnectedUsersEvent, removeUserFromEvent, getBlockUserOfEvent
+    unblockUserEvent, getConnectedUsersEvent, removeUserFromEvent, getBlockUserOfEvent, getEventInfo
 };
 
