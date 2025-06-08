@@ -408,7 +408,7 @@ const sendEventConnectionRequestByOtherUser = async (req, res) => {
         if (isSenderBlockes) {
             return res.status(400).json({ message: "you cannnot send request to the event  contact the owner of the event " })
         }
-    
+
         if (sender_id === creatorId) {
             return res.status(400).json({ message: "You cannot send a request to yourself" });
         }
@@ -1111,18 +1111,47 @@ const getSuggestionsForEventConnectionRequest = async (req, res) => {
         res.status(500).json({ message: "Cannot fetch connections.", error: error.message });
     }
 };
-const discoverEvent = async (req, res) => {
+const getDiscoverEvents = async (req, res) => {
+    const _id = req.user._id;
     try {
-        const userId = req.user._id;
-        console.log("user id ", userId.toString());
-        const eventList = await Event.find({
-            blockedUsers: { $nin: [userId] }
-        })
-            .select("name description createdAt")
-            .sort({ createdAt: -1 })
-            .lean();
-        res.status(200).json({ eventList });
+        const userEvents = await Event.find({ members: _id }).select('_id');
+        const userEventsIds = userEvents.map(ch => ch._id);
+        const data = await Event.aggregate([
+            {
+                $match: {
+                    createdBy: { $ne: _id },  // Channels not created by the current user
+                    _id: { $nin: userEventsIds },  // Channels the user hasn't joined
+                    isPrivate: false  // Only public channels
+                }
+            },
+            {
+                $addFields: {
+                    // Ensure `receiveRequest` is an array (default to empty array if missing)
+                    receiveRequest: { $ifNull: ["$recivedRequest", []] },
+                    // Check if the user's ID is in `receiveRequest`
+                    alreadySend: {
+                        $cond: {
+                            if: { $in: [_id, "$recivedRequest"] },  // Check if `_id` is in the array
+                            then: true,
+                            else: false
+                        }
+                    }
+                }
+            },
+            {
+                $project: {
+                    name: 1,
+                    description: 1,
+                    alreadySend: 1,
+                    // Include other fields you need
+                }
+            }
+        ]);
+
+        return res.status(200).json({message:"successfully get the data ",data:data})
+
     } catch (error) {
+        console.log(error)
         res.status(500).json({ message: "Cannot fetch events.", error: error.message });
 
 
@@ -1239,46 +1268,41 @@ const unblockUserEvent = async (req, res) => {
 
 const removeUserFromEvent = async (req, res) => {
     try {
-        const userId= req.user._id;
+        const userId = req.user._id;
         const eventId = req.body.eventId;
         const otherUserId = req.body.otherUserId;
         const otherUserObjId = new ObjectId(otherUserId);
         const eventObjectId = new ObjectId(eventId);
         const event = await Event.findById(eventId);
         const otherUser = await User.findById(otherUserObjId);
-        
-        if(!event)
-        {
-            return res.status(403).json({message:"Event not found"});
+
+        if (!event) {
+            return res.status(403).json({ message: "Event not found" });
         }
 
-        if(!userId.equals(event.createdBy))
-        {
-            return res.status(401).json({message: "you are not the owner of the event"})
+        if (!userId.equals(event.createdBy)) {
+            return res.status(401).json({ message: "you are not the owner of the event" })
         }
 
-        if(userId.equals(otherUserObjId))
-        {
-            return res.status(401).json({message: "you can`t remve yourself from the event "})
+        if (userId.equals(otherUserObjId)) {
+            return res.status(401).json({ message: "you can`t remve yourself from the event " })
         }
 
-        if(!event.members.includes(otherUserObjId))
-        {
-            return res.status(401).json({message: "not the member of the event "})
+        if (!event.members.includes(otherUserObjId)) {
+            return res.status(401).json({ message: "not the member of the event " })
         }
-        
 
-       if(!await User.findById(userId))
-       {
-        return res.status(403).json({message:"User not found"});
-       }
 
-       event.members = event.members.filter(id => !id.equals(otherUserObjId));
-       otherUser.connectedEvents = otherUser.connectedEvents.filter(id => !id.equals(eventObjectId));
-       await event.save();
-       await otherUser.save();
-       return res.status(200).json({message:"successfully removes the user from the event"})
-       
+        if (!await User.findById(userId)) {
+            return res.status(403).json({ message: "User not found" });
+        }
+
+        event.members = event.members.filter(id => !id.equals(otherUserObjId));
+        otherUser.connectedEvents = otherUser.connectedEvents.filter(id => !id.equals(eventObjectId));
+        await event.save();
+        await otherUser.save();
+        return res.status(200).json({ message: "successfully removes the user from the event" })
+
 
     } catch (error) {
         console.log(error)
@@ -1299,8 +1323,7 @@ const getConnectedUsersEvent = async (req, res) => {
         if (!event) {
             return res.status(404).json({ message: "Event not found" });
         }
-        if(event.members.includes(userId))
-        {
+        if (event.members.includes(userId)) {
             return res.status(200).json({ message: "not the member of the event" });
         }
         return res.status(200).json({
@@ -1315,8 +1338,7 @@ const getConnectedUsersEvent = async (req, res) => {
     }
 }
 
-const getBlockUserOfEvent = async (req,res)=>
-{
+const getBlockUserOfEvent = async (req, res) => {
     const { eventId } = req.body;
     const objEventId = new ObjectId(eventId);
 
@@ -1326,7 +1348,7 @@ const getBlockUserOfEvent = async (req,res)=>
             path: 'blockedUsers',
             select: 'name email _id'
         }).select("blockedUsers")
-   
+
         if (userId.equals(event.createdBy)) {
             return res.status(403).json({ message: "you are not the creator of the channel " })
         }
@@ -1346,13 +1368,15 @@ const getBlockUserOfEvent = async (req,res)=>
 }
 
 
-module.exports = { createEvent, getMyEvents, updateEventInfo, 
+module.exports = {
+    createEvent, getMyEvents, updateEventInfo,
     deleteEvent, sendEventConnectionRequest, sendEventConnectionRequestByOtherUser
-    , unsendEventConnectionRequestByOtherUser, leaveEvent, 
+    , unsendEventConnectionRequestByOtherUser, leaveEvent,
     unsendEventConnectionRequest, acceptEventConnectionRequestSendByOtherUser,
-     rejectEventConnectionRequestSendByOtherUser, rejectEventConnectionRequestSendByCreator,
-      getEventConnectionRequestListToEvents, getEventConnectionRequestListToUser,
-       acceptEventConnectionRequestSendByCreator, getEventRequests, getConnectionForEventConnectionRequest,
-        getSuggestionsForEventConnectionRequest, discoverEvent, blockUserEvent,
-         unblockUserEvent, getConnectedUsersEvent,removeUserFromEvent ,getBlockUserOfEvent};
+    rejectEventConnectionRequestSendByOtherUser, rejectEventConnectionRequestSendByCreator,
+    getEventConnectionRequestListToEvents, getEventConnectionRequestListToUser,
+    acceptEventConnectionRequestSendByCreator, getEventRequests, getConnectionForEventConnectionRequest,
+    getSuggestionsForEventConnectionRequest, getDiscoverEvents, blockUserEvent,
+    unblockUserEvent, getConnectedUsersEvent, removeUserFromEvent, getBlockUserOfEvent
+};
 

@@ -7,7 +7,8 @@ import PrivateRoute from "./PrivateRoute ";
 import Profile from "./pages/Profile";
 import Register from "./pages/Register";
 import GroupPage from "./pages/GroupPage";
-import Discover from "./pages/DiscoverPage";
+import Discover from "./pages/DiscoverPage"; 
+import DiscoverEvents from "./pages/DiscoverEvents"; 
 import BlockUser from "./pages/BlockUserPage";
 
 import EventPage from "./pages/EventPage";
@@ -51,6 +52,7 @@ function App() {
           <Route path="/profile/:username" element={<OtherUserProfile/>}/>
           <Route path="/group-requests" element={<GroupRequestsPage/>}/>
           <Route path="/discover-groups" element={<DiscoverGroups/>}/>
+          <Route path="/discover-events" element={<DiscoverEvents/>}/>
           <Route path="/channel-requests" element={<GroupConnectionRequests/>}/>
         </Route>
       </Routes>

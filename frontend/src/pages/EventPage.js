@@ -527,9 +527,6 @@ const fetchMyEvents = async () => {
               <li>
                 <a href="/discover-events">Discover Events</a>
               </li>
-              <li>
-                <a href="/my-pending-requests">My Pending Requests</a>
-              </li>
             </ul>
           </div>
         </div>
