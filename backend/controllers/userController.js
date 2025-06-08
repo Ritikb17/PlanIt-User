@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const Chat = require('../models/chat');
+const Channel = require('../models/channel');
 const Notification = require('../models/notification')
 const mongoose = require("mongoose");
 const ObjectId = mongoose.Types.ObjectId;
@@ -508,21 +509,24 @@ const getSuggestionForChannelConnectionRequest = async (req, res) => {
     if (!currentUser) {
       return res.status(404).json({ message: "Current user not found." });
     }
+    const channel = await Channel.findById(channel_id).select("recivedRequest");
 
     const friendIds = currentUser.connections.map(connection => connection.friend);
     const blockedUserIds = currentUser.blockUsers;
     const sendRequestUserIds = currentUser.sendFollowRequest;
+    const recivedRequest = channel.recivedRequest;
+   
 
     const skip = (page - 1) * limit;
 
 
     const nonFriends = await User.find({
       _id: {
-        $nin: [ ...blockedUserIds, ...sendRequestUserIds, self_id],
+        $nin: [ ...blockedUserIds, ...sendRequestUserIds, self_id,recivedRequest],
       },
-      receivedChannelRequest: {
-        $not: { $elemMatch: { $eq: channel_id } }
-      },
+      // receivedChannelRequest: {
+      //   $not: { $elemMatch: { $eq: channel_id } }
+      // },
       connectedChannels: { $not: { $elemMatch: { $eq: channel_id } } } 
     })
     .select("username name")

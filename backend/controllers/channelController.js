@@ -806,13 +806,19 @@ const sendChannelConnectionRequestByOtherUser = async (req, res) => {
             }
 
         })
+        await User.findByIdAndUpdate(channel.crea, {
+            $push: {
+                "sendChannelRequest": channelId
+            }
+
+        })
 
         const notificationVerification = await Notification.findOneAndUpdate(
             { user: channel.createdBy },
             {
                 $push: {
                     notification: {
-                        message: `${user} SEND YOUR CHANNEL CONNECTION REQUEST ${channel.name} `,
+                        message: `SEND YOUR CHANNEL CONNECTION REQUEST ${channel.name} `,
                         type: "channel", // Changed to match your schema enum
                         // isSeen will default to false as per your schema
                     },
@@ -949,12 +955,12 @@ const acceptChannelConnectionRequestByCreator = async (req, res) => {
 //this controller return the list of the users who have sent a request to the channel
 const getRequestToChannelsSendOtherUser = async (req, res) =>{
     const userId = req.user._id;
-    const channelId = req.body.channelId;
+  const channelId = req.query.channelId; // For URLs like `/endpoint?channelId=123`
     
     try {
         const channel = await Channel.findById(channelId).populate({
             path: "recivedRequest",
-            select: "name  username email",
+            select: "name  username ",
 
         });
         console.log("channel is ",channel);

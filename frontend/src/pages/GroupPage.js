@@ -22,21 +22,21 @@ const GroupPage = () => {
   });
   const [createChannelError, setCreateChannelError] = useState('');
   // At the top with other state declarations
-const [isChatModalOpen, setIsChatModalOpen] = useState(false);
-const [selectedChatChannel, setSelectedChatChannel] = useState(null);
-// Add these state variables near your other state declarations
-const [receivedRequests, setReceivedRequests] = useState([]);
-const [showReceivedRequestsModal, setShowReceivedRequestsModal] = useState(false);
-const [currentChannelForRequests, setCurrentChannelForRequests] = useState(null);
-const openChatModal = (channel) => {
-  setSelectedChatChannel(channel);
-  setIsChatModalOpen(true);
-};
+  const [isChatModalOpen, setIsChatModalOpen] = useState(false);
+  const [selectedChatChannel, setSelectedChatChannel] = useState(null);
+  // Add these state variables near your other state declarations
+  const [receivedRequests, setReceivedRequests] = useState([]);
+  const [showReceivedRequestsModal, setShowReceivedRequestsModal] = useState(false);
+  const [currentChannelForRequests, setCurrentChannelForRequests] = useState(null);
+  const openChatModal = (channel) => {
+    setSelectedChatChannel(channel);
+    setIsChatModalOpen(true);
+  };
 
-const closeChatModal = () => {
-  setIsChatModalOpen(false);
-  setSelectedChatChannel(null);
-};
+  const closeChatModal = () => {
+    setIsChatModalOpen(false);
+    setSelectedChatChannel(null);
+  };
   const navigate = useNavigate();
 
   const userId = JSON.parse(atob(localStorage.getItem('token').split('.')[1])).id;
@@ -48,26 +48,26 @@ const closeChatModal = () => {
     fetchOtherChannels();
   }, []);
 
-    const fetchMyChannels = async () => {
-      try {
-        setLoading(true);
-        const response = await axios.get('http://localhost:5000/api/channel/get-my-channels', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+  const fetchMyChannels = async () => {
+    try {
+      setLoading(true);
+      const response = await axios.get('http://localhost:5000/api/channel/get-my-channels', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
 
-        const connectedChannels = response.data.connectedgroups.channels || [];
-        const allChannels = response.data.connectedgroups?.channels || [];
+      const connectedChannels = response.data.connectedgroups.channels || [];
+      const allChannels = response.data.connectedgroups?.channels || [];
 
-        setMyChannels(connectedChannels);
+      setMyChannels(connectedChannels);
 
-      } catch (err) {
-        setError(err.response?.data?.message || err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+    } catch (err) {
+      setError(err.response?.data?.message || err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
   const fetchOtherChannels = async () => {
     try {
       setLoading(true);
@@ -110,14 +110,14 @@ const closeChatModal = () => {
   const handleJoinChannel = async (channel) => {
     setSelectedChannel(channel);
     const channel_id = channel._id;
-    let endpoint=''
+    let endpoint = ''
 
     try {
-      if(channel.isPrivate){
-       endpoint =`http://localhost:5000/api/user/get-connections-for-channel-request/${channel_id}`
+      if (channel.isPrivate) {
+        endpoint = `http://localhost:5000/api/user/get-connections-for-channel-request/${channel_id}`
       }
-      else{
-       endpoint =`http://localhost:5000/api/user/get-suggestion-for-channel-request/${channel_id}`
+      else {
+        endpoint = `http://localhost:5000/api/user/get-suggestion-for-channel-request/${channel_id}`
 
       }
 
@@ -230,30 +230,49 @@ const closeChatModal = () => {
   };
   const handleRequestAction = async (requestId, action) => {
   try {
-    // Implement your API call to accept/reject the request
-    // This is just a placeholder - adjust based on your API
-    const response = await fetch(`http://localhost:5000/api/channel/${action}-request`, {
-      method: 'POST',
+    const token = localStorage.getItem('token');
+    const channelId = currentChannelForRequests; // Assuming you have this state
+    const otherUserId = requestId; // Assuming requestId is the user ID to act upon
+
+    let endpoint, method;
+    
+    if (action === 'accept') {
+      endpoint = 'accept-channel-connection-request-by-creator';
+      method = 'PUT';
+    } else if (action === 'reject') {
+      endpoint = 'reject-channel-connection-request-by-creator'; // Adjust if different
+      method = 'PUT'; // Or 'DELETE' if that's your API design
+    }
+
+    const response = await fetch(`http://localhost:5000/api/channel/${endpoint}`, {
+      method: method,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
-        requestId: requestId
+        channelId: channelId,
+        otherUserId: otherUserId
       })
     });
-    
+
     if (!response.ok) {
       throw new Error(`Failed to ${action} request`);
-    }
-    
-    // Update the UI by removing the handled request
+    }else{
+      
+    console.log(response)
+    alert(`successfully ${action}`)}
+
+    // Update UI by removing the handled request
     setReceivedRequests(prev => prev.filter(req => req._id !== requestId));
-    
-    // Optionally show a success message
+
+    // Show success feedback
+    console.log(`Successfully ${action}ed request`);
+    // You might want to add toast notification here
+
   } catch (error) {
     console.error(`Error ${action}ing request:`, error);
-    // Handle error (show toast, etc.)
+    // Handle error (show error toast, etc.)
   }
 };
 
@@ -262,34 +281,35 @@ const closeChatModal = () => {
   const myChannelsList = myChannels
   console.log("MY CHANNEL LIST ", myChannelsList)
   const handleShowReceivedRequests = async (channelId) => {
-  try {
-    const token = localStorage.getItem('token');
-    setCurrentChannelForRequests(channelId);
-    console.log("the channel id is",channelId)
-    const response = await fetch('http://localhost:5000/api/channel/get-request-to-the-channel-send-by-other-user', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}` // Replace with your actual token
-      },
-      body: JSON.stringify({
-        channelId: channelId
-      })
-    });
-    console.log("resposne is",response)
-    if (!response.ok) {
-      throw new Error('Failed to fetch requests');
+    try {
+      const token = localStorage.getItem('token');
+      setCurrentChannelForRequests(channelId);
+      console.log("the channel id is", channelId);
+
+      const response = await fetch(
+        `http://localhost:5000/api/channel/get-request-to-the-channel-send-by-other-user?channelId=${channelId}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      console.log("response is", response);
+      if (!response.ok) {
+        throw new Error('Failed to fetch requests');
+      }
+
+      const data = await response.json();
+      setReceivedRequests(data.data);
+      console.log("the data from the api is ", data.data);
+      setShowReceivedRequestsModal(true);
+    } catch (error) {
+      console.error('Error fetching received requests:', error);
     }
-    
-    const data = await response.json();
-    setReceivedRequests(data.requests); // Adjust based on your API response structure
-    console.log("the dat form the api is ",data.request);
-    setShowReceivedRequestsModal(true);
-  } catch (error) {
-    console.error('Error fetching received requests:', error);
-    // Handle error (show toast, etc.)
-  }
-};
+  };
 
 
   if (loading) {
@@ -310,73 +330,73 @@ const closeChatModal = () => {
   }
 
   const renderChannelList = (channels, isMyChannel = false) => (
-  <div className="channels-list">
-    {channels.length > 0 ? (
-      channels.map((channel) => (
-        <div key={channel._id} className="channel-item">
-          <div 
-            className="channel-info" 
-            onClick={() => openChatModal(channel)}
-            style={{ cursor: 'pointer' }}
-          >
-            <h3>{channel.name}</h3>
-            {channel.isPrivate && <span className="private-badge">Private</span>}
-            <p className="channel-description">{channel.description || 'No description'}</p>
-          </div>
-          <div className="channel-actions">
-            {isMyChannel ? (
-              <button
-                className="leave-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleLeaveChannel(channel._id);
-                }}
-              >
-                Leave
-              </button>
-            ) : (
-              <>
+    <div className="channels-list">
+      {channels.length > 0 ? (
+        channels.map((channel) => (
+          <div key={channel._id} className="channel-item">
+            <div
+              className="channel-info"
+              onClick={() => openChatModal(channel)}
+              style={{ cursor: 'pointer' }}
+            >
+              <h3>{channel.name}</h3>
+              {channel.isPrivate && <span className="private-badge">Private</span>}
+              <p className="channel-description">{channel.description || 'No description'}</p>
+            </div>
+            <div className="channel-actions">
+              {isMyChannel ? (
                 <button
-                  className="join-btn"
+                  className="leave-btn"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleJoinChannel(channel);
+                    handleLeaveChannel(channel._id);
                   }}
                 >
-                  Send Connection Request
+                  Leave
                 </button>
-                <button
-                  className="receive-request-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleShowReceivedRequests(channel._id);
-                  }}
-                >
-                  View Requests
-                </button>
-              </>
-            )}
+              ) : (
+                <>
+                  <button
+                    className="join-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleJoinChannel(channel);
+                    }}
+                  >
+                    Send Connection Request
+                  </button>
+                  <button
+                    className="receive-request-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleShowReceivedRequests(channel._id);
+                    }}
+                  >
+                    View Requests
+                  </button>
+                </>
+              )}
+            </div>
           </div>
+        ))
+      ) : (
+        <div className="no-channels-message">
+          {isMyChannel
+            ? 'You are not a member of any channels yet.'
+            : 'No channels available to join.'}
+          <br />
+          {isMyChannel && (
+            <button
+              className="discover-btn"
+              onClick={() => navigate('/discover-groups')}
+            >
+              Discover Groups
+            </button>
+          )}
         </div>
-      ))
-    ) : (
-      <div className="no-channels-message">
-        {isMyChannel
-          ? 'You are not a member of any channels yet.'
-          : 'No channels available to join.'}
-        <br />
-        {isMyChannel && (
-          <button
-            className="discover-btn"
-            onClick={() => navigate('/discover-groups')}
-          >
-            Discover Groups
-          </button>
-        )}
-      </div>
-    )}
-  </div>
-);
+      )}
+    </div>
+  );
 
 
   return (
@@ -403,9 +423,7 @@ const closeChatModal = () => {
               <li>
                 <a href="/discover-groups">Discover Channels</a>
               </li>
-              <li>
-                <a href="/my-pending-requests">My Pending Requests</a>
-              </li>
+
             </ul>
           </div>
         </div>
@@ -424,11 +442,11 @@ const closeChatModal = () => {
           <div className="channels-section">
             <div className="channel-category">
               <h2>My Channels</h2>
-              {renderChannelList(myChannels,false)}
+              {renderChannelList(myChannels, false)}
             </div>
             <div className="channel-category">
               <h2>Connected Channels</h2>
-              {renderChannelList(otherChannels,true)}
+              {renderChannelList(otherChannels, true)}
             </div>
 
 
@@ -573,77 +591,71 @@ const closeChatModal = () => {
       )}
 
       {/* Channel Chat Modal */}
-{isChatModalOpen && selectedChatChannel && (
-  <ChannelChatModal
-    channel={selectedChatChannel}
-    onClose={closeChatModal}
-    // Pass any additional props your ChannelChatModal needs
-    // For example:
-    currentUserId={userId}
-    // token={token}
-  />
-)}
-{showReceivedRequestsModal && (
-  <div className="modal-overlay">
-    <div className="modal-content">
-      <div className="modal-header">
-        <h2>Received Join Requests</h2>
-        <button
-          className="close-button"
-          onClick={() => {
-            setShowReceivedRequestsModal(false);
-            setReceivedRequests([]);
-          }}
-        >
-          &times;
-        </button>
-      </div>
+      {isChatModalOpen && selectedChatChannel && (
+        <ChannelChatModal
+          channel={selectedChatChannel}
+          onClose={closeChatModal}
+          // Pass any additional props your ChannelChatModal needs
+          // For example:
+          currentUserId={userId}
+        // token={token}
+        />
+      )}
+      {showReceivedRequestsModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>Received Join Requests</h2>
+              <button
+                className="close-button"
+                onClick={() => {
+                  setShowReceivedRequestsModal(false);
+                  setReceivedRequests([]);
+                }}
+              >
+                &times;
+              </button>
+            </div>
 
-      <div className="modal-body">
-        {receivedRequests.length > 0 ? (
-          <div className="requests-list">
-            {receivedRequests.map(request => (
-              <div key={request._id} className="request-item">
-                <div className="user-info">
-                  <h4>{request.sender.name || request.sender.username}</h4>
-                  <p>Status: {request.status}</p>
+            <div className="modal-body">
+              {receivedRequests && receivedRequests.length > 0 ? (
+                <div className="requests-list">
+                  {receivedRequests.map(request => (
+                    <div key={request._id} className="request-item">
+                      <div className="user-info">
+                        <h4>{request.name || request.username}</h4>
+                        <p>Status: {request.status || "Pending"}</p>
+                      </div>
+                      <div className="request-actions">
+                        <button onClick={() => handleRequestAction(request._id, 'accept')}>
+                          Accept
+                        </button>
+                        <button onClick={() => handleRequestAction(request._id, 'reject')}>
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="request-actions">
-                  <button
-                    className="accept-btn"
-                    onClick={() => handleRequestAction(request._id, 'accept')}
-                  >
-                    Accept
-                  </button>
-                  <button
-                    className="reject-btn"
-                    onClick={() => handleRequestAction(request._id, 'reject')}
-                  >
-                    Reject
-                  </button>
-                </div>
-              </div>
-            ))}
+              ) : (
+                <p>No pending requests for this channel.</p>
+              )}
+            </div>
+
+            <div className="modal-footer">
+              <button
+                className="cancel-button"
+                onClick={() => {
+                  setShowReceivedRequestsModal(false);
+                  setReceivedRequests([]);
+                }}
+              >
+                Close
+              </button>
+            </div>
           </div>
-        ) : (
-          <p>No pending requests for this channel.</p>
-        )}
-      </div>
-
-      <div className="modal-footer">
-        <button
-          className="cancel-button"
-          onClick={() => {
-            setShowReceivedRequestsModal(false);
-            setReceivedRequests([]);
-          }}
-        >
-          Close
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+        </div>
+      )}
     </div>
   );
 };
