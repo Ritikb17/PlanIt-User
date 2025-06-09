@@ -313,7 +313,7 @@ const sendEventConnectionRequest = async (req, res) => {
         // Add the sender to the channel's sendRequest array
         const updateEvent = await Event.findByIdAndUpdate(
             event__id,
-            { $push: { sendEventConnectionRequest: sender_id } },
+            { $push: { sendRequest: sender_id } },
             { new: true }
         );
 
@@ -324,7 +324,7 @@ const sendEventConnectionRequest = async (req, res) => {
         // Add the channel to the sender's receivedChannelRequest array
         const updatedSender = await User.findByIdAndUpdate(
             sender_id,
-            { $push: { receivedEventRequest: event__id } }, // Corrected spelling
+            { $push: { receivedEventConnectionRequest: event__id } }, // Corrected spelling
             { new: true }
         );
 
@@ -613,7 +613,7 @@ const acceptEventConnectionRequestSendByOtherUser = async (req, res) => {
         if (!event) {
             return res.status(404).json({ message: "EVENT IS NOT FOUND" });
         }
-        if (!event.recivedRquest.includes(sender_id)) {
+        if (!event.recivedRequest.includes(sender_id)) {
             return res.status(404).json({ message: "REQUEST IS NOT FOUND " });
 
         }
@@ -693,7 +693,7 @@ const acceptEventConnectionRequestSendByCreator = async (req, res) => {
             return res.status(404).json({ message: "EVENT IS NOT FOUND" });
         }
 
-        if (!self.receivedEventConnectionRequest.includes(event__id)) {
+        if (!self.receiveRequest.includes(event__id)) {
             return res.status(404).json({ message: "REQUEST IS NOT FOUND" });
         }
 
