@@ -19,6 +19,7 @@ const channel = new Schema({
 
     }],
     members: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    pools:[{type:Schema.Types.ObjectId,ref:"ChannelPool"}],
     isDelete: { type: Boolean, default: false } // Added isDelete field
 })
 

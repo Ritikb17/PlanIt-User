@@ -10,6 +10,10 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [showChannelInfo, setShowChannelInfo] = useState(false);
   const [channelDetails, setChannelDetails] = useState(null);
+  const [showPollForm, setShowPollForm] = useState(false);
+  const [pollTitle, setPollTitle] = useState('');
+  const [pollOptions, setPollOptions] = useState(['', '']);
+  const [allowMultipleChoices, setAllowMultipleChoices] = useState(false);
   const messagesEndRef = useRef(null);
   const socketRef = useRef(null);
 
@@ -104,14 +108,29 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
       );
     };
 
+    const handleNewPoll = (data) => {
+      socket.emit('get-message-of-the-channel', 
+        { channelId: channel._id }, 
+        (response) => {
+          if (response?.status === 'success') {
+            setMessages(response.messages || []);
+          } else {
+            console.error('Failed to get messages:', response?.message);
+          }
+        }
+      );
+    };
+
     socket.on('new-channel-message', handleNewMessage);
     socket.on('message-edited', handleMessageEdited);
     socket.on('message-deleted', handleMessageDeleted);
+    socket.on('new-channel-poll', handleNewPoll);
 
     return () => {
       socket.off('new-channel-message', handleNewMessage);
       socket.off('message-edited', handleMessageEdited);
       socket.off('message-deleted', handleMessageDeleted);
+      socket.off('new-channel-poll', handleNewPoll);
       socket.emit('leave-channel', { channelId: channel._id, userId: currentUserId });
       socket.disconnect();
     };
@@ -195,6 +214,67 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
     });
   };
 
+  // Poll related functions
+  const handleAddPollOption = () => {
+    if (pollOptions.length < 10) {
+      setPollOptions([...pollOptions, '']);
+    }
+  };
+
+  const handleRemovePollOption = (index) => {
+    if (pollOptions.length > 2) {
+      const newOptions = [...pollOptions];
+      newOptions.splice(index, 1);
+      setPollOptions(newOptions);
+    }
+  };
+
+  const handlePollOptionChange = (index, value) => {
+    const newOptions = [...pollOptions];
+    newOptions[index] = value;
+    setPollOptions(newOptions);
+  };
+
+  const handleCreatePoll = () => {
+    if (!pollTitle.trim() || pollOptions.some(opt => !opt.trim())) {
+      alert('Please fill all poll fields');
+      return;
+    }
+
+    const pollData = {
+      channelId: channel._id,
+      title: pollTitle,
+      options: pollOptions.map(opt => ({ title: opt })),
+      allowMultipleChoices,
+      createdBy: currentUserId
+    };
+
+    socketRef.current.emit('create-channel-poll', pollData, (response) => {
+      if (response.status === 'success') {
+        setShowPollForm(false);
+        setPollTitle('');
+        setPollOptions(['', '']);
+        setAllowMultipleChoices(false);
+      } else {
+        console.error('Failed to create poll:', response.message);
+      }
+    });
+  };
+
+  const handleVote = (pollId, optionId) => {
+    if (!socketRef.current) return;
+
+    socketRef.current.emit('vote-on-poll', {
+      pollId,
+      optionId,
+      userId: currentUserId
+    }, (response) => {
+      if (response.status !== 'success') {
+        console.error('Failed to vote:', response.message);
+      }
+    });
+  };
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -220,13 +300,62 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
     setShowChannelInfo(!showChannelInfo);
   };
 
+  const renderMessageContent = (msg) => {
+    if (msg.isDeleted) {
+      return <p className="deleted-message-text">[Message deleted]</p>;
+    }
+
+    if (msg.poll) {
+      return (
+        <div className="poll-message">
+          <h4>{msg.poll.title}</h4>
+          <ul className="poll-options">
+            {msg.poll.options.map(option => (
+              <li key={option._id}>
+                <button 
+                  onClick={() => handleVote(msg.poll._id, option._id)}
+                  disabled={msg.poll.status !== 'open'}
+                >
+                  {option.title}
+                  {option.votes > 0 && (
+                    <span className="vote-count"> ({option.votes})</span>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="poll-meta">
+            {msg.poll.status === 'closed' && <span className="poll-closed">[Closed]</span>}
+            {msg.poll.allowMultipleChoices && <span className="poll-multiple">[Multiple choices allowed]</span>}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <>
+        <p className="message-content">{msg.message}</p>
+        {msg.sender === currentUserId && (
+          <div className="message-actions">
+            <button onClick={() => handleEdit(msg._id, msg.message)}>
+              Edit
+            </button>
+            <button onClick={() => handleDelete(msg._id)}>
+              Delete
+            </button>
+          </div>
+        )}
+      </>
+    );
+  };
+
   return (
     <div className="channel-chat-modal-overlay">
       <div className="channel-chat-modal">
         <div className="channel-chat-header">
           <div className="channel-header-left" onClick={toggleChannelInfo}>
             <h2>#{channel.name}</h2>
-            <button className="info-button" >
+            <button className="info-button">
               ℹ️
             </button>
           </div>
@@ -271,9 +400,6 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
               {messages.map((msg) => {
                 const isMine = msg.sender === currentUserId;
                 const isDeleted = msg.isDeleted;
-                const messageContent = typeof msg.message === 'string' 
-                  ? msg.message 
-                  : msg.message?.message || '[Invalid message format]';
 
                 return (
                   <div 
@@ -290,30 +416,12 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
                           autoFocus
                         />
                       ) : (
-                        <>
-                          {isDeleted ? (
-                            <p className="deleted-message-text">[Message deleted]</p>
-                          ) : (
-                            <>
-                              <p className="message-content">{messageContent}</p>
-                              {isMine && !isDeleted && (
-                                <div className="message-actions">
-                                  <button onClick={() => handleEdit(msg._id, messageContent)}>
-                                    Edit
-                                  </button>
-                                  <button onClick={() => handleDelete(msg._id)}>
-                                    Delete
-                                  </button>
-                                </div>
-                              )}
-                            </>
-                          )}
-                        </>
+                        renderMessageContent(msg)
                       )}
                       {msg.timestamp && (
                         <div className="message-time">
                           {formatTime(msg.timestamp)}
-                          {msg.isEdited && !isDeleted && ' (edited)'}
+                          {msg.isEdited && !isDeleted && !msg.poll && ' (edited)'}
                           {msg.failed && ' (failed)'}
                         </div>
                       )}
@@ -327,27 +435,82 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
         </div>
 
         <div className="channel-chat-footer">
-          <input
-            type="text"
-            value={editingId ? editText : input}
-            onChange={(e) => editingId ? setEditText(e.target.value) : setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={editingId ? "Edit your message..." : "Type a message..."}
-            disabled={!isConnected}
-          />
-          {editingId ? (
-            <>
-              <button onClick={handleEditSubmit} disabled={!editText.trim()}>
-                Save
-              </button>
-              <button onClick={() => { setEditingId(null); setEditText(''); }}>
-                Cancel
-              </button>
-            </>
+          {showPollForm ? (
+            <div className="poll-creation-form">
+              <input
+                type="text"
+                value={pollTitle}
+                onChange={(e) => setPollTitle(e.target.value)}
+                placeholder="Poll question"
+              />
+              {pollOptions.map((option, index) => (
+                <div key={index} className="poll-option-input">
+                  <input
+                    type="text"
+                    value={option}
+                    onChange={(e) => handlePollOptionChange(index, e.target.value)}
+                    placeholder={`Option ${index + 1}`}
+                  />
+                  {pollOptions.length > 2 && (
+                    <button 
+                      onClick={() => handleRemovePollOption(index)}
+                      className="remove-option-btn"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              ))}
+              <div className="poll-form-actions">
+                <button onClick={handleAddPollOption} disabled={pollOptions.length >= 10}>
+                  Add Option
+                </button>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={allowMultipleChoices}
+                    onChange={(e) => setAllowMultipleChoices(e.target.checked)}
+                  />
+                  Allow multiple choices
+                </label>
+                <button onClick={handleCreatePoll}>Create Poll</button>
+                <button onClick={() => setShowPollForm(false)}>Cancel</button>
+              </div>
+            </div>
           ) : (
-            <button onClick={handleSend} disabled={!input.trim() || !isConnected}>
-              Send
-            </button>
+            <>
+              <div className="message-input-container">
+                <input
+                  type="text"
+                  value={editingId ? editText : input}
+                  onChange={(e) => editingId ? setEditText(e.target.value) : setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={editingId ? "Edit your message..." : "Type a message..."}
+                  disabled={!isConnected}
+                />
+                <button 
+                  className="poll-toggle-btn"
+                  onClick={() => setShowPollForm(true)}
+                  disabled={editingId || !isConnected}
+                >
+                  Create Poll
+                </button>
+              </div>
+              {editingId ? (
+                <>
+                  <button onClick={handleEditSubmit} disabled={!editText.trim()}>
+                    Save
+                  </button>
+                  <button onClick={() => { setEditingId(null); setEditText(''); }}>
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <button onClick={handleSend} disabled={!input.trim() || !isConnected}>
+                  Send
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>

@@ -982,6 +982,7 @@ const getRequestToChannelsSendOtherUser = async (req, res) =>{
         
     }
 }
+
 module.exports = {
     getRequestChannels, createChannel, deleteChannel,
     sendChannelConnectionRequest, removeChannelConnectionRequest,

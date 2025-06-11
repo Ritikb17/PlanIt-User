@@ -217,6 +217,13 @@ module.exports = (io) => {
     });
 
 
+    socket.io("create-channel-poll",(data, callback)=>{
+      console.log("IN THE CREATE CHANNEL POLL HANDLER OF THE EVENT  ", data);
+      channelMessageController.handleCreateChannelPool(data, socket, callback);
+
+    })
+
+
 
     socket.on('disconnect', () => {
       console.log('Client disconnected:', socket.userId);
