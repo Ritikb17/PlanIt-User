@@ -8,7 +8,7 @@ const { createChannel, deleteChannel, sendChannelConnectionRequest,
     removeUserFromChannel, getBlockUsersOFChannel, sendChannelConnectionRequestByOtherUser,
     unsendChannelConnectionRequestByOtherUser, removeChannelConnectionRequestByCreator,
     acceptChannelConnectionRequestByCreator, getRequestToChannelsSendOtherUser
-} = require('../controllers/channelController');
+,createChannelPool} = require('../controllers/channelController');
 
 router.get('/get-my-channels', getMyChannels);
 router.get('/get-other-user-channels', getOtherUserChannels);
@@ -48,6 +48,8 @@ router.get('/get-request-to-the-channel-send-by-other-user/:channelId?', getRequ
 router.post('/unblock-user-from-channel', unblockUserChannel);
 router.post('/block-user-from-channel', blockUserChannel);
 router.post('/remove-user-from-channel', removeUserFromChannel);
+
+// router.post('/create-channel-pool',createChannelPool)
 
 
 module.exports = router;

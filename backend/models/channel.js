@@ -16,10 +16,13 @@ const channel = new Schema({
         isEdited: { type: Boolean, default: false } ,
         isDeleted: { type: Boolean, default: false } ,
         timestamp: { type: Date, default: Date.now },
-
+        pool:{type:Schema.Types.ObjectId, ref :"ChannelPool"},
+        isPool:{type:Boolean, default:false}
+       
     }],
+   
     members: [{ type: Schema.Types.ObjectId, ref: "User" }],
-    pools:[{type:Schema.Types.ObjectId,ref:"ChannelPool"}],
+    
     isDelete: { type: Boolean, default: false } // Added isDelete field
 })
 

@@ -14,6 +14,9 @@ const pollOptionSchema = new Schema({
   votes: {
     type: Number,
     default: 0
+  },
+  voters:{
+    type: [{type:Schema.Types.ObjectId,ref:'users'}],
   }
 });
 
@@ -22,9 +25,9 @@ const channelPollSchema = new Schema({
     type: String,
     required: true
   },
-  chatMessageId: {
+  ChannelId: {
     type: Schema.Types.ObjectId,
-    ref: 'Messages',
+    ref: 'Channel',
     required: true
   },
   options: {
@@ -64,7 +67,7 @@ const channelPollSchema = new Schema({
 });
 
 // Create compound index for better query performance
-userPollSchema.index({ chatMessageId: 1, isDeleted: 1 });
-userPollSchema.index({ createdBy: 1, status: 1 });
+channelPollSchema.index({ chatMessageId: 1, isDeleted: 1 });
+channelPollSchema.index({ createdBy: 1, status: 1 });
 
 module.exports = mongoose.model('UserPoll', channelPollSchema);

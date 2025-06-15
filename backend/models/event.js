@@ -25,7 +25,7 @@ const event = new Schema({
     }],
     members: [{ type: Schema.Types.ObjectId, ref: "User" }],
     pools: [{ type: Schema.Types.ObjectId, ref: "EventPools" }],
-    isDelete: { type: Boolean, default: false } // Added isDelete field
+    isDelete: { type: Boolean, default: false } 
 })
 
 const Event = mongoose.model('Event', event);

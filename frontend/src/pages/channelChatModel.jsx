@@ -249,7 +249,7 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
       createdBy: currentUserId
     };
 
-    socketRef.current.emit('create-channel-poll', pollData, (response) => {
+    socketRef.current.emit('create-pool-for-channel', pollData, (response) => {
       if (response.status === 'success') {
         setShowPollForm(false);
         setPollTitle('');

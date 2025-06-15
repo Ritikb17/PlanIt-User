@@ -2,6 +2,7 @@ const socketMessageController = require('../controllers/socketMessageController'
 const channelMessageController = require('../controllers/channelMessageController');
 const eventMessageController = require('../controllers/eventMessageController');
 const notificationController = require('./controllers/notificationController');
+const poolController = require('./controllers/poolController');
 const users = new Map();
 module.exports = (io) => {
   io.on('connection', (socket) => {
@@ -211,16 +212,45 @@ module.exports = (io) => {
       console.log("IN THE GET NOTIFICATION HANDLER OF THE EVENT  ", data);
       notificationController.getNotifications(socket, data, callback);
     })
+
+
+    
+//////////////////////////////CHANNEL POOLS ////////////////////
     socket.on("set-notification-isSeen", (data, callback) => {
       console.log("IN THE SETISSEEN HANDLER OF THE EVENT  ", data);
       notificationController.setNotificationIsSeenTrue(data, socket, callback);
     });
 
+    //creating a new pool in for the channel 
+    socket.on('create-pool-for-channel', (poolData, callback) => {
+      const userId = socket.user?._id?.toString();
+      console.log("IN THE CREATE POOL HANDLER OF THE EVENT  ", poolData);
+      poolController.createPoolToChannel(socket, userId, poolData, callback);
+    });
 
-    socket.io("create-channel-poll",(data, callback)=>{
-      console.log("IN THE CREATE CHANNEL POLL HANDLER OF THE EVENT  ", data);
-      channelMessageController.handleCreateChannelPool(data, socket, callback);
+    //route for closing the pool for the channel 
+    socket.on('close-pool-for-channel', (data, callback) => {
+      const userId = socket.user?._id?.toString();
+      console.log("IN THE HANDLER OF THE CLOSING THE POOL  ", data);
+      poolController.closePoolToChannel(data,userId, socket, callback);
+    })
 
+    //route for voing to the pool of the channel 
+    socket.on('vote-on-pool-for-channel', (data, callback) => {
+       const userId = socket.user?._id?.toString();
+      console.log("IN THE VOTING  POOL HANDLER OF THE EVENT  ", data);
+      poolController.voteToPoolToChannel(data,userId, socket, callback);
+    })
+    socket.on('get-pool-of-channel', (data, callback) => {
+       const userId = socket.user?._id?.toString();
+      console.log("IN THE VOTING  POOL HANDLER OF THE EVENT  ", data);
+      poolController.getPoolOfChannel(data,userId, socket, callback);
+    })
+
+    //edit the pool for the channel 
+    socket.on('delete-the-pool-for-channel', (data, callback) => {
+      console.log("IN THE DELETE  POOL HANDLER OF THE EVENT  ", data);
+      poolController.deletePoolToChannel(data, socket, callback);
     })
 
 
