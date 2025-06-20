@@ -213,13 +213,13 @@ module.exports = (io) => {
       notificationController.getNotifications(socket, data, callback);
     })
 
-
-    
-//////////////////////////////CHANNEL POOLS ////////////////////
     socket.on("set-notification-isSeen", (data, callback) => {
       console.log("IN THE SETISSEEN HANDLER OF THE EVENT  ", data);
       notificationController.setNotificationIsSeenTrue(data, socket, callback);
     });
+
+    
+//////////////////////////////CHANNEL POOLS ////////////////////
 
     //creating a new pool in for the channel 
     socket.on('create-pool-for-channel', (poolData, callback) => {
@@ -241,6 +241,8 @@ module.exports = (io) => {
       console.log("IN THE VOTING  POOL HANDLER OF THE EVENT  ", data);
       poolController.voteToPoolToChannel(data,userId, socket, callback);
     })
+    
+    //get the pool for that channel 
     socket.on('get-pool-of-channel', (data, callback) => {
        const userId = socket.user?._id?.toString();
       console.log("IN THE VOTING  POOL HANDLER OF THE EVENT  ", data);
