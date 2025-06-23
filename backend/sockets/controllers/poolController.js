@@ -83,17 +83,24 @@ module.exports = {
     voteToPoolToChannel: async (socket, userId, poolData, callback) => {
         try {
             console.log("pool data is", poolData);
+            const pool = await ChannelPool.findById(poolData.poolId);
+            if (pool.voters.includes(socket._id)) {
+                callback({ success: false, message: "You have already voted" })
+            }
             const updatedPoll = await ChannelPool.findByIdAndUpdate(
                 poolData.poolId,
                 {
                     $inc: { "options.$[option].votes": 1 },
-                    $push: { "options.$[option].voters": userId }
+                    $push: {
+                        "options.$[option].voters": userId,
+                        voters: userId
+                    }
                 },
                 {
-                    arrayFilters: [{ "option._id": poolData.optionId }],  // Target specific option
-                    new: true  // Return the updated document
+                    arrayFilters: [{ "option._id": poolData.optionId }],
+                    new: true
                 }
-            )
+            );
 
             if (!updatedPoll) {
                 throw new Error('Poll not found');
@@ -124,7 +131,7 @@ module.exports = {
             callback({
                 success: true,
                 pool: pool,
-                message:"successfully get the pool"
+                message: "successfully get the pool"
             });
         } catch (error) {
             console.log(error)
