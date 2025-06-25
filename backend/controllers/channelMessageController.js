@@ -6,7 +6,7 @@ module.exports = {
     handleGetMessages: async (socket, userId, io, { channelId }, callback) => {
         // const channelIdObj = new mongoose.
         try {
-            const channel = await Channel.findOne({ _id: channelId });
+            const channel = await Channel.findOne({ _id: channelId }).populate("messages.pool");
             if (!channel) {
                 throw new Error("Channel not found ");
             }

@@ -15,8 +15,8 @@ const pollOptionSchema = new Schema({
     type: Number,
     default: 0
   },
-  voters:{
-    type: [{type:Schema.Types.ObjectId,ref:'users'}],
+  voters: {
+    type: [{ type: Schema.Types.ObjectId, ref: 'users' }],
   }
 });
 
@@ -32,14 +32,14 @@ const channelPollSchema = new Schema({
   },
   Voters: {
     type: Schema.Types.ObjectId,
-    ref: 'Users',
-    required: true
+    ref: 'Users'
+
   },
   options: {
     type: [pollOptionSchema],
     required: true,
     validate: {
-      validator: function(v) {
+      validator: function (v) {
         return v.length > 0;
       },
       message: 'Poll must have at least one option'
@@ -75,4 +75,4 @@ const channelPollSchema = new Schema({
 channelPollSchema.index({ chatMessageId: 1, isDeleted: 1 });
 channelPollSchema.index({ createdBy: 1, status: 1 });
 
-module.exports = mongoose.model('UserPoll', channelPollSchema);
+module.exports = mongoose.model('ChannelPool', channelPollSchema);

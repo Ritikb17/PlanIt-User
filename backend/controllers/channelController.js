@@ -449,7 +449,7 @@ const getOtherUserChannels = async (req, res) => {
                 path: 'connectedChannels',
                 populate: [ {
                     path: 'messages.pool', // populate pool info for poll messages
-                    model: 'UserPoll' // make sure this matches your model name
+                    model: 'ChannelPool' // make sure this matches your model name
                 }]
             })
             .select('connectedChannels');
