@@ -24,7 +24,6 @@ module.exports = {
             console.log(" saved pool is", pool);
 
             const newMessage = {
-                message: poolData.title,
                 sender: userId,
                 timestamp: new Date(),
                 isEdited: false,
@@ -45,7 +44,7 @@ module.exports = {
             );
 
             console.log("the updated channel is", updatedChannel)
-            callback({ success: true, pool: pool });
+            callback({ success: true, pool: pool, status: "success" });
         }
         catch (error) {
             console.error("Failed to fetch notifications:", error);
@@ -82,43 +81,69 @@ module.exports = {
     },
     voteToPoolToChannel: async (socket, userId, poolData, callback) => {
         try {
-            console.log("pool data is", poolData);
-            const pool = await ChannelPool.findById(poolData.poolId);
-            if (pool.voters.includes(socket._id)) {
-                callback({ success: false, message: "You have already voted" })
+            // 1. Find the poll first to validate
+            const poll = await ChannelPool.findById(poolData.pollId);
+            if (!poll) {
+                return callback({ success: false, message: "Poll not found" });
             }
+
+            // 2. Check if user has already voted (if multiple choices not allowed)
+            if (!poll.allowMultipleChoices) {
+                const hasVoted = poll.options.some(option =>
+                    option.voters.includes(userId)
+                );
+                if (hasVoted) {
+                    return callback({ success: false, message: "You have already voted" });
+                }
+            }
+
+            // 3. Create a clean update object without circular references
+            const update = {
+                $inc: { "options.$[option].votes": 1 },
+                $addToSet: {
+                    "options.$[option].voters": userId,
+                    voters: userId
+                }
+            };
+
+            // 4. Perform the update
             const updatedPoll = await ChannelPool.findByIdAndUpdate(
-                poolData.poolId,
-                {
-                    $inc: { "options.$[option].votes": 1 },
-                    $push: {
-                        "options.$[option].voters": userId,
-                        voters: userId
-                    }
-                },
+                poolData.pollId,
+                update,
                 {
                     arrayFilters: [{ "option._id": poolData.optionId }],
                     new: true
                 }
-            );
+            ).lean(); // Use lean() to get plain JavaScript object
 
             if (!updatedPoll) {
-                throw new Error('Poll not found');
+                throw new Error('Failed to update poll');
             }
 
-            // Broadcast update to channel
-            socket.to(updatedPoll.channel).emit('poll-updated', updatedPoll);
-            callback({ success: true })
+            // 5. Create a clean object for broadcasting (no circular refs)
+            const pollDataToBroadcast = {
+                _id: updatedPoll._id,
+                title: updatedPoll.title,
+                options: updatedPoll.options.map(option => ({
+                    _id: option._id,
+                    title: option.title,
+                    votes: option.votes,
+                    voters: option.voters
+                })),
+                allowMultipleChoices: updatedPoll.allowMultipleChoices,
+                status: updatedPoll.status
+            };
 
-
-
+            // 6. Broadcast update to channel
+            socket.to(poll.channel.toString()).emit('poll-updated', pollDataToBroadcast);
+            callback({ success: true, data: pollDataToBroadcast });
 
         } catch (error) {
+            console.error("Error in voteToPoolToChannel:", error);
             callback({
                 success: false,
-                error: error.message,
+                message: error.message || "Failed to process vote"
             });
-
         }
     },
     getPoolOfChannel: async (socket, userId, poolData, callback) => {

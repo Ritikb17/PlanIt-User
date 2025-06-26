@@ -41,6 +41,7 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
   // Fetch poll details
   const fetchPollDetails = async (pollId) => {
     try {
+      console.log("the pool id is ", { pollId })
       const response = await fetch(`http://localhost:5000/api/poll/get-poll?pollId=${pollId}`, {
         method: 'GET',
         headers: {
@@ -319,15 +320,31 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
   };
 
   const handleVote = (pollId, optionId) => {
-    if (!socketRef.current) return;
+    if (!socketRef.current || !currentUserId) {
+      console.error("Socket not connected or user not authenticated");
+      return;
+    }
 
-    socketRef.current.emit('vote-on-poll', {
+    console.log("Attempting to vote on poll:", pollId, "option:", optionId);
+
+    socketRef.current.emit('vote-on-pool-for-channel', {
       pollId,
       optionId,
       userId: currentUserId
     }, (response) => {
+      console.log("Response from socket:", response);
+
+      if (!response) {
+        console.error("No response received from server");
+        return;
+      }
+
       if (response.status !== 'success') {
-        console.error('Failed to vote:', response.message);
+        console.error('Failed to vote:', response.message || 'Unknown error');
+        // Optionally show error to user here (e.g., using a toast notification)
+      } else {
+        console.log('Vote successful:', response.data);
+        // Optionally update UI state here if needed
       }
     });
   };
@@ -367,51 +384,8 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
       const hasVoted = poll.options.some(option =>
         option.voters?.includes(currentUserId)
       );
-
-      return (
-        <div className="poll-message">
-          <h4>{poll.title}</h4>
-          <ul className="poll-options">
-            {poll.options.map(option => (
-              <li key={option._id}>
-                <button
-                  onClick={() => handleVote(poll._id, option._id)}
-                  disabled={poll.status !== 'open' || (hasVoted && !poll.allowMultipleChoices)}
-                  className={option.voters?.includes(currentUserId) ? 'voted' : ''}
-                >
-                  {option.title}
-                  {option.votes > 0 && (
-                    <span className="vote-count"> ({option.votes})</span>
-                  )}
-                </button>
-              </li>
-            ))}
-          </ul>
-          <div className="poll-meta">
-            {poll.status === 'closed' && <span className="poll-closed">[Closed]</span>}
-            {poll.allowMultipleChoices && <span className="poll-multiple">[Multiple choices allowed]</span>}
-          </div>
-        </div>
-      );
     }
-
-    return (
-      <>
-        <p className="message-content">{msg.message}</p>
-        {msg.sender === currentUserId && (
-          <div className="message-actions">
-            <button onClick={() => handleEdit(msg._id, msg.message)}>
-              Edit
-            </button>
-            <button onClick={() => handleDelete(msg._id)}>
-              Delete
-            </button>
-          </div>
-        )}
-      </>
-    );
-  };
-
+  }
   return (
     <div className="channel-chat-modal-overlay">
       <div className="channel-chat-modal">
@@ -477,37 +451,51 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
                           autoFocus
                         />
                       ) : (
-                        renderMessageContent(msg)
-                      )}
-                      {renderMessageContent(msg)}
-                      {msg.isPool && msg.pool && (
-                        <div className="poll-container">
-                          <div className="poll-title">{msg.pool.title}</div>
-                          <div className="poll-options">
-                            {msg.pool.options.map((option) => (
-                              <div key={option._id} className="poll-option">
-                                <button
-                                  className="poll-vote-button"
-                                  onClick={() => handleVote(msg.pool._id, option._id)}
-                                >
-                                  {option.title}
-                                </button>
-                                <span className="poll-vote-count">
-                                  ({option.votes} votes)
-                                </span>
+                        <>
+                          {msg.message && <p className="message-content">{msg.message}</p>}
+                          {isPoll && (
+                            <div className="poll-message">
+                              <h4>{msg.pool.title}</h4>
+                              <ul className="poll-options">
+                                {msg.pool.options.map(option => {
+                                  const hasVoted = option.voters?.includes(currentUserId);
+                                  return (
+                                    <li key={option._id}>
+                                      <button
+                                        onClick={() => handleVote(msg.pool._id, option._id)}
+                                        disabled={msg.pool.status !== 'open' || (hasVoted && !msg.pool.allowMultipleChoices)}
+                                        className={`poll-option-button ${hasVoted ? 'voted' : ''} ${msg.pool.status !== 'open' ? 'disabled' : ''
+                                          }`}
+                                      >
+                                        {option.title}
+                                        {option.votes > 0 && (
+                                          <span className="vote-count"> ({option.votes})</span>
+                                        )}
+                                        {hasVoted && <span className="voted-icon">✓</span>}
+                                      </button>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                              <div className="poll-meta">
+                                {msg.pool.status === 'closed' && <span className="poll-closed">[Closed]</span>}
+                                {msg.pool.allowMultipleChoices && <span className="poll-multiple">[Multiple choices allowed]</span>}
                               </div>
-                            ))}
-                          </div>
-                          {msg.pool.allowMultipleChoices && (
-                            <div className="poll-note">(Multiple choices allowed)</div>
+                            </div>
                           )}
-                        </div>
+                          {isMine && !isDeleted && !isPoll && (
+                            <div className="message-actions">
+                              <button onClick={() => handleEdit(msg._id, msg.message)}>Edit</button>
+                              <button onClick={() => handleDelete(msg._id)}>Delete</button>
+                            </div>
+                          )}
+                        </>
                       )}
                       <div className="message-meta">
                         {msg.timestamp && (
                           <span className="message-time">
                             {formatTime(msg.timestamp)}
-                            {msg.isEdited && !isDeleted && !msg.isPool && ' (edited)'}
+                            {msg.isEdited && !isDeleted && !isPoll && ' (edited)'}
                             {msg.failed && ' (failed)'}
                           </span>
                         )}
@@ -620,6 +608,10 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
       </div>
     </div>
   );
-};
+}
+
+
+
+
 
 export default ChannelChatModal;
