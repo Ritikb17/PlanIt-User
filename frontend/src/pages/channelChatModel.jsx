@@ -97,7 +97,7 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
             pool: msg.pool || null
           }));
           setMessages(normalizedMessages);
-          
+
           // Fetch details for any polls in messages
           normalizedMessages.forEach(msg => {
             if (msg.isPool && msg.pool) {
@@ -122,7 +122,7 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
               pool: msg.pool || null
             }));
             setMessages(normalizedMessages);
-            
+
             // Fetch details for any new polls
             normalizedMessages.forEach(msg => {
               if (msg.isPool && msg.pool && !pollsData[msg.pool]) {
@@ -167,7 +167,7 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
               pool: msg.pool || null
             }));
             setMessages(normalizedMessages);
-            
+
             // Fetch details for the new poll
             const newPollMessage = normalizedMessages.find(msg => msg._id === data.messageId);
             if (newPollMessage?.isPool && newPollMessage.pool) {
@@ -364,10 +364,10 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
 
     if (msg.isPool && msg.pool && pollsData[msg.pool]) {
       const poll = pollsData[msg.pool];
-      const hasVoted = poll.options.some(option => 
+      const hasVoted = poll.options.some(option =>
         option.voters?.includes(currentUserId)
       );
-      
+
       return (
         <div className="poll-message">
           <h4>{poll.title}</h4>
@@ -479,11 +479,35 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
                       ) : (
                         renderMessageContent(msg)
                       )}
+                      {renderMessageContent(msg)}
+                      {msg.isPool && msg.pool && (
+                        <div className="poll-container">
+                          <div className="poll-title">{msg.pool.title}</div>
+                          <div className="poll-options">
+                            {msg.pool.options.map((option) => (
+                              <div key={option._id} className="poll-option">
+                                <button
+                                  className="poll-vote-button"
+                                  onClick={() => handleVote(msg.pool._id, option._id)}
+                                >
+                                  {option.title}
+                                </button>
+                                <span className="poll-vote-count">
+                                  ({option.votes} votes)
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                          {msg.pool.allowMultipleChoices && (
+                            <div className="poll-note">(Multiple choices allowed)</div>
+                          )}
+                        </div>
+                      )}
                       <div className="message-meta">
                         {msg.timestamp && (
                           <span className="message-time">
                             {formatTime(msg.timestamp)}
-                            {msg.isEdited && !isDeleted && !isPoll && ' (edited)'}
+                            {msg.isEdited && !isDeleted && !msg.isPool && ' (edited)'}
                             {msg.failed && ' (failed)'}
                           </span>
                         )}
