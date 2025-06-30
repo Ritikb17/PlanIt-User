@@ -81,69 +81,37 @@ module.exports = {
     },
     voteToPoolToChannel: async (socket, userId, poolData, callback) => {
         try {
-            // 1. Find the poll first to validate
             const poll = await ChannelPool.findById(poolData.pollId);
-            if (!poll) {
-                return callback({ success: false, message: "Poll not found" });
-            }
+            if (!poll) return callback({ success: false, message: "Poll not found" });
 
-            // 2. Check if user has already voted (if multiple choices not allowed)
+            // Check if user already voted in any option (if multiple choices not allowed)
             if (!poll.allowMultipleChoices) {
                 const hasVoted = poll.options.some(option =>
-                    option.voters.includes(userId)
+                    option.voters.some(voterId => voterId.equals(new mongoose.Types.ObjectId(poolData.userId)))
                 );
-                if (hasVoted) {
-                    return callback({ success: false, message: "You have already voted" });
-                }
+                if (hasVoted) return callback({ success: false, message: "You have already voted" });
             }
 
-            // 3. Create a clean update object without circular references
+            // Update option votes and voters array
             const update = {
                 $inc: { "options.$[option].votes": 1 },
-                $addToSet: {
-                    "options.$[option].voters": userId,
-                    voters: userId
-                }
+                $addToSet: { "options.$[option].voters": new mongoose.Types.ObjectId(poolData.userId) }
             };
 
-            // 4. Perform the update
             const updatedPoll = await ChannelPool.findByIdAndUpdate(
                 poolData.pollId,
                 update,
                 {
-                    arrayFilters: [{ "option._id": poolData.optionId }],
+                    arrayFilters: [{ "option._id": new mongoose.Types.ObjectId(poolData.optionId) }],
                     new: true
                 }
-            ).lean(); // Use lean() to get plain JavaScript object
+            ).lean();
 
-            if (!updatedPoll) {
-                throw new Error('Failed to update poll');
-            }
+            if (!updatedPoll) throw new Error("Failed to update poll");
 
-            // 5. Create a clean object for broadcasting (no circular refs)
-            const pollDataToBroadcast = {
-                _id: updatedPoll._id,
-                title: updatedPoll.title,
-                options: updatedPoll.options.map(option => ({
-                    _id: option._id,
-                    title: option.title,
-                    votes: option.votes,
-                    voters: option.voters
-                })),
-                allowMultipleChoices: updatedPoll.allowMultipleChoices,
-                status: updatedPoll.status
-            };
-
-            // 6. Broadcast update to channel
-            socket.to(poll.channel.toString()).emit('poll-updated', pollDataToBroadcast);
-            callback({ success: true, data: pollDataToBroadcast });
-
-        } catch (error) {
-            console.error("Error in voteToPoolToChannel:", error);
-            callback({
-                success: false,
-                message: error.message || "Failed to process vote"
-            });
+            callback({ success: true, data: updatedPoll });
+        } catch (err) {
+            callback({ success: false, message: err.message });
         }
     },
     getPoolOfChannel: async (socket, userId, poolData, callback) => {

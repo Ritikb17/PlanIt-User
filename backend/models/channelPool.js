@@ -30,11 +30,11 @@ const channelPollSchema = new Schema({
     ref: 'Channel',
     required: true
   },
-  Voters: {
+  voters: [{
     type: Schema.Types.ObjectId,
     ref: 'Users'
 
-  },
+  }],
   options: {
     type: [pollOptionSchema],
     required: true,
