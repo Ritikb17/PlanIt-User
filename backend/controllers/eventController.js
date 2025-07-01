@@ -121,14 +121,61 @@ const createEvent = async (req, res) => {
 const getMyEvents = async (req, res) => {
     const _id = req.user._id;
     try {
-        const data = await User.findById(_id).populate('connectedEvents').select('connectedEvents');
+        const data = await User.findById(_id)
+            .populate('connectedEvents')
+            .select('connectedEvents');
+        
         if (!data) {
-            res.status(400).json({ error: "error in fetching data" })
+            return res.status(400).json({ error: "Error in fetching data" });
         }
-        res.status(200).json({ events: data });
+
+        // Get current date/time
+        const currentDate = new Date();
+        
+        // Filter out past events
+        const upcomingEvents = data.connectedEvents.filter(event => {
+            return new Date(event.eventDate) > currentDate;
+        });
+
+        res.status(200).json({ 
+            events: {
+                ...data.toObject(),
+                connectedEvents: upcomingEvents
+            } 
+        });
 
     } catch (error) {
-        res.status(400).json({ error: error })
+        res.status(400).json({ error: error.message }); // Better to send error.message
+    }
+}
+const getMyPastEvents = async (req, res) => {
+    const _id = req.user._id;
+    try {
+        const data = await User.findById(_id)
+            .populate('connectedEvents')
+            .select('connectedEvents');
+        
+        if (!data) {
+            return res.status(400).json({ error: "Error in fetching data" });
+        }
+
+        // Get current date/time
+        const currentDate = new Date();
+        
+        // Filter out past events
+        const upcomingEvents = data.connectedEvents.filter(event => {
+            return new Date(event.eventDate) < currentDate;
+        });
+
+        res.status(200).json({ 
+            events: {
+                ...data.toObject(),
+                connectedEvents: upcomingEvents
+            } 
+        });
+
+    } catch (error) {
+        res.status(400).json({ error: error.message }); // Better to send error.message
     }
 }
 const getEventRequests = async (req, res) => {
@@ -693,7 +740,7 @@ const acceptEventConnectionRequestSendByCreator = async (req, res) => {
             return res.status(404).json({ message: "EVENT IS NOT FOUND" });
         }
 
-        if (!self.receiveRequest.includes(event__id)) {
+        if (!self.receivedEventConnectionRequest.includes(event__id)) {
             return res.status(404).json({ message: "REQUEST IS NOT FOUND" });
         }
 
@@ -1452,11 +1499,12 @@ const getEventInfo = async (req, res) => {
     try {
         const event = await Event.findById(eventId).populate({
                 path: 'members',
-                select: 'name email _id'
+                select: 'name members description createdBy eventDate location -_id',
+                model: 'User'
             })
-            .select("members createdBy description");
+            .select("members createdBy description eventDate location -_id");
 
-            console.log("the event is ",event)
+ 
         if (event.members.includes(userId)) {
             return res.status(403).json({ message: "not the member of the channel" });
         }
@@ -1477,6 +1525,6 @@ module.exports = {
     getEventConnectionRequestListToEvents, getEventConnectionRequestListToUser,
     acceptEventConnectionRequestSendByCreator, getEventRequests, getConnectionForEventConnectionRequest,
     getSuggestionsForEventConnectionRequest, getDiscoverEvents, blockUserEvent,
-    unblockUserEvent, getConnectedUsersEvent, removeUserFromEvent, getBlockUserOfEvent, getEventInfo
+    unblockUserEvent, getConnectedUsersEvent, removeUserFromEvent, getBlockUserOfEvent, getEventInfo,getMyPastEvents
 };
 

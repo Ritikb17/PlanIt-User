@@ -455,7 +455,6 @@ const EventPage = () => {
           <div key={event._id} className="channel-item">
             <div
               className="channel-info"
-              onClick={() => openChatModal(event)}
               style={{ cursor: 'pointer' }}
             >
               <h3>{event.name}</h3>
