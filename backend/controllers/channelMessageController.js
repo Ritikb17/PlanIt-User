@@ -6,12 +6,29 @@ module.exports = {
     handleGetMessages: async (socket, userId, io, { channelId }, callback) => {
         // const channelIdObj = new mongoose.
         try {
-            const channel = await Channel.findOne({ _id: channelId }).populate("messages.pool");
+            let channel = await Channel.findOne({ _id: channelId }).populate("messages.pool");
+            console.log("the channel is ", channel);
+            // for (let i = 0; i < channel.messages.length; i++) {
+            //     const message = channel.messages[i];
+
+            //     if (message.isPool) {
+            //         channel.messages[i] = {
+            //             ...message,
+            //             isUserAlreadyVoted: channel.messages[i].pool.voters.includes(userId)
+            //         };
+            //     } else {
+            //         // Simpler version if you're only adding one property
+            //         message.isUserAlreadyVoted = false;
+            //         // No need to reassign since we're modifying the object directly
+            //     }
+            // }
             if (!channel) {
                 throw new Error("Channel not found ");
             }
             console.log("user id is", userId)
             const include = channel.members.includes(userId);
+
+
             if (!include) {
                 throw new Error("User  not found  in channel ");
             }
@@ -36,7 +53,7 @@ module.exports = {
             const { channelId, message, userId } = data;
             const io = socket.server;
 
-            console.log("the channel is ",channelId);
+            console.log("the channel is ", channelId);
             const channel = await Channel.findById(channelId);
             if (!channel) {
                 throw new Error("Channel not found");
@@ -223,7 +240,7 @@ module.exports = {
             socket.emit("message-error", { error: error.message });
         }
     }
-  
+
 
 
 

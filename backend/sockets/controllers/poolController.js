@@ -95,7 +95,7 @@ module.exports = {
             // Update option votes and voters array
             const update = {
                 $inc: { "options.$[option].votes": 1 },
-                $addToSet: { "options.$[option].voters": new mongoose.Types.ObjectId(poolData.userId) }
+                $addToSet: { "voters": new mongoose.Types.ObjectId(poolData.userId) }
             };
 
             const updatedPoll = await ChannelPool.findByIdAndUpdate(

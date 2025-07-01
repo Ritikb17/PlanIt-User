@@ -100,11 +100,11 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
           setMessages(normalizedMessages);
 
           // Fetch details for any polls in messages
-          normalizedMessages.forEach(msg => {
-            if (msg.isPool && msg.pool) {
-              fetchPollDetails(msg.pool);
-            }
-          });
+          // normalizedMessages.forEach(msg => {
+          //   if (msg.isPool && msg.pool) {
+          //     // fetchPollDetails(msg.pool);
+          //   }
+          // });
         } else {
           console.error('Failed to get messages:', response?.message);
         }
@@ -170,10 +170,10 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
             setMessages(normalizedMessages);
 
             // Fetch details for the new poll
-            const newPollMessage = normalizedMessages.find(msg => msg._id === data.messageId);
-            if (newPollMessage?.isPool && newPollMessage.pool) {
-              fetchPollDetails(newPollMessage.pool);
-            }
+            // const newPollMessage = normalizedMessages.find(msg => msg._id === data.messageId);
+            // if (newPollMessage?.isPool && newPollMessage.pool) {
+            //   fetchPollDetails(newPollMessage.pool);
+            // }
           } else {
             console.error('Failed to get messages:', response?.message);
           }
