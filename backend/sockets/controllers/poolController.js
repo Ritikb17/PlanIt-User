@@ -4,9 +4,10 @@ const Channel = require('../../models/channel');
 module.exports = {
     createPoolToChannel: async (socket, userId, poolData, callback) => {
         try {
+            const io = socket.server;
             console.log("the data in the controller", poolData.channelId)
             const channel = await Channel.findById(poolData.channelId);
-            console.log("channel is ", channel)
+            const channelId = poolData.channelId;
             if (!channel.members.includes(socket.user?._id)) {
                 throw new Error("Unauthorized: Missing user ID");
             }
@@ -44,7 +45,14 @@ module.exports = {
             );
 
             console.log("the updated channel is", updatedChannel)
-            callback({ success: true, pool: pool, status: "success" });
+            io.to(channelId).emit("new-channel-message", {
+                channelId
+
+            });
+            callback({
+                status: 'success',
+                // message: savedMessage
+            });
         }
         catch (error) {
             console.error("Failed to fetch notifications:", error);
@@ -82,6 +90,9 @@ module.exports = {
     voteToPoolToChannel: async (socket, userId, poolData, callback) => {
         try {
             const poll = await ChannelPool.findById(poolData.pollId);
+            const io = socket.server;
+            const channelId = poolData.channelId;
+            console.log("the channel Id is", channelId);
             if (!poll) return callback({ success: false, message: "Poll not found" });
 
             // Check if user already voted in any option (if multiple choices not allowed)
@@ -95,7 +106,8 @@ module.exports = {
             // Update option votes and voters array
             const update = {
                 $inc: { "options.$[option].votes": 1 },
-                $addToSet: { "voters": new mongoose.Types.ObjectId(poolData.userId) }
+                $addToSet: { "voters": new mongoose.Types.ObjectId(poolData.userId) },
+                $push: { "options.$[option].voters": new mongoose.Types.ObjectId(poolData.userId) }
             };
 
             const updatedPoll = await ChannelPool.findByIdAndUpdate(
@@ -109,8 +121,17 @@ module.exports = {
 
             if (!updatedPoll) throw new Error("Failed to update poll");
 
-            callback({ success: true, data: updatedPoll });
+            io.to(channelId).emit("new-channel-message", {
+                channelId
+            })
+            
+            callback({
+                status: 'success',
+            });
+
+
         } catch (err) {
+            console.error("Error updating poll:", err);
             callback({ success: false, message: err.message });
         }
     },

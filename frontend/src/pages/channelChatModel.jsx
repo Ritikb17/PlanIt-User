@@ -39,28 +39,28 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
   };
 
   // Fetch poll details
-  const fetchPollDetails = async (pollId) => {
-    try {
-      console.log("the pool id is ", { pollId })
-      const response = await fetch(`http://localhost:5000/api/poll/get-poll?pollId=${pollId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
+  // const fetchPollDetails = async (pollId) => {
+  //   try {
+  //     console.log("the pool id is ", { pollId })
+  //     const response = await fetch(`http://localhost:5000/api/poll/get-poll?pollId=${pollId}`, {
+  //       method: 'GET',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //         'Authorization': `Bearer ${localStorage.getItem('token')}`
+  //       }
+  //     });
 
-      const data = await response.json();
-      if (data.data) {
-        setPollsData(prev => ({
-          ...prev,
-          [pollId]: data.data
-        }));
-      }
-    } catch (error) {
-      console.error('Error fetching poll details:', error);
-    }
-  };
+  //     const data = await response.json();
+  //     if (data.data) {
+  //       setPollsData(prev => ({
+  //         ...prev,
+  //         [pollId]: data.data
+  //       }));
+  //     }
+  //   } catch (error) {
+  //     console.error('Error fetching poll details:', error);
+  //   }
+  // };
 
   // Initialize socket connection
   useEffect(() => {
@@ -113,6 +113,7 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
 
     // Message event handlers
     const handleNewMessage = (data) => {
+      console.log("refeshing messages");
       socket.emit('get-message-of-the-channel',
         { channelId: channel._id },
         (response) => {
@@ -127,7 +128,7 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
             // Fetch details for any new polls
             normalizedMessages.forEach(msg => {
               if (msg.isPool && msg.pool && !pollsData[msg.pool]) {
-                fetchPollDetails(msg.pool);
+                // fetchPollDetails(msg.pool);
               }
             });
           } else {
@@ -308,7 +309,8 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
     };
 
     socketRef.current.emit('create-pool-for-channel', pollData, (response) => {
-      if (response.status === 'success') {
+      
+        if (response.status === 'success') {
         setShowPollForm(false);
         setPollTitle('');
         setPollOptions(['', '']);
@@ -330,6 +332,7 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
     socketRef.current.emit('vote-on-pool-for-channel', {
       pollId,
       optionId,
+      channelId:channel._id,
       userId: currentUserId
     }, (response) => {
       console.log("Response from socket:", response);

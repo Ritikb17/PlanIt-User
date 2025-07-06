@@ -239,7 +239,7 @@ module.exports = (io) => {
     socket.on('vote-on-pool-for-channel', (poolData, callback) => {
       const userId = socket.user?._id?.toString();
       console.log("IN THE VOTING  POOL HANDLER OF THE EVENT  ", poolData);
-      poolController.voteToPoolToChannel( userId, socket, poolData, callback);
+      poolController.voteToPoolToChannel( socket,userId , poolData, callback);
     })
 
     //get the pool for that channel 
