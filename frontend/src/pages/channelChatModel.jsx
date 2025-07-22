@@ -21,7 +21,9 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
   // Fetch channel details
   const fetchChannelInfo = async () => {
     try {
+      console.log("Fetching channel info for:", channel._id)
       const response = await fetch(`http://localhost:5000/api/channel/get-channel-info?channelId=${channel._id}`, {
+
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -309,8 +311,8 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
     };
 
     socketRef.current.emit('create-pool-for-channel', pollData, (response) => {
-      
-        if (response.status === 'success') {
+
+      if (response.status === 'success') {
         setShowPollForm(false);
         setPollTitle('');
         setPollOptions(['', '']);
@@ -332,7 +334,7 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
     socketRef.current.emit('vote-on-pool-for-channel', {
       pollId,
       optionId,
-      channelId:channel._id,
+      channelId: channel._id,
       userId: currentUserId
     }, (response) => {
       console.log("Response from socket:", response);

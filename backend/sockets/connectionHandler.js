@@ -106,6 +106,7 @@ module.exports = (io) => {
       // console.log("IN THE EDIT HANDLER OF THE CHANNEL  ",data);
       channelMessageController.handleChannelEditMessage(socket, userId, io, data, users, callback);
     })
+   
     ////////////////////////event handlers //////////////////////////
     socket.on("join-event", (data) => {
       console.log(data.text); // "Hello!"

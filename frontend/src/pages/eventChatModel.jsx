@@ -14,7 +14,110 @@ const EventChatModel = ({ event, onClose, currentUserId }) => {
   const messagesEndRef = useRef(null);
   const socketRef = useRef(null);
 
-  // Initialize socket connection
+  // Initialize socket connection and event listeners
+  useEffect(() => {
+    const socket = io('http://localhost:5000', {
+      auth: {
+        token: localStorage.getItem('token')
+      },
+      transports: ['websocket']
+    });
+    socketRef.current = socket;
+
+    // Connection events
+    socket.on('connect', () => {
+      setIsConnected(true);
+      console.log('Socket connected');
+      
+      // Join the event room
+      socket.emit('join-event', {
+        eventId: event._id,
+        userId: currentUserId
+      });
+    });
+
+    socket.on('disconnect', () => {
+      setIsConnected(false);
+      console.log('Socket disconnected');
+    });
+
+    socket.on('connect_error', (err) => {
+      console.error('Socket connection error:', err);
+      setIsConnected(false);
+    });
+
+    // Event room confirmation
+    socket.on('join-event', (data) => {
+      console.log(`Joined event room: ${data.eventId}`);
+    });
+
+    // Message events
+    socket.on('new-event-message', (data) => {
+      console.log('New message received:', data);
+      setMessages(prev => {
+        // Replace temp message if exists
+        const existingTempIndex = prev.findIndex(m => m._id === `temp-${data.message._id}`);
+        if (existingTempIndex !== -1) {
+          const newMessages = [...prev];
+          newMessages[existingTempIndex] = data.message;
+          return newMessages;
+        }
+        // Add new message if not already present
+        if (!prev.some(m => m._id === data.message._id)) {
+          return [...prev, data.message];
+        }
+        return prev;
+      });
+    });
+
+    socket.on('message-edited-in-event', (updatedMessage) => {
+      setMessages(prev =>
+        prev.map(msg =>
+          msg._id === updatedMessage._id ? { ...msg, ...updatedMessage, isEdited: true } : msg
+        )
+      );
+      setEditingId(null);
+      setEditText('');
+    });
+
+    socket.on('message-deleted-in-event', ({ messageId }) => {
+      setMessages(prev =>
+        prev.map(msg =>
+          msg._id === messageId ? { ...msg, isDeleted: true } : msg
+        )
+      );
+    });
+
+    // Fetch initial messages
+    const fetchInitialMessages = () => {
+      socket.emit('get-message-of-the-event', 
+        { eventId: event._id }, 
+        (response) => {
+          if (response?.status === 'success') {
+            setMessages(response.messages || []);
+          } else {
+            console.error('Failed to get messages:', response?.message);
+          }
+        }
+      );
+    };
+
+    fetchInitialMessages();
+
+    // Cleanup function
+    return () => {
+      socket.off('connect');
+      socket.off('disconnect');
+      socket.off('connect_error');
+      socket.off('join-event');
+      socket.off('new-event-message');
+      socket.off('message-edited-in-event');
+      socket.off('message-deleted-in-event');
+      socket.disconnect();
+    };
+  }, [event._id, currentUserId]);
+
+  // Fetch event info when showEventInfo changes
   useEffect(() => {
     if (showEventInfo) {
       const fetchEventInfo = async () => {
@@ -45,8 +148,9 @@ const EventChatModel = ({ event, onClose, currentUserId }) => {
   const handleSend = () => {
     if (!input.trim() || !socketRef.current) return;
 
+    const tempId = Date.now();
     const tempMessage = {
-      _id: `temp-${Date.now()}`,
+      _id: `temp-${tempId}`,
       message: input,
       sender: currentUserId,
       timestamp: new Date().toISOString(),
@@ -60,7 +164,8 @@ const EventChatModel = ({ event, onClose, currentUserId }) => {
     // Send to server
     socketRef.current.emit('send-message-to-event', { 
       eventId: event._id,
-      message: input
+      message: input,
+      tempId
     }, (response) => {
       if (response.status !== 'success') {
         // Mark as failed
@@ -86,40 +191,28 @@ const EventChatModel = ({ event, onClose, currentUserId }) => {
       messageId: editingId,
       message: editText
     }, (response) => {
-      if (response.status === 'success') {
-        setEditingId(null);
-        setEditText('');
-        socketRef.current.emit('get-message-of-the-event', 
-      { eventId: event._id }, 
-      (response) => {
-        if (response?.status === 'success') {
-          setMessages(response.messages || []);
-        } else {
-          console.error('Failed to get messages:', response?.message);
-        }
-      }
-    );
+      if (response.status !== 'success') {
+        console.error('Edit failed:', response.message);
       }
     });
   };
 
- const handleDelete = (id) => {
-  if (!socketRef.current || !window.confirm('Are you sure you want to delete this message?')) return;
+  const handleDelete = (id) => {
+    if (!socketRef.current || !window.confirm('Are you sure you want to delete this message?')) return;
 
-  // Add callback function as third parameter
-  socketRef.current.emit(
-    'delete-message-of-the-event', 
-    { 
-      eventId: event._id,
-      messageId: id
-    },
-    (response) => { // This is the callback function
-      if (response.status !== 'success') {
-        console.error('Delete failed:', response.message);
+    socketRef.current.emit(
+      'delete-message-of-the-event', 
+      { 
+        eventId: event._id,
+        messageId: id
+      },
+      (response) => {
+        if (response.status !== 'success') {
+          console.error('Delete failed:', response.message);
+        }
       }
-    }
-  );
-};
+    );
+  };
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -131,7 +224,8 @@ const EventChatModel = ({ event, onClose, currentUserId }) => {
       }
     }
   };
-   const handleEventNameClick = () => {
+
+  const handleEventNameClick = () => {
     setShowEventInfo(!showEventInfo);
   };
 
@@ -193,13 +287,23 @@ const EventChatModel = ({ event, onClose, currentUserId }) => {
                   >
                     <div className={`message-bubble ${isMine ? 'own' : 'other'} ${isDeleted ? 'deleted' : ''}`}>
                       {editingId === msg._id ? (
-                        <input
-                          value={editText}
-                          onChange={(e) => setEditText(e.target.value)}
-                          onKeyDown={handleKeyDown}
-                          className="edit-input"
-                          autoFocus
-                        />
+                        <div className="edit-message-container">
+                          <input
+                            value={editText}
+                            onChange={(e) => setEditText(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            className="edit-input"
+                            autoFocus
+                          />
+                          <div className="edit-buttons">
+                            <button onClick={handleEditSubmit} disabled={!editText.trim()}>
+                              Save
+                            </button>
+                            <button onClick={() => { setEditingId(null); setEditText(''); }}>
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
                       ) : (
                         <>
                           {isDeleted ? (
@@ -209,7 +313,7 @@ const EventChatModel = ({ event, onClose, currentUserId }) => {
                           ) : (
                             <>
                               <p className="message-content">{messageContent}</p>
-                              {isMine && (
+                              {isMine && !msg.isTemp && (
                                 <div className="message-actions">
                                   <button onClick={() => handleEdit(msg._id, messageContent)}>
                                     Edit
@@ -249,14 +353,7 @@ const EventChatModel = ({ event, onClose, currentUserId }) => {
             disabled={!isConnected}
           />
           {editingId ? (
-            <>
-              <button onClick={handleEditSubmit} disabled={!editText.trim()}>
-                Save
-              </button>
-              <button onClick={() => { setEditingId(null); setEditText(''); }}>
-                Cancel
-              </button>
-            </>
+            <></>
           ) : (
             <button onClick={handleSend} disabled={!input.trim() || !isConnected}>
               Send

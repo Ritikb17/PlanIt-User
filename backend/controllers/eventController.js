@@ -1495,6 +1495,7 @@ const getEventInfo = async (req, res) => {
     const eventId = req.query.eventId;
     const userId = req.user._id;
     const objEventId = new ObjectId(eventId);
+    console.log("in the get event info ", eventId, userId)
 
     try {
         const event = await Event.findById(eventId).populate({
