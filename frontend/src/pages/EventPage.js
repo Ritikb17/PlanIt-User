@@ -285,20 +285,24 @@ const EventPage = () => {
     // Validate required fields
     if (!newEvent.name) {
         setCreateEventError('Event name is required');
+        alert('Event name is required');
         return;
     }
     if (!newEvent.eventDate) {
         setCreateEventError('Event date is required');
+        alert('Event date is required');
         return;
     }
     if (!newEvent.applicationDeadline) {
         setCreateEventError('Application deadline is required');
+        alert('Application deadline is required');
         return;
     }
 
     // Validate date logic
     if (new Date(newEvent.applicationDeadline) >= new Date(newEvent.eventDate)) {
         setCreateEventError('Application deadline must be before the event date');
+        alert('Application deadline must be before the event date');
         return;
     }
 

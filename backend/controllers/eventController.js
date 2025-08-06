@@ -121,17 +121,19 @@ const createEvent = async (req, res) => {
 const getMyEvents = async (req, res) => {
     const _id = req.user._id;
     try {
+
+        console.log("this is ID",_id)
         const data = await User.findById(_id)
             .populate('connectedEvents')
             .select('connectedEvents');
-        
+       
         if (!data) {
             return res.status(400).json({ error: "Error in fetching data" });
         }
 
         // Get current date/time
         const currentDate = new Date();
-        
+        console.log("data in the getMyEvent",data);
         // Filter out past events
         const upcomingEvents = data.connectedEvents.filter(event => {
             return new Date(event.eventDate) > currentDate;
