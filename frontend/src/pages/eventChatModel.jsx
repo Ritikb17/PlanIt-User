@@ -158,7 +158,7 @@ const EventChatModel = ({ event, onClose, currentUserId }) => {
     };
 
     // Optimistic update
-    setMessages(prev => [...prev, tempMessage]);
+    // setMessages(prev => [...prev, tempMessage]);
     setInput('');
 
     // Send to server
