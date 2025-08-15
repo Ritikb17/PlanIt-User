@@ -130,7 +130,8 @@ const EventChatModel = ({ event, onClose, currentUserId }) => {
               },
             }
           );
-          setEventInfo(response.data);
+          setEventInfo(response.data.data);
+          console.log("this is the event info ",response.data.data)
         } catch (error) {
           console.error('Error fetching event info:', error);
           setEventInfo(null);
