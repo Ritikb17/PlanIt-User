@@ -447,15 +447,17 @@ const getOtherUserChannels = async (req, res) => {
         const data = await User.findById(_id)
             .populate({
                 path: 'connectedChannels',
-                populate: [ {
+                populate: [{
                     path: 'messages.pool', // populate pool info for poll messages
                     model: 'ChannelPool' // make sure this matches your model name
-                }]
+                }],
+                select: '-messages' 
             })
-            .select('connectedChannels');
-             if (!data) {
-                res.status(400).json({ error: "error in fetching data" })
-            }
+            .select('connectedChannels ');
+
+        if (!data) {
+            res.status(400).json({ error: "error in fetching data" });
+        } // check syntax
         res.status(200).json({ connectedgroups: data });
 
     } catch (error) {

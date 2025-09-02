@@ -5,6 +5,7 @@ import ChatDialog from './ChatDialog'; // Import the ChatDialog component
 import Navbar from '../components/Navbar';
 import ChannelChatModal from './channelChatModel'
 
+
 const Home = () => {
   const [isEventsModalOpen, setIsEventsModalOpen] = useState(false);
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
@@ -28,6 +29,11 @@ const Home = () => {
   const [error, setError] = useState(null); // Error state
   const userId = JSON.parse(atob(localStorage.getItem('token').split('.')[1])).id;
    const [createEventError, setCreateEventError] = useState('');
+
+     const openChatModal = (channel) => {
+    setSelectedChatChannel(channel);
+    setIsChatModalOpen(true);
+  };
   // Fetch the list of non-friends when the component mounts
   useEffect(() => {
     const fetchNonFriends = async () => {
@@ -309,6 +315,7 @@ const Home = () => {
             </div>
           ))}
         </div>
+        
 
         <div className="groups-section">
           <h3>Groups</h3>
@@ -317,7 +324,8 @@ const Home = () => {
               <div
                 key={group.id}
                 className="chat-item"
-                onClick={() => openChatDialog(group)}
+                // onClick={() => openChatDialog(group)}
+                  onClick={() => openChatModal(group)}
               >
                 <img
                   src={group.profilePicture}

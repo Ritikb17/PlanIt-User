@@ -276,7 +276,7 @@ module.exports = {
 
             if (!updatedPoll) throw new Error("Failed to update poll");
 
-            io.to(channelId).emit("new-channel-message", {
+            io.to(channelId).emit("new-event-message", {
                 channelId
             })
             
