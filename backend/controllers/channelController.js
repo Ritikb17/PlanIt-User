@@ -428,10 +428,17 @@ const updateChannelInfo = async (req, res) => {
 
     }
 }
+//get list of channels created by the user
 const getMyChannels = async (req, res) => {
     const _id = req.user._id;
     try {
-        const data = await User.findById(_id).populate('channels').select('channels');
+        const data = await User.findById(_id)
+            .populate({
+                path: 'channels',
+                select: 'name description isPrivate ', 
+            })
+            .select('channels'); 
+
         if (!data) {
             res.status(400).json({ error: "error in fetching data" })
         }
@@ -451,7 +458,7 @@ const getOtherUserChannels = async (req, res) => {
                     path: 'messages.pool', // populate pool info for poll messages
                     model: 'ChannelPool' // make sure this matches your model name
                 }],
-                select: '-messages' 
+                select: '-messages'
             })
             .select('connectedChannels ');
 

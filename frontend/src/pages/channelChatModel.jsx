@@ -16,6 +16,7 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
   const [allowMultipleChoices, setAllowMultipleChoices] = useState(false);
   const [pollsData, setPollsData] = useState({}); // Store poll data separately
   const messagesEndRef = useRef(null);
+  const [members, setMembers] = useState([]);
   const socketRef = useRef(null);
 
   // Fetch channel details
@@ -378,6 +379,30 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
     }
     setShowChannelInfo(!showChannelInfo);
   };
+  const handleRemoveUser = async (userId) => {
+    try {
+      alert("are you sure you want to remove this user")
+      const response = await fetch('http://localhost:5000/api/channel/remove-user-from-channel', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          channelId: channel._id,
+          otherUserId: userId
+        })
+      });
+
+      const data = await response.json();
+      if (data.message === "successfully removes the user from the event") {
+        alert("user removed successfully")
+        setMembers(prev => prev.filter(member => member._id !== userId));
+      }
+    } catch (error) {
+      console.error('Error removing user:', error);
+    }
+  };
 
   const renderMessageContent = (msg) => {
     if (msg.isDeleted) {
@@ -425,7 +450,12 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
                     <li key={member._id}>
                       {member.name} ({member.email})
                       {member._id === channelDetails.createdBy && ' (Creator)'}
+                      {member._id != channelDetails.createdBy &&  <button
+                        onClick={() => handleRemoveUser(member._id)}
+                        className="action-btn remove-btn"
+                      > remove User</button>}                      
                     </li>
+
                   ))}
                 </ul>
               </div>
