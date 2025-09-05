@@ -403,6 +403,55 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
       console.error('Error removing user:', error);
     }
   };
+  
+  const handleBlockUser = async (userId) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/channel/block-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          channelId: channel._id,
+          otherUserId: userId
+        })
+      });
+
+      const data = await response.json();
+      if (data.message === "User blocked successfully") {
+        // Remove from members and add to blocked users
+        setMembers(prev => prev.filter(member => member._id !== userId));
+        // fetchChannelData(); // Refresh blocked users list
+      }
+    } catch (error) {
+      console.error('Error blocking user:', error);
+    }
+  };
+
+  const handleUnblockUser = async (userId) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/channel/unblock-user-from-channel', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          channelId: channel._id,
+          otherUserId: userId
+        })
+      });
+
+      const data = await response.json();
+      if (data.message === "User unblocked successfully") {
+        // setBlockedUsers(prev => prev.filter(user => user._id !== userId));
+        // fetchChannelData(); // Refresh members list
+      }
+    } catch (error) {
+      console.error('Error unblocking user:', error);
+    }
+  };
 
   const renderMessageContent = (msg) => {
     if (msg.isDeleted) {

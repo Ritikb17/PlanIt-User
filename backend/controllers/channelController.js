@@ -435,9 +435,9 @@ const getMyChannels = async (req, res) => {
         const data = await User.findById(_id)
             .populate({
                 path: 'channels',
-                select: 'name description isPrivate ', 
+                select: 'name description isPrivate ',
             })
-            .select('channels'); 
+            .select('channels');
 
         if (!data) {
             res.status(400).json({ error: "error in fetching data" })
@@ -568,9 +568,8 @@ const getConnectedInfoChannel = async (req, res) => {
     try {
 
         const channel = await Channel.findById(objChannelId)
-
             .populate({
-                path: 'members',
+                path: 'members.user',  // Correct path to populate
                 select: 'name email _id'
             })
             .select("members createdBy description");

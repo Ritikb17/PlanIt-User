@@ -21,7 +21,16 @@ const channel = new Schema({
        
     }],
    
-    members: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    members: [{
+    user: {
+      type: Schema.Types.ObjectId,
+      ref: "User"
+    },
+    isblocked: {
+      type: Boolean,
+      default: false
+    }
+  }],
     
     isDelete: { type: Boolean, default: false } // Added isDelete field
 })
