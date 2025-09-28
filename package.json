@@ -23,6 +23,7 @@
   "dependencies": {
     "concurrently": "^9.1.2",
     "mongoose": "^8.15.1",
+    "multer": "^2.0.2",
     "react-modal": "^3.16.3",
     "react-router-dom": "^7.2.0",
     "react-use": "^17.6.0",
