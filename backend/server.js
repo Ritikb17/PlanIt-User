@@ -57,7 +57,7 @@ io.use(verifySocketToken);
 require('./sockets/connectionHandler')(io);
 
 // Routes - Profile picture routes should come before general error handling
-app.use('/api/profile-picture',verifyToken, profilePictureRoutes);
+app.use('/api/picture',verifyToken, profilePictureRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", verifyToken, profileRoutes);
 app.use("/api/user", verifyToken, userRoutes);
@@ -102,6 +102,8 @@ app.use((error, req, res, next) => {
     message: 'File upload failed!'
   });
 });
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'public')));
 
 // General error handling middleware
 app.use((err, req, res, next) => {

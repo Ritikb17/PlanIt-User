@@ -1,8 +1,12 @@
 const fs = require('fs').promises;
 const path = require('path');
 const User = require('../models/User'); // Make sure this path is correct
-
+const getFileUrl = (req, filename, folderType, userId) => {
+  const baseUrl = `${req.protocol}://${req.get('host')}`;
+  return `${baseUrl}/uploads/${folderType}/user_${userId}/${filename}`;
+};
 const profilePictureController = {
+  
   // Upload profile picture
   async uploadProfilePicture(req, res) {
     try {
@@ -16,10 +20,13 @@ const profilePictureController = {
       }
 
       const userId = req.user.id;
+      const pictureType = req.params.pictureType; // Access the dynamic parameter
       console.log('User ID:', userId);
       
       // Find user
       const user = await User.findById(userId);
+      user.profilePicture = `/public/user_${userId}/${pictureType}/${req.file.filename}`;
+      await user.save();
       if (!user) {
         // Delete uploaded file if user not found
         await fs.unlink(req.file.path);
@@ -30,12 +37,13 @@ const profilePictureController = {
       }
 
       console.log('File uploaded:', req.file);
+      
 
       res.status(200).json({
         success: true,
         message: 'Profile picture uploaded successfully',
         data: {
-          profilePicture: `/uploads/profiles/${req.file.filename}`,
+          // profilePicture: `${req.protocol}://${req.get('host')}/public/user_${userId}/${pictureType}/${req.file.filename}`,
           filename: req.file.filename
         }
       });
@@ -178,35 +186,81 @@ const profilePictureController = {
   },
 
   // Get profile picture
-  async getProfilePicture(req, res) {
-    try {
-      const userId = req.user.id;
-      const user = await User.findById(userId).select('profilePicture');
-      
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: 'User not found'
-        });
-      }
+ async getProfilePicture(req, res) {
+  try {
+    const userId = req.user.id;
+    const user = await User.findById(userId).select('profilePicture');
+    console.log("profilepicture", user);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
 
+    let profilePictureUrl;
+    let imagePath;
+
+    if (user.profilePicture === 'default.jpg') {
+      profilePictureUrl = `${req.protocol}://${req.get('host')}/uploads/profiles/default.jpg`;
+      imagePath = path.join(__dirname, '../public/uploads/profiles/default.jpg');
+    } else {
+      profilePictureUrl = `${req.protocol}://${req.get('host')}/uploads/profiles/user_${userId}/${user.profilePicture}`;
+      imagePath = path.join(
+        __dirname, 
+        '../public/uploads/profiles', 
+        `user_${userId}`, 
+        user.profilePicture
+      );
+    }
+
+    console.log("Image path:", imagePath);
+
+    // Check if file exists
+    try {
+      await fs.access(imagePath);
+    } catch (error) {
+      console.log("Image file not found:", imagePath);
+      // If image doesn't exist, return default image URL
+      profilePictureUrl = `${req.protocol}://${req.get('host')}/uploads/profiles/default.jpg`;
+      
+      return res.status(200).json({
+        success: true,
+        data: {
+          profilePicture: profilePictureUrl,
+          filename: 'default.jpg',
+          message: 'Image file not found, returning default'
+        }
+      });
+    }
+
+    // Decide what to return based on query parameter
+    if (req.query.download === 'true') {
+      // Send the actual image file
+      res.sendFile(imagePath);
+    } else {
+      // Return JSON with image URL (default behavior)
       res.status(200).json({
         success: true,
         data: {
-          profilePicture: `/uploads/profiles/${user.profilePicture}`,
-          filename: user.profilePicture
+          profilePicture: profilePictureUrl,
+          filename: user.profilePicture,
+          fileExists: true
         }
       });
-
-    } catch (error) {
-      console.error('Get profile picture error:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error retrieving profile picture',
-        error: error.message
-      });
     }
+
+  } catch (error) {
+    console.error('Get profile picture error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving profile picture',
+      error: error.message
+    });
   }
+}
+
 };
 
 module.exports = profilePictureController;

@@ -2,29 +2,43 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Ensure uploads directory exists
-const uploadsDir = path.join(__dirname, '../public/uploads/profiles');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-// Storage configuration
+// Create storage with dynamic user folders
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadsDir);
+    try {
+      // Get user ID from authenticated request (make sure auth middleware runs first)
+      const userId = req.user.id;
+      const pictureType = req.params.pictureType; // Access the dynamic parameter
+      console.log("Picture Type:", pictureType);
+      if (!userId) {
+        return cb(new Error('User not authenticated'), null);
+      }
+
+      // Create user-specific folder path: uploads/profiles/user_{userId}
+      const userFolder = path.join(__dirname, '../public/',`user_${userId}/${pictureType}`);
+      
+      // Create folder if it doesn't exist
+      if (!fs.existsSync(userFolder)) {
+        fs.mkdirSync(userFolder, { recursive: true });
+        console.log(`Created folder for user: user_${userId}`);
+      }
+      
+      cb(null, userFolder);
+    } catch (error) {
+      console.error('Error creating user folder:', error);
+      cb(error, null);
+    }
   },
   filename: (req, file, cb) => {
-    // Generate unique filename: userid-timestamp.extension
+    // Generate unique filename
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const fileExtension = path.extname(file.originalname);
-    const filename = `profile-${req.user.id}-${uniqueSuffix}${fileExtension}`;
+    const filename = `profile_${uniqueSuffix}${fileExtension}`;
     cb(null, filename);
   }
 });
 
-// File filter
 const fileFilter = (req, file, cb) => {
-  // Check if file is an image
   if (file.mimetype.startsWith('image/')) {
     cb(null, true);
   } else {
@@ -32,13 +46,12 @@ const fileFilter = (req, file, cb) => {
   }
 };
 
-// Multer instance
 const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
-    files: 1 // Only one file
+    fileSize: 5 * 1024 * 1024, // 5MB
+    files: 1
   }
 });
 
