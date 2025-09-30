@@ -2,15 +2,12 @@ const express = require('express');
 const router = express.Router();
 const upload = require('../config/multerConfig');
 const profilePictureController = require('../controllers/profilePictureController');
-// const authMiddleware = require('../middleware/authMiddleware'); // Your auth middleware
 
-// Apply authentication middleware to all routes
-// router.use(authMiddleware);
 
-// Upload profile picture
+// Upload picture of any type (profilePicture, coverPhoto, etc.)
 router.post('/upload/:pictureType', 
   upload.single('profilePicture'),
-  profilePictureController.uploadProfilePicture
+  profilePictureController.uploadPicture
 );
 
 // Change/Update profile picture
