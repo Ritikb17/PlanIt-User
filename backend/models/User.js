@@ -9,6 +9,10 @@ const UserSchema = new Schema({
     type: String,
     default: 'default.jpg'
   },
+  coverPicture: {
+    type: String,
+    default: 'default.jpg'
+  },
   bio: { type: String, default: '' },
   email: { type: String, require: true, unique: true },
   password: { type: String, required: true },

@@ -25,6 +25,10 @@ router.delete('/delete',
 router.get('/my-profile-picture', 
   profilePictureController.getProfilePicture
 );
+// Get cover picture
+router.get('/my-cover-picture', 
+  profilePictureController.getCoverPicture
+);
 
 // Get any user's profile picture (public access)
 // router.get('/public-profile-picture/:userId', 
