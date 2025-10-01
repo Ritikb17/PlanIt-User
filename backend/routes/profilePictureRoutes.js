@@ -17,8 +17,8 @@ router.put('/change',
 );
 
 // Delete profile picture
-router.delete('/delete', 
-  profilePictureController.deleteProfilePicture
+router.delete('/delete-picture/:pictureType', 
+  profilePictureController.deletePicture
 );
 
 // Get profile picture

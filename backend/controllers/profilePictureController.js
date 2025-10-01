@@ -28,20 +28,20 @@ const profilePictureController = {
       console.log("req.file.path", req.file.path);
 
       //removing the previous profile picture if exists
-      if(req.params.pictureType==='profilePicture'&& user.profilePicture!== 'default.jpg')
-      {imagePath = path.join(
-        __dirname,
-        `../${user.profilePicture}`
-      );
-      await fs.unlink(imagePath);
-      }    
-      if(req.params.pictureType==='coverPicture'){
-      user.coverPicture = `/public/user_${userId}/${req.params.pictureType}/${req.file.filename}`;
-      await user.save();
+      if (req.params.pictureType === 'profilePicture' && user.profilePicture !== 'default.jpg') {
+        imagePath = path.join(
+          __dirname,
+          `../${user.profilePicture}`
+        );
+        await fs.unlink(imagePath);
       }
-      if(req.params.pictureType==='profilePicture'){
-      user.profilePicture = `/public/user_${userId}/${req.params.pictureType}/${req.file.filename}`;
-      await user.save();
+      if (req.params.pictureType === 'coverPicture') {
+        user.coverPicture = `/public/user_${userId}/${req.params.pictureType}/${req.file.filename}`;
+        await user.save();
+      }
+      if (req.params.pictureType === 'profilePicture') {
+        user.profilePicture = `/public/user_${userId}/${req.params.pictureType}/${req.file.filename}`;
+        await user.save();
       }
       if (!user) {
         // Delete uploaded file if user not found
@@ -52,7 +52,7 @@ const profilePictureController = {
         });
       }
 
-     return res.status(200).json({
+      return res.status(200).json({
         success: true,
         message: 'Profile picture uploaded successfully',
       });
@@ -79,126 +79,126 @@ const profilePictureController = {
   },
 
   // Get profile picture
-async getProfilePicture(req, res) {
-  try {
-    const userId = req.user.id;
-    const user = await User.findById(userId).select('profilePicture');
+  async getProfilePicture(req, res) {
+    try {
+      const userId = req.user.id;
+      const user = await User.findById(userId).select('profilePicture');
 
-    if (!user) {
-      return res.status(404).json({
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+
+      const imagePath = path.join(
+        __dirname,
+        `../${user.profilePicture}`
+      );
+
+      // Send the image file
+      res.sendFile(path.normalize(imagePath));
+
+    } catch (error) {
+      console.error('Get profile picture error:', error);
+      res.status(500).json({
         success: false,
-        message: 'User not found'
+        message: 'Error retrieving profile picture',
+        error: error.message
       });
     }
-
-    const imagePath = path.join(
-      __dirname,
-      `../${user.profilePicture}`
-    );
-
-    // Send the image file
-    res.sendFile(path.normalize(imagePath));
-
-  } catch (error) {
-    console.error('Get profile picture error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error retrieving profile picture',
-      error: error.message
-    });
-  }
-},
+  },
   // Get profile picture of other user
-async getProfilePictureOfOtherUser(req, res) {
-  try {
-    const username = req.params.username;
-    const user = await User.findOne({username:username}).select('profilePicture');
+  async getProfilePictureOfOtherUser(req, res) {
+    try {
+      const username = req.params.username;
+      const user = await User.findOne({ username: username }).select('profilePicture');
 
-    if (!user) {
-      return res.status(404).json({
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
+
+      const imagePath = path.join(
+        __dirname,
+        `../${user.profilePicture}`
+      );
+
+      // Send the image file
+      res.sendFile(path.normalize(imagePath));
+
+    } catch (error) {
+      console.error('Get profile picture error:', error);
+      res.status(500).json({
         success: false,
-        message: 'User not found'
+        message: 'Error retrieving profile picture',
+        error: error.message
       });
     }
+  },
 
-    const imagePath = path.join(
-      __dirname,
-      `../${user.profilePicture}`
-    );
+  //get cover picture
+  async getCoverPicture(req, res) {
+    try {
+      const userId = req.user.id;
+      const user = await User.findById(userId).select('coverPicture');
 
-    // Send the image file
-    res.sendFile(path.normalize(imagePath));
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
 
-  } catch (error) {
-    console.error('Get profile picture error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error retrieving profile picture',
-      error: error.message
-    });
-  }
-},
+      const imagePath = path.join(
+        __dirname,
+        `../${user.coverPicture}`
+      );
 
-//get cover picture
-async getCoverPicture(req, res) {
-  try {
-    const userId = req.user.id;
-    const user = await User.findById(userId).select('coverPicture');
+      // Send the image file
+      res.sendFile(path.normalize(imagePath));
 
-    if (!user) {
-      return res.status(404).json({
+    } catch (error) {
+      console.error('Get cover picture error:', error);
+      res.status(500).json({
         success: false,
-        message: 'User not found'
+        message: 'Error retrieving cover picture',
+        error: error.message
       });
     }
+  },
+  //get cover picture
+  async getCoverPictureOfOtherUser(req, res) {
+    try {
+      const username = req.params.username;
+      const user = await User.findOne({ username: username }).select('coverPicture');
 
-    const imagePath = path.join(
-      __dirname,
-      `../${user.coverPicture}`
-    );
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'User not found'
+        });
+      }
 
-    // Send the image file
-    res.sendFile(path.normalize(imagePath));
+      const imagePath = path.join(
+        __dirname,
+        `../${user.coverPicture}`
+      );
 
-  } catch (error) {
-    console.error('Get cover picture error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error retrieving cover picture',
-      error: error.message
-    });
-  }
-},
-//get cover picture
-async getCoverPictureOfOtherUser(req, res) {
-  try {
-    const username = req.params.username;
-    const user = await User.findOne({username:username}).select('coverPicture');
+      // Send the image file
+      res.sendFile(path.normalize(imagePath));
 
-    if (!user) {
-      return res.status(404).json({
+    } catch (error) {
+      console.error('Get cover picture error:', error);
+      res.status(500).json({
         success: false,
-        message: 'User not found'
+        message: 'Error retrieving cover picture',
+        error: error.message
       });
     }
-
-    const imagePath = path.join(
-      __dirname,
-      `../${user.coverPicture}`
-    );
-
-    // Send the image file
-    res.sendFile(path.normalize(imagePath));
-
-  } catch (error) {
-    console.error('Get cover picture error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Error retrieving cover picture',
-      error: error.message
-    });
-  }
-},
+  },
 
   // Change/Update profile picture
   async changeProfilePicture(req, res) {
@@ -265,10 +265,11 @@ async getCoverPictureOfOtherUser(req, res) {
   },
 
   // Delete profile picture
-  async deleteProfilePicture(req, res) {
+  async deletePicture(req, res) {
     try {
       const userId = req.user.id;
       const user = await User.findById(userId);
+      const pictureType = req.params.pictureType; // Access the dynamic parameter
 
       if (!user) {
         return res.status(404).json({
@@ -277,31 +278,70 @@ async getCoverPictureOfOtherUser(req, res) {
         });
       }
 
-      // Check if user has a profile picture to delete
-      if (!user.profilePicture || user.profilePicture === 'default.jpg') {
-        return res.status(400).json({
+      if (userId !== req.user.id) {
+        return res.status(403).json({
           success: false,
-          message: 'No profile picture to delete'
+          message: 'Unauthorized to delete this picture'
         });
       }
 
-      const picturePath = path.join(__dirname, '../public/uploads/profiles', user.profilePicture);
+      let imagePath;
+      let fieldToUpdate;
+
+      if (pictureType === 'profilePicture') {
+        // Check if user has a profile picture to delete
+        if (user.profilePicture === 'default.jpg') {
+          return res.status(400).json({
+            success: false,
+            message: 'No profile picture to delete'
+          });
+
+        }
+        imagePath = path.join(
+          __dirname,
+          `../${user.profilePicture}`
+        )
+        fieldToUpdate = 'profilePicture';
+      }
+
+      //Setting the image path to be deleted
+      if (pictureType === 'coverPicture') {
+        // Check if user has a profile picture to delete
+        if (user.coverPicture === 'default.jpg') {
+          return res.status(400).json({
+            success: false,
+            message: 'No profile picture to delete'
+          });
+        }
+
+        //Setting the image path to be deleted
+        imagePath = path.join(
+          __dirname,
+          `../${user.coverPicture}`
+        )
+        fieldToUpdate = 'coverPicture';
+      }
 
       // Delete file from filesystem
       try {
-        await fs.access(picturePath);
-        await fs.unlink(picturePath);
+        console.log('the image path is ', imagePath)
+        await fs.access(imagePath);
+        await fs.unlink(imagePath);
+        // Reset to default picture
+        user[fieldToUpdate] = 'default.jpg';
+        await user.save();
       } catch (error) {
-        console.log('Profile picture file not found, continuing with database update');
+        console.log('Picture file not found, continuing with database update');
+        res.status(500).json({
+          success: false,
+          message: 'Error deleting profile picture',
+          error: error.message
+        });
+
       }
-
-      // Reset to default profile picture
-      user.profilePicture = 'default.jpg';
-      await user.save();
-
       res.status(200).json({
         success: true,
-        message: 'Profile picture deleted successfully',
+        message: `successfully deleted ${pictureType}`,
         data: {
           profilePicture: '/uploads/profiles/default.jpg'
         }
@@ -316,9 +356,6 @@ async getCoverPictureOfOtherUser(req, res) {
       });
     }
   },
-
-
-
 };
 
 module.exports = profilePictureController;
