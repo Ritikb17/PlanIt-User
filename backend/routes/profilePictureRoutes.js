@@ -29,6 +29,14 @@ router.get('/my-profile-picture',
 router.get('/my-cover-picture', 
   profilePictureController.getCoverPicture
 );
+// Get cover picture of other user
+router.get('/other-user-cover-picture/:username', 
+  profilePictureController.getCoverPictureOfOtherUser
+);
+// Get any user's profile picture of other user
+router.get('/other-user-profile-picture/:username', 
+  profilePictureController.getProfilePictureOfOtherUser
+);
 
 // Get any user's profile picture (public access)
 // router.get('/public-profile-picture/:userId', 

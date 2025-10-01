@@ -108,12 +108,72 @@ async getProfilePicture(req, res) {
     });
   }
 },
+  // Get profile picture of other user
+async getProfilePictureOfOtherUser(req, res) {
+  try {
+    const username = req.params.username;
+    const user = await User.findOne({username:username}).select('profilePicture');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const imagePath = path.join(
+      __dirname,
+      `../${user.profilePicture}`
+    );
+
+    // Send the image file
+    res.sendFile(path.normalize(imagePath));
+
+  } catch (error) {
+    console.error('Get profile picture error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving profile picture',
+      error: error.message
+    });
+  }
+},
 
 //get cover picture
 async getCoverPicture(req, res) {
   try {
     const userId = req.user.id;
     const user = await User.findById(userId).select('coverPicture');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const imagePath = path.join(
+      __dirname,
+      `../${user.coverPicture}`
+    );
+
+    // Send the image file
+    res.sendFile(path.normalize(imagePath));
+
+  } catch (error) {
+    console.error('Get cover picture error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error retrieving cover picture',
+      error: error.message
+    });
+  }
+},
+//get cover picture
+async getCoverPictureOfOtherUser(req, res) {
+  try {
+    const username = req.params.username;
+    const user = await User.findOne({username:username}).select('coverPicture');
 
     if (!user) {
       return res.status(404).json({
