@@ -17,7 +17,7 @@ const UserSchema = new Schema({
   bio: { type: String, default: '' },
   email: { type: String, require: true, unique: true },
   password: { type: String, required: true },
-  posts: [{ type: Schema.Types.ObjectId, ref: "Post" }],
+  posts: [{ type: Schema.Types.ObjectId, ref: "UserPosts" }],
   connections: [
     {
       friend: { type: Schema.Types.ObjectId, ref: "User" },

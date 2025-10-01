@@ -18,6 +18,7 @@ const otherRoutes = require("./routes/otherRoutes");
 const channelRoutes = require("./routes/channelRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const eventRoutes = require("./routes/eventRoutes");
+const userPostRoutes = require("./routes/userPostRoutes"); // Added user post routes
 const profilePictureRoutes = require("./routes/profilePictureRoutes"); // Moved up with other routes
 
 const { verifyToken } = require("./middlewares/authMiddleware");
@@ -58,6 +59,7 @@ require('./sockets/connectionHandler')(io);
 
 // Routes - Profile picture routes should come before general error handling
 app.use('/api/picture',verifyToken, profilePictureRoutes);
+app.use('/api/user-post',verifyToken, userPostRoutes); // Added user post routes with token verification
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", verifyToken, profileRoutes);
 app.use("/api/user", verifyToken, userRoutes);
