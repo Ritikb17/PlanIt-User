@@ -1,3 +1,4 @@
+require("dotenv").config();
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const { Schema } = mongoose;
@@ -7,11 +8,11 @@ const UserSchema = new Schema({
   name: { type: String, require: true },
   profilePicture: {
     type: String,
-    default: 'default.jpg'
+    default: process.env.DEFAULT_PROFILE_PICTURE_LOCATION || 'default.jpg'
   },
   coverPicture: {
     type: String,
-    default: 'default.jpg'
+    default: process.env.DEFAULT_COVER_PICTURE_LOCATION || 'defaultCover.jpg'
   },
   bio: { type: String, default: '' },
   email: { type: String, require: true, unique: true },

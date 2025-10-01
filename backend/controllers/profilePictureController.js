@@ -1,3 +1,4 @@
+require("dotenv").config();
 const fs = require('fs').promises;
 const path = require('path');
 const User = require('../models/User'); // Make sure this path is correct
@@ -28,7 +29,7 @@ const profilePictureController = {
       console.log("req.file.path", req.file.path);
 
       //removing the previous profile picture if exists
-      if (req.params.pictureType === 'profilePicture' && user.profilePicture !== 'default.jpg') {
+      if (req.params.pictureType === 'profilePicture' && user.profilePicture !== process.env.DEFAULT_PROFILE_PICTURE_LOCATION) {
         imagePath = path.join(
           __dirname,
           `../${user.profilePicture}`
@@ -83,7 +84,7 @@ const profilePictureController = {
     try {
       const userId = req.user.id;
       const user = await User.findById(userId).select('profilePicture');
-
+      console.log('GETTING THE DATA');
       if (!user) {
         return res.status(404).json({
           success: false,
@@ -95,7 +96,7 @@ const profilePictureController = {
         __dirname,
         `../${user.profilePicture}`
       );
-
+    console.log('the image path is ', imagePath)
       // Send the image file
       res.sendFile(path.normalize(imagePath));
 
@@ -222,7 +223,7 @@ const profilePictureController = {
       }
 
       // Delete old profile picture if exists
-      if (user.profilePicture && user.profilePicture !== 'default.jpg') {
+      if (user.profilePicture && user.profilePicture !== process.env.DEFAULT_PROFILE_PICTURE_LOCATION ) {
         const oldPicturePath = path.join(__dirname, '../public/uploads/profiles', user.profilePicture);
         try {
           await fs.access(oldPicturePath);
@@ -290,7 +291,7 @@ const profilePictureController = {
 
       if (pictureType === 'profilePicture') {
         // Check if user has a profile picture to delete
-        if (user.profilePicture === 'default.jpg') {
+        if (user.profilePicture === process.env.DEFAULT_PROFILE_PICTURE_LOCATION) {
           return res.status(400).json({
             success: false,
             message: 'No profile picture to delete'
@@ -307,7 +308,7 @@ const profilePictureController = {
       //Setting the image path to be deleted
       if (pictureType === 'coverPicture') {
         // Check if user has a profile picture to delete
-        if (user.coverPicture === 'default.jpg') {
+        if (user.coverPicture === process.env.DEFAULT_COVER_PICTURE_LOCATION) {
           return res.status(400).json({
             success: false,
             message: 'No profile picture to delete'
@@ -328,7 +329,7 @@ const profilePictureController = {
         await fs.access(imagePath);
         await fs.unlink(imagePath);
         // Reset to default picture
-        user[fieldToUpdate] = 'default.jpg';
+        user[fieldToUpdate] = process.env.DEFAULT_PROFILE_PICTURE_LOCATION || '/public/defaultPicture/default.png';
         await user.save();
       } catch (error) {
         console.log('Picture file not found, continuing with database update');
@@ -342,9 +343,7 @@ const profilePictureController = {
       res.status(200).json({
         success: true,
         message: `successfully deleted ${pictureType}`,
-        data: {
-          profilePicture: '/uploads/profiles/default.jpg'
-        }
+        
       });
 
     } catch (error) {
