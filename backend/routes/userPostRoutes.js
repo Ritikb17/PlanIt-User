@@ -12,7 +12,7 @@ router.post(
 );
 
 // Get all posts for a user
-router.get("/get-posts/:userId", getUserPosts);
+router.get("/get-user-posts/:username", getUserPosts);
 // Like a user post
 // router.put("/like-post/:postId", likeUserPost);
 

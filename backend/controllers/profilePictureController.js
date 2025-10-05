@@ -84,7 +84,7 @@ const profilePictureController = {
     try {
       const userId = req.user.id;
       const user = await User.findById(userId).select('profilePicture');
-      console.log('GETTING THE DATA');
+    
       if (!user) {
         return res.status(404).json({
           success: false,
@@ -96,7 +96,7 @@ const profilePictureController = {
         __dirname,
         `../${user.profilePicture}`
       );
-    console.log('the image path is ', imagePath)
+
       // Send the image file
       res.sendFile(path.normalize(imagePath));
 

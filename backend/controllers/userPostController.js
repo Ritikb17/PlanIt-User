@@ -10,6 +10,10 @@ const createUserPost = async (req, res) => {
         const { content, isPublic } = req.body;
         const userId = req.user._id;
         const pictureType = req.params.pictureType;
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
         if (!userId || !content) {
             return res.status(400).json({ message: "User ID and content are required" });
         }
@@ -44,6 +48,11 @@ const createUserPost = async (req, res) => {
         }
 
         await newPost.save();
+
+        user.posts.push(newPost._id);
+        await user.save();
+
+
 
         return res.status(201).json({
             message: "Post created successfully",
@@ -116,13 +125,29 @@ const getUserPostLikes = async (req, res) => {
 //get all posts for a user
 const getUserPosts = async (req, res) => {
     try {
-        const { userId } = req.params;
-        const posts = await UserPost.find({ userId }).sort({ createdAt: -1 });
-        return res.status(200).json(posts);
+        const { username } = req.params;
+        console.log("Username Param:", username);
+
+        const user = await User.findOne({ username })
+            
+            .populate({
+                path: 'posts',
+                match: { isDeleted: false }, // only non-deleted posts
+                options: { sort: { createdAt: -1 } } // sort posts by creation date descending
+            });
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        return res.status(200).json(user.posts); // return array of posts
+
     } catch (error) {
-        res.status(500).json({ message: "Server error", error });
+        console.error("Error fetching user posts:", error);
+        res.status(500).json({ message: "Server error", error: error.message });
     }
-}
+};
+
 //like a post
 const likeUnlikePost = async (req, res) => {
     try {
