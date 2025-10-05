@@ -1,17 +1,37 @@
 const mongoose = require('mongoose');
+require('dotenv').config();
 const User = require("../models/User");
 const UserPost = require("../models/UserPost");
+
 //create new post 
 const createUserPost = async (req, res) => {
     try {
-        const { userId, content } = req.body;
-        const newPost = new UserPost({ userId, content });
+        const {  content,isPublic } = req.body;
+        const userId = req.user._id;
+        console.log("Request Body:", req.body);
+        console.log("isPublic value:", isPublic === 'true');
+        const public = isPublic === 'true' || isPublic === 'True';
+        if (!userId || !content) {
+            return res.status(400).json({ message: "User ID and content are required" });
+        }
+        const newPost = new UserPost({
+            userId,
+            content,
+            createdBy: userId,
+            isPublic:public
+        });
+        if (public) {
+            const publicLink = `${process.env.APP_URL}/public-posts/${newPost._id}`;
+            newPost.publicLink = publicLink;
+        }
         await newPost.save();
         return res.status(201).json({ message: "Post created successfully" });
     } catch (error) {
+        console.log("Error creating post:", error);
         res.status(500).json({ message: "Server error", error });
     }
 }
+
 //delete a post
 const deleteUserPost = async (req, res) => {
     try {
@@ -37,6 +57,7 @@ const deleteUserPost = async (req, res) => {
         return res.status(500).json({ message: "Server error", error });
     }
 }
+
 //get comments of a post
 const getUserPostComments = async (req, res) => {
     try {
@@ -185,4 +206,20 @@ const deletePostComment = async (req, res) => {
     }
 
 }
-module.exports = { createUserPost, getUserPosts, likeUnlikePost, commentOnPost, deletePostComment, deleteUserPost, getUserPostComments, getUserPostLikes };
+//get all public posts
+const getPublicPosts = async (req, res) => {
+    try {
+        const postId = req.params.postId;
+        const posts = await UserPost.findById(
+            { _id: postId },
+            { isPublic: true, isDeleted: false }
+        ).sort({ createdAt: -1 });
+        if (!posts) {
+            return res.status(404).json({ message: "No posts found" });
+        }
+        return res.status(200).json(posts);
+    } catch (error) {
+        return res.status(500).json({ message: "Server error", error });
+    }
+}
+module.exports = { createUserPost, getUserPosts, likeUnlikePost, commentOnPost, deletePostComment, deleteUserPost, getUserPostComments, getUserPostLikes, getPublicPosts };

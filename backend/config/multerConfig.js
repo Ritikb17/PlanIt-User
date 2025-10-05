@@ -6,6 +6,8 @@ const fs = require('fs');
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     try {
+
+      console.log("Request Params:", req.params);
       // Get user ID from authenticated request (make sure auth middleware runs first)
       const userId = req.user.id;
       const pictureType = req.params.pictureType; // Access the dynamic parameter
@@ -48,11 +50,11 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({
   storage: storage,
-  fileFilter: fileFilter,
-  limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB
-    files: 1
-  }
+  // fileFilter: fileFilter,
+  // limits: {
+  //   fileSize: 5 * 1024 * 1024, // 5MB
+  //   files: 3 // Max 3 files
+  // }
 });
 
 module.exports = upload;

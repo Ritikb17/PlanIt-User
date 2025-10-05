@@ -10,6 +10,7 @@ const userPostSchema = new Schema({
     comments: [{ type: Schema.Types.ObjectId, ref: 'Comment' }],
     isCommentsAllowed: { type: Boolean, default: true },
     likes: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    publicLink: { type: String }
 });
 const UserPost = mongoose.model('UserPost', userPostSchema);
 module.exports = UserPost;
