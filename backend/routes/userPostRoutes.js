@@ -2,10 +2,14 @@ const express = require("express");
 const router = express.Router();
 const multer = require('multer');
 const { createUserPost, getUserPosts, likeUnlikePost, commentOnPost, deletePostComment, deleteUserPost, getUserPostComments, getUserPostLikes } = require("../controllers/userPostController");
-const upload = multer();
+const upload = require('../config/multerConfig');
 // Create a new user post
 // router.post("/create-post", createUserPost);  
-router.post("/create-post/:pictureType",upload.array('images'),createUserPost);
+router.post(
+  "/create-post/:pictureType",
+  upload.array('images'), // field name must match your form/curl field
+  createUserPost
+);
 
 // Get all posts for a user
 router.get("/get-posts/:userId", getUserPosts);

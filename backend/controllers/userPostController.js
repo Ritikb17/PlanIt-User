@@ -1,36 +1,60 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
+const path = require('path');
 const User = require("../models/User");
 const UserPost = require("../models/UserPost");
 
 //create new post 
 const createUserPost = async (req, res) => {
     try {
-        const {  content,isPublic } = req.body;
+        const { content, isPublic } = req.body;
         const userId = req.user._id;
-        console.log("Request Body:", req.body);
-        console.log("isPublic value:", isPublic === 'true');
-        const public = isPublic === 'true' || isPublic === 'True';
+        const pictureType = req.params.pictureType;
         if (!userId || !content) {
             return res.status(400).json({ message: "User ID and content are required" });
         }
+
+        // Convert string to boolean
+        const isPostPublic = isPublic === 'true' || isPublic === 'True';
+
+
+        const imagePaths = (req.files || []).map(file => {
+            const relativePath = path.join(
+                'uploads',
+                `user_${userId}`,
+                'post',  // safe default
+                file.originalname
+            );
+            return relativePath.replace(/\\/g, '/');
+        });
+
+        // Create a new post document
         const newPost = new UserPost({
             userId,
             content,
             createdBy: userId,
-            isPublic:public
+            image: imagePaths, // ✅ store array of image paths
+            isPublic: isPostPublic,
         });
-        if (public) {
+
+        // Add public link if public
+        if (isPostPublic) {
             const publicLink = `${process.env.APP_URL}/public-posts/${newPost._id}`;
             newPost.publicLink = publicLink;
         }
+
         await newPost.save();
-        return res.status(201).json({ message: "Post created successfully" });
+
+        return res.status(201).json({
+            message: "Post created successfully",
+            post: newPost,
+        });
     } catch (error) {
-        console.log("Error creating post:", error);
+        console.error("Error creating post:", error);
         res.status(500).json({ message: "Server error", error });
     }
-}
+};
+
 
 //delete a post
 const deleteUserPost = async (req, res) => {
