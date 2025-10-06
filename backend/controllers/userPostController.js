@@ -9,7 +9,7 @@ const createUserPost = async (req, res) => {
     try {
         const { content, isPublic } = req.body;
         const userId = req.user._id;
-        const pictureType = req.params.pictureType;
+
         const user = await User.findById(userId);
         if (!user) {
             return res.status(404).json({ message: "User not found" });
@@ -24,11 +24,12 @@ const createUserPost = async (req, res) => {
 
         const imagePaths = (req.files || []).map(file => {
             const relativePath = path.join(
-                'uploads',
+                'public',
                 `user_${userId}`,
                 'post',  // safe default
                 file.originalname
             );
+
             return relativePath.replace(/\\/g, '/');
         });
 
@@ -63,6 +64,51 @@ const createUserPost = async (req, res) => {
         res.status(500).json({ message: "Server error", error });
     }
 };
+
+
+
+
+const getUserPosts = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id)
+      .populate({
+        path: 'posts',
+        match: { isDeleted: false },
+        options: { sort: { createdAt: -1 } }
+      });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Build posts with accessible image URLs
+    const postsWithImages = user.posts.map(post => {
+      const imageURLs = (post.image || []).map(img => {
+        // Remove duplicate public/ if present and normalize slashes
+        const cleanPath = img.replace(/^public[\\/]/, '').replace(/\\/g, '/');
+        return `${req.protocol}://${req.get('host')}/uploads/${cleanPath}`;
+      });
+
+      return {
+        _id: post._id,
+        content: post.content,
+        createdAt: post.createdAt,
+        isPublic: post.isPublic,
+        imageURLs
+      };
+    });
+
+    res.status(200).json({ posts: postsWithImages });
+
+  } catch (error) {
+    console.error("Error fetching user posts:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+module.exports = { getUserPosts };
+
+
 
 
 //delete a post
@@ -122,31 +168,7 @@ const getUserPostLikes = async (req, res) => {
     }
 }
 
-//get all posts for a user
-const getUserPosts = async (req, res) => {
-    try {
-        const { username } = req.params;
-        console.log("Username Param:", username);
 
-        const user = await User.findOne({ username })
-            
-            .populate({
-                path: 'posts',
-                match: { isDeleted: false }, // only non-deleted posts
-                options: { sort: { createdAt: -1 } } // sort posts by creation date descending
-            });
-
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-
-        return res.status(200).json(user.posts); // return array of posts
-
-    } catch (error) {
-        console.error("Error fetching user posts:", error);
-        res.status(500).json({ message: "Server error", error: error.message });
-    }
-};
 
 //like a post
 const likeUnlikePost = async (req, res) => {

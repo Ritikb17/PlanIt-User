@@ -7,13 +7,15 @@ const upload = require('../config/multerConfig');
 // router.post("/create-post", createUserPost);  
 router.post(
   "/create-post/:pictureType",
-  upload.array('images'), // field name must match your form/curl field
+  upload.array('images'), 
   createUserPost
 );
+router.get('/user', getUserPosts);
 
 // Get all posts for a user
-router.get("/get-user-posts/:username", getUserPosts);
+router.get("/get-user-posts", getUserPosts);
 // Like a user post
 // router.put("/like-post/:postId", likeUserPost);
+
 
 module.exports = router;
