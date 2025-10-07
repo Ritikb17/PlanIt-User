@@ -6,63 +6,65 @@ const UserPost = require("../models/UserPost");
 
 //create new post 
 const createUserPost = async (req, res) => {
-    try {
-        const { content, isPublic } = req.body;
-        const userId = req.user._id;
+  try {
+    const { content, isPublic } = req.body;
+    const userId = req.user._id;
 
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.status(404).json({ message: "User not found" });
-        }
-        if (!userId || !content) {
-            return res.status(400).json({ message: "User ID and content are required" });
-        }
-
-        // Convert string to boolean
-        const isPostPublic = isPublic === 'true' || isPublic === 'True';
-
-
-        const imagePaths = (req.files || []).map(file => {
-            const relativePath = path.join(
-                'public',
-                `user_${userId}`,
-                'post',  // safe default
-                file.originalname
-            );
-
-            return relativePath.replace(/\\/g, '/');
-        });
-
-        // Create a new post document
-        const newPost = new UserPost({
-            userId,
-            content,
-            createdBy: userId,
-            image: imagePaths, // ✅ store array of image paths
-            isPublic: isPostPublic,
-        });
-
-        // Add public link if public
-        if (isPostPublic) {
-            const publicLink = `${process.env.APP_URL}/public-posts/${newPost._id}`;
-            newPost.publicLink = publicLink;
-        }
-
-        await newPost.save();
-
-        user.posts.push(newPost._id);
-        await user.save();
-
-
-
-        return res.status(201).json({
-            message: "Post created successfully",
-            post: newPost,
-        });
-    } catch (error) {
-        console.error("Error creating post:", error);
-        res.status(500).json({ message: "Server error", error });
+    if (!userId || !content) {
+      return res.status(400).json({ message: "User ID and content are required" });
     }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Convert string to boolean
+    const isPostPublic = isPublic === "true" || isPublic === "True";
+
+    // ✅ Use filenames exactly as Multer stored them
+    let imagePaths = [];
+    if (req.files && req.files.length > 0) {
+      imagePaths = req.files.map(file =>
+        path
+          .join("public", `user_${userId}`, "post", file.filename)
+          .replace(/\\/g, "/")
+      );
+    } else if (req.file) {
+      imagePaths = [
+        path
+          .join("public", `user_${userId}`, "post", req.file.filename)
+          .replace(/\\/g, "/")
+      ];
+    }
+
+    // ✅ Create a new post document
+    const newPost = new UserPost({
+      userId,
+      content,
+      createdBy: userId,
+      image: imagePaths, // Correct file names from Multer
+      isPublic: isPostPublic,
+    });
+
+    // Optional: Add public link for public posts
+    if (isPostPublic) {
+      newPost.publicLink = `${process.env.APP_URL}/public-posts/${newPost._id}`;
+    }
+
+    await newPost.save();
+
+    user.posts.push(newPost._id);
+    await user.save();
+
+    res.status(201).json({
+      message: "Post created successfully",
+      post: newPost,
+    });
+  } catch (error) {
+    console.error("Error creating post:", error);
+    res.status(500).json({ message: "Server error", error });
+  }
 };
 
 
