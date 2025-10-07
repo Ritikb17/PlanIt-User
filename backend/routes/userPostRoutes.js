@@ -5,6 +5,9 @@ const { createUserPost, getUserPosts, likeUnlikePost, commentOnPost, deletePostC
 const upload = require('../config/multerConfig');
 // Create a new user post
 // router.post("/create-post", createUserPost);  
+
+
+// create post with multiple images with the field name 'images'
 router.post(
   "/create-post/:pictureType",
   upload.array('images'), 

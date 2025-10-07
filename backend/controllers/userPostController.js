@@ -67,9 +67,6 @@ const createUserPost = async (req, res) => {
   }
 };
 
-
-
-
 const getUserPosts = async (req, res) => {
   try {
     const user = await User.findById(req.user._id)
