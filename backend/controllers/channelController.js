@@ -1,9 +1,9 @@
 const mongoose = require('mongoose');
 const Channel = require('../models/channel');
 const User = require('../models/User');
-const ChannelPool = require('../models/channelPool')
+const ChannelPool = require('../models/channelPool');
 const Notification = require('../models/notification');
-const notification = require('../models/notification');
+// const notification = require('../models/notification');
 const ObjectId = mongoose.Types.ObjectId;
 //for channel creator( create new channel)
 const createChannel = async (req, res) => {

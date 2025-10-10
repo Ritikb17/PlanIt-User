@@ -3,26 +3,27 @@ const { Schema } = mongoose;
 
 const notificationSchema = new Schema(
   {
-    user: { type: Schema.Types.ObjectId, ref: 'User' }, // Reference to the User model
+    user: { type: Schema.Types.ObjectId, ref: 'User' },
     notification: [
       {
         message: { type: String, required: true }, 
-        from: { type: Schema.Types.ObjectId, ref: 'User' }, // User who triggered the notification
-        post: { type: Schema.Types.ObjectId, ref: 'UserPost' }, // Reference to the related post, if applicable
-        channel: { type: Schema.Types.ObjectId, ref: 'Channel' }, // Reference to the related channel, if applicable
-        event: { type: Schema.Types.ObjectId, ref: 'Event' }, // Reference to the related event, if applicable
-        date: { type: Date, default: Date.now }, // Timestamp of the notification
+        from: { type: Schema.Types.ObjectId, ref: 'User' },
+        post: { type: Schema.Types.ObjectId, ref: 'UserPost' },
+        channel: { type: Schema.Types.ObjectId, ref: 'Channel' },
+        event: { type: Schema.Types.ObjectId, ref: 'Event' },
+        date: { type: Date, default: Date.now },
         isSeen: { type: Boolean, default: false }, 
-        isDeleted:{ type: Boolean, default: false }, 
+        isDeleted: { type: Boolean, default: false }, 
         type: {
           type: String,
-          enum: ['follow', 'post','channel','event','message','like'], // Add other types as needed
+          enum: ['follow', 'post', 'channel', 'event', 'message', 'like'],
           required: true, 
         },
       },
     ],
   },
-  { timestamps: true } // Enable automatic timestamps (createdAt and updatedAt)
+  { timestamps: true }
 );
 
-module.exports = mongoose.model('Notification', notificationSchema); // Corrected model name
+// Check if the model already exists before creating it
+module.exports = mongoose.models.Notification || mongoose.model('Notification', notificationSchema);

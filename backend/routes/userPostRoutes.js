@@ -17,6 +17,12 @@ router.get('/user', getUserPosts);
 
 // Get all posts for a user
 router.get("/get-user-posts", getUserPosts);
+router.delete("/delete-post/:postId", deleteUserPost);
+router.put("/like-unlike-post/:postId", likeUnlikePost);
+router.post("/comment-on-post/:postId", commentOnPost);
+// router.delete("/delete-comment/:postId/:commentId", deletePostComment);
+// router.get("/get-post-comments/:postId", getUserPostComments);
+// router.get("/get-post-likes/:postId", getUserPostLikes);
 // Like a user post
 // router.put("/like-post/:postId", likeUserPost);
 

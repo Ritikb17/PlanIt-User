@@ -7,7 +7,7 @@ const userPostSchema = new Schema({
     isPublic: { type: Boolean, default: true },
     isDeleted: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now },
-    comments: [{ type: Schema.Types.ObjectId, ref: 'Comment' }],
+    comments: [{ type: Schema.Types.ObjectId, ref: 'PostComment' }],
     isCommentsAllowed: { type: Boolean, default: true },
     likes: [{ type: Schema.Types.ObjectId, ref: 'User' }],
     publicLink: { type: String }

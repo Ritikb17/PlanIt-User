@@ -1,8 +1,13 @@
 const mongoose = require('mongoose');
+const fs = require('fs');
 require('dotenv').config();
 const path = require('path');
 const User = require("../models/User");
 const UserPost = require("../models/UserPost");
+const Notification = require("../models/notification");
+const Comment = require("../models/postComment");
+
+
 
 //create new post 
 const createUserPost = async (req, res) => {
@@ -93,6 +98,8 @@ const getUserPosts = async (req, res) => {
         content: post.content,
         createdAt: post.createdAt,
         isPublic: post.isPublic,
+        likes: post.likes,
+        comments: post.comments,    
         imageURLs
       };
     });
@@ -105,34 +112,70 @@ const getUserPosts = async (req, res) => {
   }
 };
 
-module.exports = { getUserPosts };
+// //delete a post(HARD DELETE IMPLEMENTED)
+// const deleteUserPost = async (req, res) => {
+//     try {
+//         const { postId } = req.params;
+//         const userId = req.user._id;
+//         const userIdObj = new mongoose.Types.ObjectId(userId);
+//         const post = await UserPost.findById(postId);
+//         if (!post) {
+//             return res.status(404).json({ message: "Post not found" });
+//         }
+       
+//         if (post.createdBy.toString() !== userId.toString()) {
+//             return res.status(403).json({ message: "Unauthorized to delete this post" });
+//         }
+//         // Delete associated images from filesystem
 
-
-
-
-//delete a post
+//         for (const imgPath of post.image) {
+//             const fullPath = path.join(__dirname, `../${imgPath}`);
+//             fs.unlink(fullPath, (err) => {
+//                 if (err) {
+//                     console.error(`Error deleting file ${fullPath}:`, err); 
+//                 } else {
+//                     console.log(`Deleted file: ${fullPath}`);
+//                 }});
+//             }
+//         // hard delete the post
+//         await UserPost.deleteOne(
+//             { _id: postId },
+//             { isDeleted: true }
+//         );
+//         return res.status(200).json({ message: "Post deleted successfully" });
+//     } catch (error) {
+//         console.error("Error deleting post:", error);
+//         return res.status(500).json({ message: "Server error", error });
+        
+//     }
+// }
 const deleteUserPost = async (req, res) => {
-    try {
-        const { postId } = req.params;
+    try{
         const userId = req.user._id;
+        const { postId } = req.params;
+        const userIdObj = new mongoose.Types.ObjectId(userId);
         const post = await UserPost.findById(postId);
-        if (!post) {
+        
+        if(!post){
             return res.status(404).json({ message: "Post not found" });
         }
-        if (post.isDeleted) {
-            return res.status(400).json({ message: "Post already deleted" });
-        }
-        if (post.userId.toString() !== userId.toString()) {
+        if(post.createdBy.toString() !== userId.toString()){
             return res.status(403).json({ message: "Unauthorized to delete this post" });
         }
-        // await UserPost.findByIdAndDelete(postId);
+        if(post.isDeleted){ 
+            return res.status(400).json({ message: "Post already deleted" });
+        }
+        // Soft delete the post
         await UserPost.updateOne(
             { _id: postId },
             { isDeleted: true }
-        );
+        )
         return res.status(200).json({ message: "Post deleted successfully" });
-    } catch (error) {
-        return res.status(500).json({ message: "Server error", error });
+
+
+    }catch(error){
+        console.error("Error deleting post:", error);
+        return json.status(500).json({ message: "Server error", error });
     }
 }
 
@@ -166,43 +209,52 @@ const getUserPostLikes = async (req, res) => {
         res.status(500).json({ message: "Server error", error });
     }
 }
-
-
-
 //like a post
 const likeUnlikePost = async (req, res) => {
     try {
         const { postId } = req.params;
         const userId = req.user._id;
-        const _id = mongoose.Types.ObjectId(userId);
+        const _id =  new mongoose.Types.ObjectId(userId);
         const post = await UserPost.findById(postId);
+        const posttId = new mongoose.Types.ObjectId(postId);
+        const user = await User.findById(userId);
 
         if (!post) {
             return res.status(404).json({ message: "Post not found" });
         }
-        const otherUserId = await User.findById(post.createdBy);
+        const creatorUserId = await User.findById(post.createdBy);
 
         if (!post.isPublic) {
             return res.status(403).json({ message: "Cannot like a private post" });
         }
+        else
+        {   
+            if(creatorUserId.connections.includes(userId) || post.createdBy.toString() !== userId.toString())
+            {
+                console.log(" liking own post");
+                return res.status(403).json({ message: "cannot like private post " });
+            }
+        }
 
 
         //liking and unliking logic
+        console.log("data",{ type: 'like', from: userId, post: posttId, date: new Date(), message: `Somebody like your post ` })
         if (post.likes.includes(userId)) {
             await UserPost.updateOne(
-                { _id: _id },
+                { _id: postId },
                 { $pull: { likes: _id } }
             );
             return res.status(200).json({ message: "Post unliked" });
 
         } else {
             await UserPost.updateOne(
-                { _id: _id },
+                { _id: postId },
                 { $push: { likes: _id } }
             )
-            await User.updateOne(
-                { _id: otherUserId },
-                { $push: { notifications: { type: 'like', from: userId, post: postId, date: new Date(), message: `Somebody like your post ` } } }
+            //send notification to post owner
+            await Notification.updateOne(
+                { user: creatorUserId },
+                { $push: { notifications: { type: 'like',  message: `Somebody like your post ` } } }
             );
             return res.status(200).json({ message: "Post liked" });
         }
@@ -210,6 +262,7 @@ const likeUnlikePost = async (req, res) => {
     }
 
     catch (error) {
+        console.error("Error liking/unliking post:", error);
         return res.status(500).json({ message: "Server error", error });
     }
 }
@@ -219,23 +272,30 @@ const commentOnPost = async (req, res) => {
         const { postId } = req.params;
         const { comment } = req.body;
         const userId = req.user._id;
-        const _id = mongoose.Types.ObjectId(userId);
+        const _id =  new mongoose.Types.ObjectId(userId);
         const post = await UserPost.findById(postId);
+        console.log("post comment ",comment);
         if (!post) {
             return res.status(404).json({ message: "Post not found" });
-        }
-        if (!post.isPublic) {
-            return res.status(403).json({ message: "Cannot comment on a private post" });
         }
         if (!post.isCommentsAllowed) {
             return res.status(403).json({ message: "Comments are disabled for this post" });
         }
+        if (!post.isPublic) {
+            return res.status(403).json({ message: "Cannot comment on a private post" });
+        }
 
         //commenting logic
-        await UserPost.updateOne(
-            { _id: _id },
-            { $push: { comments: { userId, comment, date: new Date() } } }
-        );
+         const newComment = await Comment.create({
+            postId,
+            userId,
+            comment});
+        if(!newComment){
+            return res.status(500).json({ message: "Failed to add comment" });
+        }
+            await UserPost.updateOne({ _id: postId },
+            { $push: { comments: newComment._id } } ) 
+       
         //send notification to post owner
         User.updateOne(
             { _id: post.createdBy },
@@ -245,6 +305,7 @@ const commentOnPost = async (req, res) => {
 
 
     } catch (error) {
+        console.error("Error adding comment:", error);
         return res.status(500).json({ message: "Server error", error });
     }
 
