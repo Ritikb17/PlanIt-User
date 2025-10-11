@@ -143,6 +143,7 @@ const profilePictureController = {
   //get cover picture
   async getCoverPicture(req, res) {
     try {
+      console.log('Get cover picture called');
       const userId = req.user.id;
       const user = await User.findById(userId).select('coverPicture');
 

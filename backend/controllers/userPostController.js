@@ -226,12 +226,12 @@ const likeUnlikePost = async (req, res) => {
 
         if (!post.isPublic) {
             if (!creatorUserId.connections.includes(userId) || post.createdBy.toString() !== userId.toString()) {
-                
+
                 return res.status(403).json({ message: "cannot like this  post (not owner and its not public post )" });
             }
             return res.status(403).json({ message: "Cannot like a private post" });
         }
-       
+
 
 
         //liking and unliking logic
@@ -308,31 +308,31 @@ const commentOnPost = async (req, res) => {
     }
 
 }
-
+//Like unlike a comment 
 const LikeOnComment = async (req, res) => {
     try {
-        const {commentId} = req.params;
-    
+        const { commentId } = req.params;
+
         const comment = await Comment.findById(commentId);
-        console.log("comment ",comment);
-        if(!comment){
-            return res.status(404).json({message:"Comment not found"});
+        console.log("comment ", comment);
+        if (!comment) {
+            return res.status(404).json({ message: "Comment not found" });
         }
         const postId = comment.postId;
         const post = await UserPost.findById(postId);
-        if(!post){
-            return res.status(404).json({message:"Post not found"});
+        if (!post) {
+            return res.status(404).json({ message: "Post not found" });
         }
-        if(!post.isPublic){
-            if(!post.createdBy.toString() !== req.user._id.toString()){
-                return res.status(403).json({message:"cannot like comment on this post (not owner and its not public post )"});
+        if (!post.isPublic) {
+            if (!post.createdBy.toString() !== req.user._id.toString()) {
+                return res.status(403).json({ message: "cannot like comment on this post (not owner and its not public post )" });
             }
-            return res.status(403).json({message:"Cannot like comment on a private post"});
+            return res.status(403).json({ message: "Cannot like comment on a private post" });
         }
-        if(comment.likes.includes(req.user._id)){
+        if (comment.likes.includes(req.user._id)) {
             comment.likes.pull(req.user._id);
             await comment.save();
-            return res.status(400).json({message:"comment unliked"});
+            return res.status(400).json({ message: "comment unliked" });
         }
         comment.likes.push(req.user._id);
         await comment.save();
@@ -341,13 +341,61 @@ const LikeOnComment = async (req, res) => {
             { user: Userr },
             { $push: { notifications: { type: 'like', message: `Somebody like your comment on post ` } } }
         );
-        return res.status(200).json({message:"Comment liked successfully"});
+        return res.status(200).json({ message: "Comment liked successfully" });
 
     } catch (error) {
         console.error("Error liking comment:", error);
         return res.status(500).json({ message: "Server error", error });
     }
 
+}
+// replaying on a comment 
+const replayOnComment = async (req, res) => {
+    try {
+        const { commentId } = req.params;
+        const userId = req.user._id;
+        const commentText = req.body.comment;
+
+        const comment = await Comment.findById(commentId);
+        if (!comment) {
+            return res.status(404).json({ message: "comment not found" });
+        }
+        const post = await UserPost.findById(comment.postId)
+        const postId = comment.postId
+        if (!post) {
+            return res.status(404).json({ message: "post not found " });
+
+        }
+        if (!post.isPublic) {
+            if (!post.createdBy.toString() !== req.user._id.toString()) {
+                return res.status(403).json({ message: "cannot like comment on this post (not owner and its not public post )" });
+            }
+            return res.status(403).json({ message: "Cannot like comment on a private post" });
+        }
+
+        //commenting logic
+        const newComment = await Comment.create({
+            postId,
+            userId,
+            comment:commentText
+        });
+
+        if (!newComment) {
+            return res.status(500).json({ message: "Failed to add comment" });
+        }
+        console.log("newComment ", newComment._id);
+        const pushingReplayToComment = await Comment.updateOne({ _id: commentId },
+            { $push: { replies: newComment._id } })
+        console.log("pushingReplayToComment ", pushingReplayToComment);
+        if (!pushingReplayToComment) {
+            return res.status(403).json({ message: "error in pushing replay" })
+        }
+        return res.status(200).json({ message: "comment has been created successfully" })
+    }
+    catch (error) {
+        console.log("error replying on comment ", error)
+        return res.status(500).json({ message: "internal server error" })
+    }
 }
 //delete comment post
 const deletePostComment = async (req, res) => {
@@ -367,7 +415,7 @@ const deletePostComment = async (req, res) => {
         if (!post) {
             return res.status(404).json({ message: "Post not found" });
         }
-        if (!user.posts.includes(postId)&&comment.userId.toString() !== userId.toString()) {
+        if (!user.posts.includes(postId) && comment.userId.toString() !== userId.toString()) {
             return res.status(403).json({ message: "Unauthorized to delete this comment" });
         }
         // Remove comment reference from post
@@ -405,4 +453,4 @@ const getPublicPosts = async (req, res) => {
         return res.status(500).json({ message: "Server error", error });
     }
 }
-module.exports = { createUserPost, getUserPosts, likeUnlikePost, commentOnPost, deletePostComment, deleteUserPost, getUserPostComments, getUserPostLikes, getPublicPosts,LikeOnComment };
+module.exports = { createUserPost, getUserPosts, likeUnlikePost, commentOnPost, deletePostComment, deleteUserPost, getUserPostComments, getUserPostLikes, getPublicPosts, LikeOnComment,replayOnComment };

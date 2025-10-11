@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const multer = require('multer');
-const { createUserPost, getUserPosts, likeUnlikePost, commentOnPost, deletePostComment, deleteUserPost, getUserPostComments, getUserPostLikes,LikeOnComment } = require("../controllers/userPostController");
+const { createUserPost, getUserPosts, likeUnlikePost, commentOnPost, deletePostComment, deleteUserPost, getUserPostComments, getUserPostLikes,LikeOnComment ,replayOnComment} = require("../controllers/userPostController");
 const upload = require('../config/multerConfig');
 // Create a new user post
 // router.post("/create-post", createUserPost);  
@@ -22,6 +22,7 @@ router.put("/like-unlike-post/:postId", likeUnlikePost);
 router.post("/comment-on-post/:postId", commentOnPost);
 router.post("/like-unlike-on-comment/:commentId", LikeOnComment);
 router.delete("/delete-comment/:commentId", deletePostComment);
+router.post("/replay-on-comment/:commentId",replayOnComment);
 // router.get("/get-post-comments/:postId", getUserPostComments);
 // router.get("/get-post-likes/:postId", getUserPostLikes);
 // Like a user post
