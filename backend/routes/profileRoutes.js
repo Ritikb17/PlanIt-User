@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const {editBio,checkUserName,getNotification} = require('../controllers/userController')
+const {updateProfile,checkUserName,getNotification} = require('../controllers/userController')
 
 router.get("/get-profile", (req, res) => {
     res.json(req.user );
@@ -11,7 +11,7 @@ router.get("/verify-token", (req, res) => {
   res.json({ valid: true, user: req.user });
 });
 
-router.put("/update-profile",editBio);
+router.put("/update-profile",updateProfile);
 router.get("/check-user-name",checkUserName);
 
 

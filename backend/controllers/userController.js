@@ -4,13 +4,10 @@ const Channel = require('../models/channel');
 const Notification = require('../models/notification')
 const mongoose = require("mongoose");
 const ObjectId = mongoose.Types.ObjectId;
-const editBio = async (req, res) => {
+const updateProfile = async (req, res) => {
   try {
     const { email, ...updateFields } = req.body;
-    const _id = req.body._id;
-    if (!email) {
-      return res.status(400).json({ message: "Email is required." });
-    }
+    const _id = req.user._id;
     console.log("BODY ", req.body);
 
     const user = await User.findOneAndUpdate(
@@ -896,4 +893,4 @@ const alreadySendRequest = async(req,res)=>
   }
 }
 
-module.exports = { editBio, checkUserName, sendRequest, acceptRequest, getSuggestion, getConnections, BlockUser, unBlockUser, removeUser ,getNotification,rejectRequest,getBlockList,getUser,alreadySendRequest,unsendRequest,getSuggestionForChannelConnectionRequest,getConnectionsForChannelConnectionRequest};
+module.exports = { updateProfile, checkUserName, sendRequest, acceptRequest, getSuggestion, getConnections, BlockUser, unBlockUser, removeUser ,getNotification,rejectRequest,getBlockList,getUser,alreadySendRequest,unsendRequest,getSuggestionForChannelConnectionRequest,getConnectionsForChannelConnectionRequest};
