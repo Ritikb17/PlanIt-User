@@ -120,19 +120,26 @@ const createEvent = async (req, res) => {
 };
 const getMyEvents = async (req, res) => {
     const _id = req.user._id;
+
     try {
+        // Deep populate connectedEvents and their recivedRequest
         const data = await User.findById(_id)
-            .populate('connectedEvents')
+            .populate({
+                path: 'connectedEvents',
+                populate: {
+                    path: 'recivedRequest', 
+                    select: '_id name email', // optional: limit fields
+                },
+            })
             .select('connectedEvents');
 
         if (!data) {
             return res.status(400).json({ error: "Error in fetching data" });
         }
 
-        // Get current date/time
         const currentDate = new Date();
-        console.log("data in the getMyEvent", data);
-        // Filter out past events
+
+        // Filter upcoming events only
         const upcomingEvents = data.connectedEvents.filter(event => {
             return new Date(event.eventDate) > currentDate;
         });
@@ -140,44 +147,47 @@ const getMyEvents = async (req, res) => {
         res.status(200).json({
             events: {
                 ...data.toObject(),
-                connectedEvents: upcomingEvents
-            }
+                connectedEvents: upcomingEvents,
+            },
         });
 
     } catch (error) {
-        res.status(400).json({ error: error.message }); // Better to send error.message
+        console.error("Error in getMyEvents:", error);
+        res.status(400).json({ error: error.message });
     }
-}
-const getMyPastEvents = async (req, res) => {
-    const _id = req.user._id;
-    try {
-        const data = await User.findById(_id)
-            .populate('connectedEvents')
-            .select('connectedEvents');
+};
 
-        if (!data) {
-            return res.status(400).json({ error: "Error in fetching data" });
-        }
+// const getMyPastEvents = async (req, res) => {
+//     const _id = req.user._id;
+//     try {
+//         const data = await User.findById(_id)
+//             .populate('connectedEvents')
+//             .select('connectedEvents');
 
-        // Get current date/time
-        const currentDate = new Date();
+//         if (!data) {
+//             return res.status(400).json({ error: "Error in fetching data" });
+//         }
 
-        // Filter out past events
-        const upcomingEvents = data.connectedEvents.filter(event => {
-            return new Date(event.eventDate) < currentDate;
-        });
+//         // Get current date/time
+//         const currentDate = new Date();
+//         console.log("data in the getMyEvent", data);
+//         // Filter out past events
+//         const upcomingEvents = data.connectedEvents.filter(event => {
+//             return new Date(event.eventDate) < currentDate;
+//         });
 
-        res.status(200).json({
-            events: {
-                ...data.toObject(),
-                connectedEvents: upcomingEvents
-            }
-        });
+//         res.status(200).json({
+//             events: {
+//                 ...data.toObject(),
+//                 connectedEvents: upcomingEvents
+//             }
+//         });
 
-    } catch (error) {
-        res.status(400).json({ error: error.message }); // Better to send error.message
-    }
-}
+//     } catch (error) {
+//         res.status(400).json({ error: error.message }); // Better to send error.message
+//     }
+// }
+
 const getEventRequests = async (req, res) => {
     const _id = req.user._id;
     try {
@@ -1523,6 +1533,6 @@ module.exports = {
     getEventConnectionRequestListToEvents, getEventConnectionRequestListToUser,
     acceptEventConnectionRequestSendByCreator, getEventRequests, getConnectionForEventConnectionRequest,
     getSuggestionsForEventConnectionRequest, getDiscoverEvents, blockUserEvent,
-    unblockUserEvent, getConnectedUsersEvent, removeUserFromEvent, getBlockUserOfEvent, getEventInfo, getMyPastEvents
+    unblockUserEvent, getConnectedUsersEvent, removeUserFromEvent, getBlockUserOfEvent, getEventInfo,
 };
 

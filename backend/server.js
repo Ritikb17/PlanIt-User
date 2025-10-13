@@ -18,6 +18,7 @@ const otherRoutes = require("./routes/otherRoutes");
 const channelRoutes = require("./routes/channelRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const eventRoutes = require("./routes/eventRoutes");
+const pastEventRoutes = require("./routes/pastEventRoutes");
 const userPostRoutes = require("./routes/userPostRoutes");
 const profilePictureRoutes = require("./routes/profilePictureRoutes");
 
@@ -66,6 +67,7 @@ app.use("/api/user", verifyToken, userRoutes);
 app.use("/api/other", verifyToken, otherRoutes);
 app.use("/api/channel", verifyToken, channelRoutes);
 app.use("/api/events", verifyToken, eventRoutes);
+app.use('/api/past-events', verifyToken, pastEventRoutes);
 
 // Multer error handling middleware
 app.use((error, req, res, next) => {

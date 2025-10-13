@@ -25,6 +25,12 @@ const event = new Schema({
     }],
     members: [{ type: Schema.Types.ObjectId, ref: "User" }],
     pools: [{ type: Schema.Types.ObjectId, ref: "EventPools" }],
+    feedbacks: [{
+        user: { type: Schema.Types.ObjectId, ref: "User" },
+        feedback: { type: String },
+        rating: { type: Number, min: 1, max: 5 }
+    }],
+    
     isDelete: { type: Boolean, default: false } 
 })
 

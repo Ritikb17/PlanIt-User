@@ -52,6 +52,8 @@ const UserSchema = new Schema({
   blockEvents: [
     { type: Schema.Types.ObjectId, ref: "Event" }
   ],
+  eventAttendence : { type: Number, default: 0 },
+ 
   reciveFollowRequests: [{ type: Schema.Types.ObjectId, ref: "User" }],
   sendFollowRequest: [{ type: Schema.Types.ObjectId, ref: "User" }],
   blockUsers: [{ type: Schema.Types.ObjectId, ref: "User" }],
@@ -59,6 +61,11 @@ const UserSchema = new Schema({
     { type: Schema.Types.ObjectId, ref: "Event" },
     { type: Schema.Types.ObjectId, ref: "Chat" },
   ],
+  //store attendence record of events user has attended or absent
+  attendenceRecord: {
+    presentEvents: [{ type: Schema.Types.ObjectId, ref: "Event" }],
+    absentEvents: [{ type: Schema.Types.ObjectId, ref: "Event" }]
+  },
   notifications: [{ type: Schema.Types.ObjectId, ref: "Notification" }],
 });
 
