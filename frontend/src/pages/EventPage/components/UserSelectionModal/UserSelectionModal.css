@@ -1,0 +1,79 @@
+.selected-event-info {
+  background-color: #f8f9fa;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  border-left: 4px solid #007bff;
+}
+
+.selected-event-info h4 {
+  margin: 0;
+  color: #333;
+}
+
+.users-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.user-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  background-color: white;
+}
+
+.user-info {
+  flex: 1;
+}
+
+.user-info h4 {
+  margin: 0 0 4px 0;
+  color: #333;
+  font-size: 16px;
+}
+
+.user-info p {
+  margin: 0;
+  color: #6c757d;
+  font-size: 14px;
+}
+
+.send-request-btn {
+  padding: 8px 16px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  min-width: 120px;
+  transition: background-color 0.2s;
+}
+
+.send-request-btn:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+.send-request-btn:disabled {
+  cursor: not-allowed;
+}
+
+.send-request-btn.sent {
+  background-color: #28a745;
+}
+
+.send-request-btn.sent:hover {
+  background-color: #218838;
+}
+
+.no-users-message {
+  text-align: center;
+  padding: 40px;
+  color: #6c757d;
+  font-style: italic;
+}

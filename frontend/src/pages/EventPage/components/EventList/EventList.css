@@ -1,0 +1,28 @@
+.events-list {
+  display: grid;
+  gap: 16px;
+}
+
+.no-events-message {
+  text-align: center;
+  padding: 40px;
+  color: #6c757d;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 2px dashed #dee2e6;
+}
+
+.discover-btn {
+  margin-top: 15px;
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.discover-btn:hover {
+  background-color: #0056b3;
+}

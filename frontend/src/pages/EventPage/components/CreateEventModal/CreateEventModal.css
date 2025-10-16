@@ -1,0 +1,71 @@
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: #333;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: normal;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
+.hint {
+  color: #6c757d;
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+.form-subgroup {
+  margin-top: 12px;
+  padding-left: 20px;
+  border-left: 2px solid #e9ecef;
+}
+
+.form-subgroup label {
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.form-subgroup input {
+  max-width: 120px;
+}

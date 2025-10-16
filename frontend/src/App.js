@@ -10,14 +10,13 @@ import GroupPage from "./pages/GroupPage";
 import Discover from "./pages/DiscoverPage"; 
 import DiscoverEvents from "./pages/DiscoverEvents"; 
 import BlockUser from "./pages/BlockUserPage";
-
-import EventPage from "./pages/EventPage";
+import EventPage from "./pages/EventPage/";
 import FollowersPage from "./pages/FollowersPage";
 import OtherUserProfile from "./pages/OtherUserProfile";
 import GroupRequestsPage from "./pages/GroupRequestPage";
 import DiscoverGroups from "./pages/DiscoverGroups";
 import ReverseAuthRoutes from "./ReverseAuthRoutes";
-import GroupConnectionRequests from "./pages/GroupConnectionRequests ";
+// import GroupConnectionRequests from "./pages/GroupConnectionRequests";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("token"));
@@ -27,8 +26,23 @@ function App() {
       setIsAuthenticated(!!localStorage.getItem("token"));
     };
 
+    // Also check authentication on component mount and when token changes
+    const token = localStorage.getItem("token");
+    setIsAuthenticated(!!token);
+
     window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+    
+    // Custom event listener for login/logout from other components
+    const handleAuthChange = () => {
+      setIsAuthenticated(!!localStorage.getItem("token"));
+    };
+
+    window.addEventListener('authChange', handleAuthChange);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener('authChange', handleAuthChange);
+    };
   }, []);
 
   return (
@@ -36,11 +50,13 @@ function App() {
       {isAuthenticated && <Navbar />} {/* Only show navbar if logged in */}
       
       <Routes>
-      <Route element={<ReverseAuthRoutes />}>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        {/* Public routes - only accessible when NOT logged in */}
+        <Route element={<ReverseAuthRoutes />}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
         </Route>
-        {/* Wrap protected routes inside PrivateRoute */}
+
+        {/* Protected routes - only accessible when logged in */}
         <Route element={<PrivateRoute />}>
           <Route path="/" element={<Home />} />
           <Route path="/groups" element={<GroupPage />} />
@@ -49,12 +65,29 @@ function App() {
           <Route path="/events" element={<EventPage />} />
           <Route path="/block-users" element={<BlockUser />} />
           <Route path="/discover" element={<Discover />} />
-          <Route path="/profile/:username" element={<OtherUserProfile/>}/>
-          <Route path="/group-requests" element={<GroupRequestsPage/>}/>
-          <Route path="/discover-groups" element={<DiscoverGroups/>}/>
-          <Route path="/discover-events" element={<DiscoverEvents/>}/>
-          <Route path="/channel-requests" element={<GroupConnectionRequests/>}/>
+          <Route path="/profile/:username" element={<OtherUserProfile />} />
+          <Route path="/group-requests" element={<GroupRequestsPage />} />
+          <Route path="/discover-groups" element={<DiscoverGroups />} />
+          <Route path="/discover-events" element={<DiscoverEvents />} />
+          {/* <Route path="/channel-requests" element={<GroupConnectionRequests />} /> */}
+          
+          {/* You might want to add these event-related routes if they don't exist */}
+          <Route path="/event-requests" element={<EventPage />} />
+          {/* Or create a separate component for event requests */}
         </Route>
+
+        {/* Fallback route for 404 pages */}
+        <Route path="*" element={
+          <div style={{ padding: "20px", textAlign: "center" }}>
+            <h2>404 - Page Not Found</h2>
+            <p>The page you're looking for doesn't exist.</p>
+            {isAuthenticated ? (
+              <a href="/">Go to Home</a>
+            ) : (
+              <a href="/login">Go to Login</a>
+            )}
+          </div>
+        } />
       </Routes>
     </Router>
   );
