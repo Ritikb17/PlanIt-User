@@ -9,11 +9,13 @@ const EventItem = ({
   onDeleteEvent,
   onAcceptInvitation,
   onOpenChat,
+  onViewRequests, // ← Add this new prop
   isMyEvent = false,
   isRequestList = false
 }) => {
   const userId = JSON.parse(atob(localStorage.getItem('token').split('.')[1])).id;
   const isCreator = event.createdBy === userId;
+  const hasPendingRequests = event.recivedRequest && event.recivedRequest.length > 0;
 
   return (
     <div className="event-item">
@@ -25,6 +27,9 @@ const EventItem = ({
         <div className="event-header">
           <h3>{event.name}</h3>
           {event.isPrivate && <span className="private-badge">Private</span>}
+          {hasPendingRequests && (
+            <span className="requests-badge">{event.recivedRequest.length} Pending</span>
+          )}
         </div>
         
         <p className="event-description">
@@ -50,6 +55,15 @@ const EventItem = ({
             <span className="detail-label">Created by:</span>
             <span className="detail-value">{isCreator ? 'You' : 'Other user'}</span>
           </div>
+
+          {hasPendingRequests && (
+            <div className="event-detail">
+              <span className="detail-label">Pending Requests:</span>
+              <span className="detail-value requests-count">
+                {event.recivedRequest.length}
+              </span>
+            </div>
+          )}
         </div>
       </div>
       
@@ -69,12 +83,17 @@ const EventItem = ({
             >
               Add members
             </button>
-            {/* <button
-              className="join-btn"
-              onClick={() => onJoinEvent(event)}
-            >
-              View requests
-            </button> */}
+            
+            {/* Add View Requests Button */}
+            {isMyEvent && isCreator && hasPendingRequests && (
+              <button
+                className="requests-btn"
+                onClick={() => onViewRequests(event)}
+              >
+                View Requests ({event.recivedRequest.length})
+              </button>
+            )}
+            
             {isMyEvent && isCreator && (
               <>
                 <button

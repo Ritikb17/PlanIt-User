@@ -135,3 +135,32 @@
 .delete-btn:hover {
   background-color: #c82333;
 }
+.requests-badge {
+  background-color: #ffc107;
+  color: #212529;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.requests-count {
+  color: #ffc107;
+  font-weight: 600;
+}
+
+.requests-btn {
+  padding: 8px 16px;
+  background-color: #ffc107;
+  color: #212529;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  min-width: 140px;
+}
+
+.requests-btn:hover {
+  background-color: #e0a800;
+}

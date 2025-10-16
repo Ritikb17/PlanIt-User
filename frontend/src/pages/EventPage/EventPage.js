@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useEventActions } from './hooks/useEventActions';
 import { useEvents } from './hooks/useEvents';
+import {  useEventActions } from './hooks/useEventActions';
 import Navbar from '../../components/Navbar';
 import EventChatModal from '../eventChatModel';
 import SideNavigation from './components/SideNavigation';
@@ -8,6 +8,7 @@ import EventList from './components/EventList';
 import CreateEventModal from './components/CreateEventModal';
 import EditEventModal from './components/EditEventModal';
 import UserSelectionModal from './components/UserSelectionModal';
+import EventRequestsModal from './components/EventRequestsModal';
 import './EventPage.css';
 
 const EventPage = () => {
@@ -15,8 +16,10 @@ const EventPage = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showUserSelectionModal, setShowUserSelectionModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showRequestsModal, setShowRequestsModal] = useState(false);
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [selectedChatEvent, setSelectedChatEvent] = useState(null);
+  const [selectedEventForRequests, setSelectedEventForRequests] = useState(null);
   const [eventToEdit, setEventToEdit] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
 
@@ -38,20 +41,29 @@ const EventPage = () => {
     handleAcceptInvitation,
     handleSendRequest,
     handleCreateEvent,
+    handleAcceptRequest,
+    handleRejectRequest,
     newEvent,
     setNewEvent,
     createEventError,
     setCreateEventError,
     usersList,
-    setUsersList
+    setUsersList,
+    userId
   } = useEventActions({
     fetchMyEvents,
     fetchEventRequests,
     setShowEditModal,
+    setShowUserSelectionModal,
     setEventToEdit,
-    setSelectedEvent,
-    setShowUserSelectionModal
+    setSelectedEvent
   });
+
+  // Handler for viewing requests
+  const handleViewRequests = (event) => {
+    setSelectedEventForRequests(event);
+    setShowRequestsModal(true);
+  };
 
   const openChatModal = (event) => {
     setSelectedChatEvent(event);
@@ -115,6 +127,7 @@ const EventPage = () => {
                 onLeaveEvent={handleLeaveEvent}
                 onDeleteEvent={handleDeleteEvent}
                 onOpenChat={openChatModal}
+                onViewRequests={handleViewRequests}
                 isMyEvent={true}
               />
             </div>
@@ -131,7 +144,7 @@ const EventPage = () => {
         </div>
       </div>
 
-      {/* Modals */}
+      {/* Create Event Modal */}
       <CreateEventModal
         isOpen={showCreateModal}
         onClose={() => {
@@ -154,6 +167,7 @@ const EventPage = () => {
         error={createEventError}
       />
 
+      {/* Edit Event Modal */}
       <EditEventModal
         isOpen={showEditModal}
         onClose={() => {
@@ -167,6 +181,7 @@ const EventPage = () => {
         error={createEventError}
       />
 
+      {/* User Selection Modal */}
       <UserSelectionModal
         isOpen={showUserSelectionModal}
         onClose={() => {
@@ -178,12 +193,24 @@ const EventPage = () => {
         selectedEvent={selectedEvent}
       />
 
+      {/* Event Requests Modal */}
+      <EventRequestsModal
+        isOpen={showRequestsModal}
+        onClose={() => {
+          setShowRequestsModal(false);
+          setSelectedEventForRequests(null);
+        }}
+        event={selectedEventForRequests}
+        onAcceptRequest={handleAcceptRequest}
+        onRejectRequest={handleRejectRequest}
+      />
+
       {/* Event Chat Modal */}
       {isChatModalOpen && selectedChatEvent && (
         <EventChatModal
           event={selectedChatEvent}
           onClose={closeChatModal}
-          currentUserId={JSON.parse(atob(localStorage.getItem('token').split('.')[1])).id}
+          currentUserId={userId}
         />
       )}
     </div>

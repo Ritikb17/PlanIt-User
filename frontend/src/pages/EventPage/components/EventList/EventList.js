@@ -10,6 +10,7 @@ const EventList = ({
   onDeleteEvent,
   onAcceptInvitation,
   onOpenChat,
+  onViewRequests, // ← Add this prop
   isMyEvent = false,
   isRequestList = false
 }) => {
@@ -19,6 +20,14 @@ const EventList = ({
         {isMyEvent
           ? 'You are not a member of any events yet.'
           : 'No event requests available.'}
+        {isMyEvent && (
+          <button
+            className="discover-btn"
+            onClick={() => window.location.href = '/discover-events'}
+          >
+            Discover Events
+          </button>
+        )}
       </div>
     );
   }
@@ -35,6 +44,7 @@ const EventList = ({
           onDeleteEvent={onDeleteEvent}
           onAcceptInvitation={onAcceptInvitation}
           onOpenChat={onOpenChat}
+          onViewRequests={onViewRequests} // ← Pass to EventItem
           isMyEvent={isMyEvent}
           isRequestList={isRequestList}
         />
