@@ -49,7 +49,7 @@ router.put('/reject-event-connection-sendby-by-creator',rejectEventConnectionReq
 router.put('/send-event-connection-request-by-other-user',sendEventConnectionRequestByOtherUser) 
 router.put('/unsend-event-connection-request-by-other-user',unsendEventConnectionRequestByOtherUser) 
 //accept request by other user send by other user  
-router.put('/accept-event-connection-sendby-otheruser',acceptEventConnectionRequestSendByOtherUser)
+router.put('/accept-event-connection-request-sendby-by-otheruser',acceptEventConnectionRequestSendByOtherUser)
 //reject request send by the other user
 router.put('/reject-event-connection-sendby-by-otheruser',rejectEventConnectionRequestSendByOtherUser)
 router.put('/leave-event',leaveEvent);

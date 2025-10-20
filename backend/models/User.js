@@ -8,7 +8,7 @@ const UserSchema = new Schema({
   name: { type: String, require: true },
   profilePicture: {
     type: String,
-    default: process.env.DEFAULT_PROFILE_PICTURE_LOCATION || 'default.jpg'
+    default: process.env.DEFAULT_COVER_PICTURE_LOCATION || 'default.jpg'
   },
   coverPicture: {
     type: String,

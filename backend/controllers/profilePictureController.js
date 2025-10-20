@@ -158,7 +158,7 @@ const profilePictureController = {
         __dirname,
         `../${user.coverPicture}`
       );
-
+console.log("the filepath for cover picture is ", imagePath);
       // Send the image file
       res.sendFile(path.normalize(imagePath));
 

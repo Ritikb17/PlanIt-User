@@ -273,7 +273,7 @@ export const useEventActions = ({
     const handleAcceptRequest = async (eventId, senderId) => {
         try {
             await axios.put(
-                'http://localhost:5000/api/events/accept-event-connection-sendby-request-by-otheruser',
+                'http://localhost:5000/api/events/accept-event-connection-request-sendby-by-otheruser',
                 {
                     eventId: eventId,
                     senderId: senderId

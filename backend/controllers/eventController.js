@@ -7,7 +7,6 @@ console.log('User import:', User);  // Should show Mongoose model functions
 const Event = require('../models/event');
 const Notification = require('../models/notification');
 const { findByIdAndUpdate } = require('../models/channel');
-const { CgOpenCollective } = require('react-icons/cg');
 const createEvent = async (req, res) => {
     const _id = req.user._id;
     console.log("Creating event for user:", _id);
@@ -123,15 +122,15 @@ const getMyEvents = async (req, res) => {
 
     try {
         // Deep populate connectedEvents and their recivedRequest
-        const data = await User.findById(_id)
-            .populate({
-                path: 'connectedEvents',
-                populate: {
-                    path: 'recivedRequest', 
-                    select: '_id name email', // optional: limit fields
-                },
-            })
-            .select('connectedEvents');
+       const data = await User.findById(_id)
+  .populate({
+    path: 'connectedEvents',
+    populate: {
+      path: 'recivedRequest',
+      select: '_id name email', // optional: limit fields
+    },
+  })
+  .select('connectedEvents'); // <- important
 
         if (!data) {
             return res.status(400).json({ error: "Error in fetching data" });
@@ -193,17 +192,20 @@ const getEventRequests = async (req, res) => {
     try {
         const data = await User.findById(_id)
             .select('receivedEventConnectionRequest')
-            .populate('receivedEventConnectionRequest'); // Model is inferred from schema
-        // const data = await User.findById(_id).select('receivedEventConnectionRequest').populate('receivedEventConnectionRequest');
+            .populate('receivedEventConnectionRequest');
+
         if (!data) {
-            res.status(400).json({ error: "error in fetching data" })
+            return res.status(400).json({ error: "Error in fetching data" });
         }
-        res.status(200).json({ eventRequests: data });
+
+        res.status(200).json({ eventRequests: data.receivedEventConnectionRequest });
 
     } catch (error) {
-        res.status(400).json({ error: error })
+        res.status(400).json({ error: error.message || error });
     }
-}
+};
+
+
 const updateEventInfo = async (req, res) => {
     const event__id = req.params.eventId;
     const _id = req.user._id;
@@ -703,7 +705,7 @@ const acceptEventConnectionRequestSendByOtherUser = async (req, res) => {
         const updatingUser = await User.findByIdAndUpdate(_id,
             {
                 $pull: { receivedEventConnectionRequest: sender_id },
-                $push: { connectedEvents: event__id }
+                // $push: { connectedEvents: event__id }
             }
         )
         if (!updatingUser) {

@@ -3,7 +3,7 @@ const fs = require('fs');
 require('dotenv').config();
 const path = require('path');
 const User = require("../models/User");
-const UserPost = require("../models/UserPost");
+const UserPost = require("../models/userPost");
 const Notification = require("../models/notification");
 const Comment = require("../models/postComment");
 
