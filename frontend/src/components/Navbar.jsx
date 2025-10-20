@@ -201,7 +201,7 @@ const Navbar = () => {
         <Link to="/" className="navbar-icon" title="Home">
           <i className="fas fa-home"></i>
         </Link>
-        <Link to="/groups" className="navbar-icon" title="Groups">
+        <Link to="/channels" className="navbar-icon" title="Groups">
           <i className="fas fa-users"></i>
         </Link>
         <Link to="/followers" className="navbar-icon" title="Followers">

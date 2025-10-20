@@ -5,7 +5,7 @@ import './GroupPage.css';
 import Navbar from '../components/Navbar';
 import ChannelChatModal from './channelChatModel'
 
-const GroupPage = () => {
+const ChannelPage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [myChannels, setMyChannels] = useState([]);
   const [otherChannels, setOtherChannels] = useState([]);
@@ -660,4 +660,4 @@ const GroupPage = () => {
   );
 };
 
-export default GroupPage;
+export default ChannelPage;

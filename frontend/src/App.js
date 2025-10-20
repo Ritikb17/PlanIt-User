@@ -6,7 +6,7 @@ import Login from "./pages/Login";
 import PrivateRoute from "./PrivateRoute ";
 import Profile from "./pages/Profile";
 import Register from "./pages/Register";
-import GroupPage from "./pages/GroupPage";
+import ChannelPage from "./pages/ChannelPage";
 import Discover from "./pages/DiscoverPage"; 
 import DiscoverEvents from "./pages/DiscoverEvents"; 
 import BlockUser from "./pages/BlockUserPage";
@@ -59,7 +59,7 @@ function App() {
         {/* Protected routes - only accessible when logged in */}
         <Route element={<PrivateRoute />}>
           <Route path="/" element={<Home />} />
-          <Route path="/groups" element={<GroupPage />} />
+          <Route path="/channels" element={<ChannelPage />} />
           <Route path="/followers" element={<FollowersPage />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/events" element={<EventPage />} />

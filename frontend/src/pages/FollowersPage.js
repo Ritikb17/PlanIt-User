@@ -230,7 +230,7 @@ const FollowersPage = () => {
                   </div>
                   <div className="follower-actions">
                     <button className="unfollow-btn">Unfollow</button>
-                    <button className="follow-btn">Open Chat</button>
+                    <button className="follow-btn" >Open Chat</button>
                     <button
                       className="remove-btn"
                       onClick={() => handleRemoveUser(follower._id)} // Handle remove user
