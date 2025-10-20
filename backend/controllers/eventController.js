@@ -309,7 +309,7 @@ const deleteEvent = async (req, res) => {
         return res.status(500).json({ error: 'Internal server error' });
     }
 };
-//creator send request to other user
+//creator send request to other user by creator 
 const sendEventConnectionRequest = async (req, res) => {
     const _id = req.user._id;
     const event__id = req.body.eventId;
@@ -380,22 +380,14 @@ const sendEventConnectionRequest = async (req, res) => {
         // Add the channel to the sender's receivedChannelRequest array
         const updatedSender = await User.findByIdAndUpdate(
             sender_id,
-            { $push: { receivedEventConnectionRequest: event__id } }, // Corrected spelling
+            { $push: { receivedEventConnectionRequest : event__id } }, // Corrected spelling
             { new: true }
         );
-
+        console.log("Updated Sender:", updatedSender);
         if (!updatedSender) {
             return res.status(400).json({ message: "Failed to update sender's request list" });
         }
-        const updatedUser = await User.findByIdAndUpdate(
-            sender_id,
-            { $push: { receivedEventConnectionRequest: event__id } }, // Corrected spelling
-            { new: true }
-        );
-
-        if (!updatedUser) {
-            return res.status(400).json({ message: "Failed to update users's request list" });
-        }
+    
 
 
         // Success response

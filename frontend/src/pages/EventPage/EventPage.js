@@ -82,6 +82,7 @@ const EventPage = () => {
   const filteredEventRequests = eventRequests.filter(event =>
     event.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  console.log('event respons',filteredEventRequests)
 
   if (loading) {
     return (

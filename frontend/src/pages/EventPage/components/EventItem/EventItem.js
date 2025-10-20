@@ -17,6 +17,7 @@ const EventItem = ({
   const isCreator = event.createdBy === userId;
   const hasPendingRequests = event.recivedRequest && event.recivedRequest.length > 0;
 
+
   return (
     <div className="event-item">
       <div

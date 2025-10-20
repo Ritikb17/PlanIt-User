@@ -40,7 +40,10 @@ export const useEvents = () => {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
-      const requests = response.data.eventRequests?.receivedEventConnectionRequest || [];
+      console.log('Fetched Event Request in hook ', response.data.eventRequests);
+     const requests = response.data.eventRequests || [];
+
+      console.log('Processed Event Requests:', requests);
       setEventRequests(requests);
       setError(null);
     } catch (err) {
