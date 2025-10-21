@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import './DiscoverEvents.css'; // Create this CSS file for styling
+import axios from 'axios';
+import './DiscoverEvents.css';
 
 const DiscoverEvents = () => {
-  const [events, setEvents] = useState([]);
+  const [events, setEvents] = useState([]);           // All events
+  const [searchQuery, setSearchQuery] = useState(''); // User search text
+  const [filteredEvents, setFilteredEvents] = useState([]); // Search results
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch events from API
+  // Fetch all events initially
   const fetchEvents = async () => {
     try {
       setLoading(true);
@@ -19,7 +22,8 @@ const DiscoverEvents = () => {
       
       const data = await response.json();
       if (data.data) {
-        setEvents(data.data);
+        setEvents(data.data);          // All events
+        setFilteredEvents(data.data);  // Initially show all
       } else {
         setError(data.message || 'No events found');
       }
@@ -33,6 +37,37 @@ const DiscoverEvents = () => {
   useEffect(() => {
     fetchEvents();
   }, []);
+
+  // Handle search input
+  const handleSearchChange = async (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+
+    // If search query is empty, reset to show all events
+    if (query.trim() === '') {
+      setFilteredEvents(events);  // Show all events when search is cleared
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    try {
+      const response = await axios.get(`http://localhost:5000/api/events/search-events/${query}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      // Debug log: Check the response structure
+      console.log('Search API Response:', response.data);
+
+      if (response.data.data && response.data.data.length > 0) {
+        setFilteredEvents(response.data.data); // Set filtered events
+      } else {
+        setFilteredEvents([]); // No results found
+      }
+    } catch (error) {
+      console.error('Error searching events:', error);
+      setFilteredEvents([]); // Ensure no results are shown if error occurs
+    }
+  };
 
   // Handle send request
   const handleSendRequest = async (eventId) => {
@@ -48,9 +83,13 @@ const DiscoverEvents = () => {
 
       const data = await response.json();
       if (response.ok) {
-        // Update the event's alreadySend status
-        setEvents(prevEvents => 
-          prevEvents.map(event => 
+        setEvents(prevEvents =>
+          prevEvents.map(event =>
+            event._id === eventId ? { ...event, alreadySend: true } : event
+          )
+        );
+        setFilteredEvents(prevEvents =>
+          prevEvents.map(event =>
             event._id === eventId ? { ...event, alreadySend: true } : event
           )
         );
@@ -77,9 +116,13 @@ const DiscoverEvents = () => {
 
       const data = await response.json();
       if (response.ok) {
-        // Update the event's alreadySend status
-        setEvents(prevEvents => 
-          prevEvents.map(event => 
+        setEvents(prevEvents =>
+          prevEvents.map(event =>
+            event._id === eventId ? { ...event, alreadySend: false } : event
+          )
+        );
+        setFilteredEvents(prevEvents =>
+          prevEvents.map(event =>
             event._id === eventId ? { ...event, alreadySend: false } : event
           )
         );
@@ -100,15 +143,27 @@ const DiscoverEvents = () => {
     return <div className="error">Error: {error}</div>;
   }
 
+  // Render events (either search results or all events)
+  const eventsToRender = searchQuery.trim() ? filteredEvents : events;
+
   return (
     <div className="discover-events-container">
       <h1>Discover Events</h1>
-      
-      {events.length === 0 ? (
-        <div className="no-events">No events available to discover</div>
+
+      {/* 🔍 Search box */}
+      <input
+        type="text"
+        placeholder="Search events..."
+        value={searchQuery}
+        onChange={handleSearchChange}
+        className="search-box"
+      />
+
+      {eventsToRender.length === 0 ? (
+        <div className="no-events">No events found</div>
       ) : (
         <div className="events-list">
-          {events.map(event => (
+          {eventsToRender.map(event => (
             <div key={event._id} className="event-card">
               <h3>{event.name}</h3>
               <p>{event.description}</p>

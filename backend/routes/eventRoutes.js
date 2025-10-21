@@ -8,7 +8,7 @@ const {createEvent, getMyEvents,
     rejectEventConnectionRequestSendByOtherUser,rejectEventConnectionRequestSendByCreator,
     deleteEvent,getEventConnectionRequestListToEvents,getEventConnectionRequestListToUser,acceptEventConnectionRequestSendByCreator,
     getEventRequests,getConnectionForEventConnectionRequest,getSuggestionsForEventConnectionRequest,getDiscoverEvents,blockUserEvent,
-    unblockUserEvent,getConnectedUsersEvent,removeUserFromEvent,getBlockUserOfEvent,getEventInfo} = require('../controllers/eventController');
+    unblockUserEvent,getConnectedUsersEvent,removeUserFromEvent,getBlockUserOfEvent,getEventInfo,searchEvents} = require('../controllers/eventController');
 
 // router.get('/get-other-user-events',getOtherUserEvents);
 // router.get('/get-request-events',getRequestEvents)
@@ -65,6 +65,8 @@ router.delete('/delete-event',deleteEvent);
 //get the connected users (members) of the event
 
 router.get('/get-event-users',getConnectedUsersEvent)
+//search event via event names 
+router.get('/search-events/:search',searchEvents)
 
 router.get('/get-event-info/:eventId?',getEventInfo)
 router.get('/get-event-block-user',getBlockUserOfEvent)

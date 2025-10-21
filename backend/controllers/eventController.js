@@ -1517,6 +1517,23 @@ const getEventInfo = async (req, res) => {
     }
 }
 
+const searchEvents = async (req,res)=>{
+    try{
+        const search = req.params.search;
+        const events = await Event.find({
+            $or: [
+                { name: { $regex: search, $options: "i" } },
+            ]
+        });
+        return res.status(200).json({ message: "successfully fetched events", data: events });
+    }
+    catch(error)
+    {
+        console.log("error",error)
+        return res.status(500).json({ message: "internal server error" })
+    }
+}
+
 
 module.exports = {
     createEvent, getMyEvents, updateEventInfo,
@@ -1527,6 +1544,6 @@ module.exports = {
     getEventConnectionRequestListToEvents, getEventConnectionRequestListToUser,
     acceptEventConnectionRequestSendByCreator, getEventRequests, getConnectionForEventConnectionRequest,
     getSuggestionsForEventConnectionRequest, getDiscoverEvents, blockUserEvent,
-    unblockUserEvent, getConnectedUsersEvent, removeUserFromEvent, getBlockUserOfEvent, getEventInfo,
+    unblockUserEvent, getConnectedUsersEvent, removeUserFromEvent, getBlockUserOfEvent, getEventInfo,searchEvents
 };
 

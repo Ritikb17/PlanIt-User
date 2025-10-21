@@ -151,10 +151,14 @@ const Profile = () => {
   };
 
   // Handle other input fields
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
+ const handleInputChange = (e) => {
+  const { name, type, checked, value } = e.target;
+
+  setFormData({
+    ...formData,
+    [name]: type === "checkbox" ? checked : value,
+  });
+};
 
   // Handle profile picture upload
   const handleProfilePictureUpload = async (e) => {
@@ -359,11 +363,27 @@ const Profile = () => {
               </div>
 
               <div className="form-group">
+                <label>Name </label>
+                <input 
+                  type="text" 
+                  name="name" 
+                  value={formData.name} 
+                  onChange={handleInputChange} 
+                />
                 <label>Bio</label>
                 <textarea 
                   name="bio" 
                   value={formData.bio} 
                   onChange={handleInputChange} 
+                />
+                <br />
+                <br />
+                <label>Private account</label>
+                <input
+                  type="checkbox"
+                  name="isAccountPrivate"
+                  checked={formData.isAccountPrivate}
+                  onChange={handleInputChange}
                 />
               </div>
 
