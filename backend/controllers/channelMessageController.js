@@ -3,112 +3,114 @@ const mongoose = require('mongoose');
 const Chat = require('../models/chat');
 module.exports = {
 
-    handleGetMessages: async (socket, userId, io, { channelId }, callback) => {
-        // const channelIdObj = new mongoose.
-        try {
-            let channel = await Channel.findOne({ _id: channelId }).populate("messages.pool");
-            console.log("the channel is ", channel);
-            // for (let i = 0; i < channel.messages.length; i++) {
-            //     const message = channel.messages[i];
+handleGetMessages: async (socket, userId, io, { channelId }, callback) => {
+    try {
+        const channel = await Channel.findOne({ _id: channelId }).populate("messages.pool");
 
-            //     if (message.isPool) {
-            //         channel.messages[i] = {
-            //             ...message,
-            //             isUserAlreadyVoted: channel.messages[i].pool.voters.includes(userId)
-            //         };
-            //     } else {
-            //         // Simpler version if you're only adding one property
-            //         message.isUserAlreadyVoted = false;
-            //         // No need to reassign since we're modifying the object directly
-            //     }
-            // }
-            if (!channel) {
-                throw new Error("Channel not found ");
-            }
-            console.log("user id is", userId)
-            const include = channel.members.includes(userId);
-
-
-            if (!include) {
-                throw new Error("User  not found  in channel ");
-            }
-            callback({
-                status: 'success',
-                messages: channel.messages || [],
-            });
-
-
+        if (!channel) {
+            throw new Error("Channel not found");
         }
-        catch (error) {
-            console.error("Error in getMessages:", error);
-            callback({
-                status: 'error',
-                message: error.message
-            });
+        const userObjectId = new mongoose.Types.ObjectId(userId);
+
+        const isMember = channel.members.some(member => 
+            member.user?.equals(userObjectId)
+        );
+
+        if (!isMember) {
+            throw new Error("User not found in channel while fetching messages");
         }
 
-    },
-    handleChannelSendMessage: async (socket, data, callback) => {
-        try {
-            const { channelId, message, userId } = data;
-            const io = socket.server;
-
-            console.log("the channel is ", channelId);
-            const channel = await Channel.findById(channelId);
-            if (!channel) {
-                throw new Error("Channel not found");
+        // Add isUserAlreadyVoted to messages with polls
+        for (let message of channel.messages) {
+            if (message.isPool && message.pool && message.pool.voters) {
+                message.isUserAlreadyVoted = message.pool.voters.includes(userId);
+            } else {
+                message.isUserAlreadyVoted = false;
             }
-
-            if (!channel.members.includes(userId)) {
-                throw new Error("User not found in channel");
-            }
-
-            // Create new message object with all required fields
-            const newMessage = {
-                message: message,
-                sender: userId,
-                timestamp: new Date(),
-                isEdited: false,
-                isDeleted: false
-            };
-
-            const updatedChannel = await Channel.findByIdAndUpdate(
-                channelId,
-                {
-                    $push: {
-                        messages: newMessage
-                    }
-                },
-                { new: true }
-            );
-
-            if (!updatedChannel) {
-                throw new Error("Error saving message");
-            }
-
-            // Get the last message (the one we just added)
-            const savedMessage = updatedChannel.messages[updatedChannel.messages.length - 1];
-
-            callback({
-                status: 'success',
-                message: savedMessage
-            });
-
-            // Emit to all clients in the channel
-            io.to(channelId).emit("new-channel-message", {
-                channelId,
-                message: savedMessage
-            });
-
-        } catch (error) {
-            console.error("Send message error:", error.message);
-            callback({
-                status: 'error',
-                message: error.message
-            });
-            socket.emit("message-error", { error: error.message });
         }
-    },
+
+        callback({
+            status: 'success',
+            messages: channel.messages || [],
+        });
+
+    } catch (error) {
+        console.error("Error in getMessages:", error.message);
+        callback({
+            status: 'error',
+            message: error.message
+        });
+    }
+},
+
+   handleChannelSendMessage: async (socket, data, callback) => {
+  try {
+    const { channelId, message, userId } = data;
+    const io = socket.server;
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+
+    console.log("The channel is", channelId);
+    const channel = await Channel.findById(channelId);
+
+    if (!channel) {
+      throw new Error("Channel not found");
+    }
+    const isMember = channel.members.some(member =>
+  member.user?.equals(userObjectId)
+);
+
+if (!isMember) {
+  throw new Error("User not found in channel");
+}
+
+    console.log("User is member:", isMember);
+
+    // ✅ Passed check — user is in the channel
+
+    const newMessage = {
+      message: message,
+      sender: userObjectId,
+      timestamp: new Date(),
+      isEdited: false,
+      isDeleted: false
+    };
+
+    const updatedChannel = await Channel.findByIdAndUpdate(
+      channelId,
+      {
+        $push: {
+          messages: newMessage
+        }
+      },
+      { new: true }
+    );
+
+    if (!updatedChannel) {
+      throw new Error("Error saving message");
+    }
+
+    const savedMessage = updatedChannel.messages[updatedChannel.messages.length - 1];
+
+    callback({
+      status: 'success',
+      message: savedMessage
+    });
+
+    io.to(channelId).emit("new-channel-message", {
+      channelId,
+      message: savedMessage
+    });
+
+  } catch (error) {
+    console.error("Send message error:", error.message);
+    callback({
+      status: 'error',
+      message: error.message
+    });
+    socket.emit("message-error", { error: error.message });
+  }
+}
+,
     handleChannelEditMessage: async (socket, userId, io, { channelId, message, messageId }, data, callback) => {
         console.log("IN THE EDIT MESSAGExxxxxx CONTROLLER OF CHANNEL", channelId, message);
         try {
@@ -244,4 +246,4 @@ module.exports = {
 
 
 
-}
+} 

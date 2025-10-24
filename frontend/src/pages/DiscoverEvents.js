@@ -156,7 +156,7 @@ const DiscoverEvents = () => {
         placeholder="Search events..."
         value={searchQuery}
         onChange={handleSearchChange}
-        className="search-box"
+        className="search-input"
       />
 
       {eventsToRender.length === 0 ? (

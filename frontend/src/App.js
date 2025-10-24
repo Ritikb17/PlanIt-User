@@ -16,7 +16,7 @@ import OtherUserProfile from "./pages/OtherUserProfile";
 import GroupRequestsPage from "./pages/GroupRequestPage";
 import DiscoverGroups from "./pages/DiscoverGroups";
 import ReverseAuthRoutes from "./ReverseAuthRoutes";
-// import GroupConnectionRequests from "./pages/GroupConnectionRequests";
+import GroupConnectionRequests from "./pages/GroupConnectionRequests ";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("token"));
@@ -69,7 +69,7 @@ function App() {
           <Route path="/group-requests" element={<GroupRequestsPage />} />
           <Route path="/discover-groups" element={<DiscoverGroups />} />
           <Route path="/discover-events" element={<DiscoverEvents />} />
-          {/* <Route path="/channel-requests" element={<GroupConnectionRequests />} /> */}
+          <Route path="/channel-requests" element={<GroupConnectionRequests />} />
           
           {/* You might want to add these event-related routes if they don't exist */}
           <Route path="/event-requests" element={<EventPage />} />

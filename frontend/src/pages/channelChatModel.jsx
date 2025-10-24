@@ -237,6 +237,7 @@ const ChannelChatModal = ({ channel, onClose, currentUserId }) => {
       sender: currentUserId
     }, (response) => {
       if (response.status === 'success') {
+        console.log("Message sent successfully");
         setEditingId(null);
         setEditText('');
       }

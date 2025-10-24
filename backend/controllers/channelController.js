@@ -27,12 +27,13 @@ const createChannel = async (req, res) => {
         }
 
         const newChannel = await Channel.create({
-            name: nameOfChannel,
-            description: bio,
-            isPrivate: req.body.isPrivate,
-            createdBy: _id,
-            members: [_id],
+         name: nameOfChannel,
+         description: bio,
+         isPrivate: req.body.isPrivate,
+         createdBy: _id,
+         members: [{ user: _id }], 
         });
+
         console.log("new channel is ", newChannel);
         if (newChannel) {
             console.log("new channel is being created ")
@@ -353,10 +354,9 @@ const acceptChannelConnectionRequest = async (req, res) => {
             return res.status(400).json({ message: "Failed to remove channel request" });
         }
 
-        // Add user to channel's members
         const addMemberResult = await Channel.updateOne(
             { _id: channel_id },
-            { $addToSet: { members: obj_id } } // Using $addToSet to prevent duplicates
+            { $addToSet: { members: { user: obj_id } } }
         );
 
         // if (addMemberResult.modifiedCount === 0) {
@@ -945,22 +945,28 @@ const acceptChannelConnectionRequestByCreator = async (req, res) => {
             return res.status(403).json({ message: "already member of the channel " })
         }
 
+        
         await Channel.findByIdAndUpdate(channelId, {
-            $pull: {
-                "recivedRequest": otherUserId
-            },
-            $push: {
-                "members": otherUserId
-            }
-        })
-        await User.findByIdAndUpdate(otherUserId, {
-            $pull: {
-                "sendChannelRequest": channelId
-            },
-            $push: {
-                "connectedChannels": channelId
-            }
+    $pull: {
+        recivedRequest: otherUserId
+    },
+    $push: {
+        members: {
+            user: otherUserId,
+            isblocked: false  // If your members have this structure
         }
+    }
+});
+
+await User.findByIdAndUpdate(otherUserId, {
+    $pull: {
+        sendChannelRequest: channelId
+    },
+    $push: {
+        connectedChannels: channelId
+    }
+}
+
         )
         return res.status(200).json({ message: "successfully accecpt the request" });
     }
