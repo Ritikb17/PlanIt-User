@@ -21,6 +21,7 @@ const eventRoutes = require("./routes/eventRoutes");
 const pastEventRoutes = require("./routes/pastEventRoutes");
 const userPostRoutes = require("./routes/userPostRoutes");
 const profilePictureRoutes = require("./routes/profilePictureRoutes");
+const accountSettingRoutes = require ("./routes/accountSettingRoutes")
 
 const { verifyToken } = require("./middlewares/authMiddleware");
 const verifySocketToken = require("./middlewares/socketAuthMiddleware");
@@ -60,6 +61,7 @@ require('./sockets/connectionHandler')(io);
 
 // Routes
 app.use('/api/picture', verifyToken, profilePictureRoutes);
+app.use('/api/account-settings', verifyToken, accountSettingRoutes);
 app.use('/api/user-post', verifyToken, userPostRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", verifyToken, profileRoutes);

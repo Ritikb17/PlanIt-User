@@ -16,7 +16,11 @@ const UserSchema = new Schema({
   },
   bio: { type: String, default: '' },
   email: { type: String, require: true, unique: true },
-  isAccountPrivate: { type: Boolean, default: false },
+  accountPrivacy: {
+    type: String,
+    enum: ['public', 'private', 'protected', 'ghost'],  
+    default: 'public',  
+     required: true,   
   password: { type: String, required: true },
   posts: [{ type: Schema.Types.ObjectId, ref: "UserPost" }],
   connections: [
