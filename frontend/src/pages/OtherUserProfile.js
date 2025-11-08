@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './Profile.css';
 
 const OtherUserProfile = () => {
   const { username } = useParams();
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -24,15 +25,12 @@ const OtherUserProfile = () => {
 
       try {
         // ✅ Prevent viewing own profile
-        const meRes = await fetch('http://localhost:5000/api/profile/get-profile', {
-          method: 'GET',
+        const meRes = await axios.get('http://localhost:5000/api/profile/get-profile', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        if (!meRes.ok) throw new Error('Failed to fetch profile');
-        const meData = await meRes.json();
-        if (meData.username === username) {
-          window.location.href = '/profile';
+        if (meRes.data.username === username) {
+          navigate('/profile'); // ✅ Use navigate instead of window.location
           return;
         }
 
@@ -43,8 +41,8 @@ const OtherUserProfile = () => {
         );
 
         const userData = userRes.data;
-        setUser(userData.userInfo || userData); // ✅ handles both cases
-        setIsAlreadyConnected(userData.isAlreadyConnected);
+        setUser(userData.userInfo || userData);
+        setIsAlreadyConnected(userData.isAlreadyConnected || false);
 
         // ✅ Fetch profile picture (binary)
         const profilePicRes = await axios.get(
@@ -54,7 +52,10 @@ const OtherUserProfile = () => {
             responseType: 'blob',
           }
         );
-        setProfilePicUrl(URL.createObjectURL(profilePicRes.data));
+        if (profilePicRes.data.size > 0) {
+          const profileUrl = URL.createObjectURL(profilePicRes.data);
+          setProfilePicUrl(profileUrl);
+        }
 
         // ✅ Fetch cover picture (binary)
         const coverPicRes = await axios.get(
@@ -64,7 +65,10 @@ const OtherUserProfile = () => {
             responseType: 'blob',
           }
         );
-        setCoverPicUrl(URL.createObjectURL(coverPicRes.data));
+        if (coverPicRes.data.size > 0) {
+          const coverUrl = URL.createObjectURL(coverPicRes.data);
+          setCoverPicUrl(coverUrl);
+        }
 
         // ✅ Check if follow request already sent
         const reqRes = await axios.get(
@@ -72,27 +76,34 @@ const OtherUserProfile = () => {
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
-        setHasSentRequest(reqRes.data.result);
-        setIsLoading(false);
+        setHasSentRequest(reqRes.data.result || false);
+        
       } catch (error) {
         console.error('Error fetching user data:', error);
-        setError('Failed to fetch user data.');
+        if (error.response?.status === 404) {
+          setError('User not found.');
+        } else {
+          setError('Failed to fetch user data.');
+        }
+      } finally {
         setIsLoading(false);
       }
     };
 
     fetchUserData();
+  }, [username, navigate]);
 
-    // 🧹 Clean up object URLs
+  // 🧹 Clean up object URLs on unmount
+  useEffect(() => {
     return () => {
       if (profilePicUrl) URL.revokeObjectURL(profilePicUrl);
       if (coverPicUrl) URL.revokeObjectURL(coverPicUrl);
     };
-  }, [username]);
+  }, [profilePicUrl, coverPicUrl]);
 
   const sendFollowRequest = async () => {
     const token = localStorage.getItem('token');
-    if (!token) return;
+    if (!token || !user?._id) return;
 
     try {
       const response = await axios.put(
@@ -104,7 +115,9 @@ const OtherUserProfile = () => {
       if (response.status === 200) {
         alert('Request sent successfully');
         setHasSentRequest(true);
-      } else alert('Failed to send request');
+      } else {
+        alert('Failed to send request');
+      }
     } catch (error) {
       console.error('Error sending follow request:', error);
       alert('Error sending request');
@@ -113,7 +126,7 @@ const OtherUserProfile = () => {
 
   const unsendFollowRequest = async () => {
     const token = localStorage.getItem('token');
-    if (!token) return;
+    if (!token || !user?._id) return;
 
     try {
       const response = await axios.put(
@@ -125,16 +138,23 @@ const OtherUserProfile = () => {
       if (response.status === 200) {
         alert('Request unsent successfully');
         setHasSentRequest(false);
-      } else alert('Failed to unsend request');
+      } else {
+        alert('Failed to unsend request');
+      }
     } catch (error) {
       console.error('Error unsending follow request:', error);
       alert('Error unsending request');
     }
   };
 
-  if (isLoading) return <p>Loading...</p>;
-  if (error) return <p style={{ color: 'red' }}>{error}</p>;
-  if (!user) return <p>User not found.</p>;
+  const handleChat = () => {
+    // Navigate to chat or open chat modal
+    navigate(`/chat/${username}`);
+  };
+
+  if (isLoading) return <div className="loading">Loading...</div>;
+  if (error) return <div className="error-message">{error}</div>;
+  if (!user) return <div className="error-message">User not found.</div>;
 
   return (
     <div className="profile-page">
@@ -144,6 +164,9 @@ const OtherUserProfile = () => {
           src={coverPicUrl || 'https://via.placeholder.com/800x250?text=No+Cover+Picture'}
           alt="Cover"
           className="cover-picture"
+          onError={(e) => {
+            e.target.src = 'https://via.placeholder.com/800x250?text=No+Cover+Picture';
+          }}
         />
       </div>
 
@@ -154,29 +177,34 @@ const OtherUserProfile = () => {
             src={profilePicUrl || 'https://via.placeholder.com/150'}
             alt="Profile"
             className="profile-picture"
+            onError={(e) => {
+              e.target.src = 'https://via.placeholder.com/150';
+            }}
           />
         </div>
         <div className="user-details">
           <h1>{user.username}</h1>
-          <p className="pronouns">{user.name || 'No name provided'}</p>
+          <p className="name">{user.name || 'No name provided'}</p>
           <p className="pronouns">{user.pronouns || 'No pronouns provided'}</p>
           <p className="bio">{user.bio || 'No bio available'}</p>
         </div>
       </div>
 
       {/* ✅ Follow / Chat Button */}
-      {isAlreadyConnected ? (
-        <button className="chat-btn" onClick={() => alert('Redirecting to chat...')}>
-          Chat
-        </button>
-      ) : (
-        <button
-          className={`follow-btn ${hasSentRequest ? 'unsend-btn' : ''}`}
-          onClick={hasSentRequest ? unsendFollowRequest : sendFollowRequest}
-        >
-          {hasSentRequest ? 'Unsend Request' : 'Follow'}
-        </button>
-      )}
+      <div className="action-buttons">
+        {isAlreadyConnected ? (
+          <button className="chat-btn" onClick={handleChat}>
+            Chat
+          </button>
+        ) : (
+          <button
+            className={`follow-btn ${hasSentRequest ? 'unsend-btn' : ''}`}
+            onClick={hasSentRequest ? unsendFollowRequest : sendFollowRequest}
+          >
+            {hasSentRequest ? 'Unsend Request' : 'Follow'}
+          </button>
+        )}
+      </div>
     </div>
   );
 };

@@ -15,7 +15,7 @@ const Navbar = () => {
   const [notifications, setNotifications] = useState([]);
   const [glbSocket, setGlbSocket] = useState();
   const [totalNewNotification, setTotalNewNotification] = useState();
-  const [profilePicUrl, setProfilePicUrl] = useState(null); // ✅ added for profile picture
+  const [profilePicUrl, setProfilePicUrl] = useState(null);
 
   const navigate = useNavigate();
 
@@ -34,7 +34,7 @@ const Navbar = () => {
         if (!username) return;
 
         const picRes = await axios.get(
-          `http://localhost:5000/api/picture/own-profile-picture/${username}`,
+          `http://localhost:5000/api/picture/my-profile-picture`,
           {
             headers: { Authorization: `Bearer ${token}` },
             responseType: 'blob',
@@ -105,6 +105,7 @@ const Navbar = () => {
   const dropdownRef = useRef(null);
   const notificationsRef = useRef(null);
   const settingsRef = useRef(null);
+  const searchRef = useRef(null);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -115,6 +116,8 @@ const Navbar = () => {
         setIsNotificationsOpen(false);
       if (settingsRef.current && !settingsRef.current.contains(event.target))
         setIsSettingsOpen(false);
+      if (searchRef.current && !searchRef.current.contains(event.target))
+        setIsSearchVisible(false);
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -139,18 +142,12 @@ const Navbar = () => {
     }
   };
 
-  const getUserInfo = async (username) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
-    try {
-      await axios.get(`http://localhost:5000/api/user/get-user/${username}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      navigate(`/profile/${username}`);
-    } catch (error) {
-      console.error('Error fetching user info:', error);
-    }
+  // ✅ Fixed: Simplified user navigation function
+  const handleUserClick = (username) => {
+    setIsSearchVisible(false);
+    setSearchQuery('');
+    setSearchResults([]);
+    navigate(`/profile/${username}`);
   };
 
   const markNotification = () => {
@@ -217,7 +214,7 @@ const Navbar = () => {
         </div>
 
         {isSearchVisible && (
-          <div className="search-form">
+          <div className="search-form" ref={searchRef}>
             <input
               type="text"
               placeholder="Search users..."
@@ -232,7 +229,7 @@ const Navbar = () => {
                   <div
                     key={user._id}
                     className="search-result-item"
-                    onClick={() => getUserInfo(user.username)}
+                    onClick={() => handleUserClick(user.username)} // ✅ Use the simplified function
                   >
                     <img
                       src={user.profilePicture || 'https://via.placeholder.com/40'}
@@ -306,7 +303,7 @@ const Navbar = () => {
         {/* 👤 Profile Dropdown */}
         <div className="profile-dropdown" ref={dropdownRef}>
           <img
-            src={profilePicUrl || 'https://via.placeholder.com/40'} // ✅ shows actual profile picture
+            src={profilePicUrl || 'https://via.placeholder.com/40'}
             alt="Profile"
             className="profile-image"
             onClick={() => setIsProfileOpen(!isProfileOpen)}
