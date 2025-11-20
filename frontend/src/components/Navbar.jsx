@@ -184,7 +184,6 @@ const Navbar = () => {
   };
 
   const handleBlockUser = () => navigate('/block-users');
-  const handlePrivacySettings = () => alert('Privacy Settings coming soon!');
 
   return (
     <nav className="navbar">
@@ -284,17 +283,8 @@ const Navbar = () => {
           </div>
           {isSettingsOpen && (
             <div className="dropdown-menu">
-              <div className="dropdown-item" onClick={handleBlockUser}>
+              <Link to="/block-users" className="dropdown-item">
                 <i className="fas fa-ban"></i> Block User
-              </div>
-              <div className="dropdown-item" onClick={handlePrivacySettings}>
-                <i className="fas fa-lock"></i> Privacy Settings
-              </div>
-              <Link to="/theme" className="dropdown-item">
-                <i className="fas fa-palette"></i> Theme
-              </Link>
-              <Link to="/help" className="dropdown-item">
-                <i className="fas fa-question-circle"></i> Help
               </Link>
             </div>
           )}
