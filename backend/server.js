@@ -52,7 +52,6 @@ app.use('/uploads', (req, res, next) => {
 const io = new Server(server, {
   cors: {
     origin: process.env.FRONTEND_URL || "http://localhost:3000",
-    methods: ["GET", "POST"],
     credentials: true
   }
 });
@@ -94,7 +93,6 @@ app.use('*', (req, res) => {
 });
 
 // Start server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on http://0.0.0.0:${PORT}`);
-  console.log(`Use on phone: http://YOUR_PC_IP:${PORT}`);
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
