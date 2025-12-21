@@ -90,7 +90,7 @@ const getUserPosts = async (req, res) => {
             const imageURLs = (post.image || []).map(img => {
                 // Remove duplicate public/ if present and normalize slashes
                 const cleanPath = img.replace(/^public[\\/]/, '').replace(/\\/g, '/');
-                return `${req.protocol}://${req.get('host')}/uploads/${cleanPath}`;
+                return `${req.protocol}://${req.get('host')}/api/user-post/${cleanPath}`;
             });
 
             return {
@@ -111,6 +111,21 @@ const getUserPosts = async (req, res) => {
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
+const getUserPostImage = async (req, res) => {
+    try {
+        const { userID, imageName } = req.params;
+        console.log("Fetching image for userID:", userID, "imageName:", imageName);
+        const imagePath = path.join(__dirname, `../public/${userID}/userPost/${imageName}`);
+        if (fs.existsSync(imagePath)) {
+            return res.sendFile(imagePath);
+        } else {
+            return res.status(404).json({ message: "Image not found" });
+        }
+    } catch (error) {
+        console.error("Error fetching post image:", error);
+        return res.status(500).json({ message: "Server error", error });
+    }
+}   
 
 // //delete a post(HARD DELETE IMPLEMENTED)
 // const deleteUserPost = async (req, res) => {
@@ -156,11 +171,11 @@ const deleteUserPost = async (req, res) => {
         const userIdObj = new mongoose.Types.ObjectId(userId);
         const post = await UserPost.findById(postId);
 
-        if (!post) {
-            return res.status(404).json({ message: "Post not found" });
-        }
         if (post.createdBy.toString() !== userId.toString()) {
             return res.status(403).json({ message: "Unauthorized to delete this post" });
+        }
+        if (!post) {
+            return res.status(404).json({ message: "Post not found" });
         }
         if (post.isDeleted) {
             return res.status(400).json({ message: "Post already deleted" });
@@ -224,13 +239,12 @@ const likeUnlikePost = async (req, res) => {
         }
         const creatorUserId = await User.findById(post.createdBy);
 
-        if (!post.isPublic) {
-            if (!creatorUserId.connections.includes(userId) || post.createdBy.toString() !== userId.toString()) {
-
-                return res.status(403).json({ message: "cannot like this  post (not owner and its not public post )" });
-            }
-            return res.status(403).json({ message: "Cannot like a private post" });
+     if(!post.isPublic){
+        console.log("post is not public",post.createdBy.toString(),req.user._id.toString());
+        if (post.createdBy.toString() !== req.user._id.toString()&&!user.connections.includes(post.createdBy)) {
+            return res.status(403).json({ message: "cannot like/unlike on this post (not owner and its not public post )" });
         }
+     }
 
 
 
@@ -278,9 +292,17 @@ const commentOnPost = async (req, res) => {
         if (!post.isCommentsAllowed) {
             return res.status(403).json({ message: "Comments are disabled for this post" });
         }
-        if (!post.isPublic) {
-            return res.status(403).json({ message: "Cannot comment on a private post" });
+        // if (!post.isPublic) {
+        //     return res.status(403).json({ message: "Cannot comment on a private post" });
+        // }
+
+
+     if(!post.isPublic){
+        console.log("post is not public",post.createdBy.toString(),req.user._id.toString());
+        if (post.createdBy.toString() !== req.user._id.toString()&&!user.connections.includes(post.createdBy)) {
+            return res.status(403).json({ message: "cannot comment on this post (not owner and its not public post )" });
         }
+     }
 
         //commenting logic
         const newComment = await Comment.create({
@@ -308,35 +330,47 @@ const commentOnPost = async (req, res) => {
     }
 
 }
+
+
 //Like unlike a comment 
 const LikeOnComment = async (req, res) => {
     try {
         const { commentId } = req.params;
-
+        const userId = req.user._id;
         const comment = await Comment.findById(commentId);
-        console.log("comment ", comment);
+        // console.log("comment ", comment);
         if (!comment) {
             return res.status(404).json({ message: "Comment not found" });
         }
         const postId = comment.postId;
+        // const userId = req.user._id;
         const post = await UserPost.findById(postId);
         if (!post) {
             return res.status(404).json({ message: "Post not found" });
         }
-        if (!post.isPublic) {
-            if (!post.createdBy.toString() !== req.user._id.toString()) {
-                return res.status(403).json({ message: "cannot like comment on this post (not owner and its not public post )" });
-            }
-            return res.status(403).json({ message: "Cannot like comment on a private post" });
+        if(!post.isPublic){
+        console.log("post is not public",post.createdBy.toString(),req.user._id.toString());
+        if (post.createdBy.toString() !== req.user._id.toString()&&!user.connections.includes(post.createdBy)) {
+            return res.status(403).json({ message: "cannot comment on this post (not owner and its not public post )" });
         }
-        if (comment.likes.includes(req.user._id)) {
-            comment.likes.pull(req.user._id);
-            await comment.save();
-            return res.status(400).json({ message: "comment unliked" });
         }
-        comment.likes.push(req.user._id);
+
+        const alreadyLiked = comment.likes.some(
+            like => like.likedBy && like.likedBy.equals(userId)
+        );
+
+        if (alreadyLiked) {
+        comment.likes = comment.likes.filter(
+        like => !like.likedBy.equals(userId)
+        );
+
+        await comment.save();
+        return res.status(200).json({ message: "Comment unliked" });
+    }
+        comment.likes.push({ likedBy: userId });
         await comment.save();
         const Userr = await User.findById(comment.userId);
+        console.log("Userr ", userId);
         await Notification.updateOne(
             { user: Userr },
             { $push: { notifications: { type: 'like', message: `Somebody like your comment on post ` } } }
@@ -349,6 +383,8 @@ const LikeOnComment = async (req, res) => {
     }
 
 }
+
+
 // replaying on a comment 
 const replayOnComment = async (req, res) => {
     try {
@@ -366,11 +402,11 @@ const replayOnComment = async (req, res) => {
             return res.status(404).json({ message: "post not found " });
 
         }
-        if (!post.isPublic) {
-            if (!post.createdBy.toString() !== req.user._id.toString()) {
-                return res.status(403).json({ message: "cannot like comment on this post (not owner and its not public post )" });
-            }
-            return res.status(403).json({ message: "Cannot like comment on a private post" });
+        if(!post.isPublic){
+        console.log("post is not public",post.createdBy.toString(),req.user._id.toString());
+        if (post.createdBy.toString() !== req.user._id.toString()&&!user.connections.includes(post.createdBy)) {
+            return res.status(403).json({ message: "cannot comment on this post (not owner and its not public post )" });
+        }
         }
 
         //commenting logic
@@ -402,41 +438,74 @@ const deletePostComment = async (req, res) => {
     try {
         const { commentId } = req.params;
         const userId = req.user._id;
-        const user = await User.findById(userId);
+
         const comment = await Comment.findById(commentId);
         if (!comment) {
             return res.status(404).json({ message: "Comment not found" });
         }
 
-        const postId = comment.postId;
-
-        const post = await UserPost.findById(postId);
-
+        const post = await UserPost.findById(comment.postId);
         if (!post) {
             return res.status(404).json({ message: "Post not found" });
         }
-        if (!user.posts.includes(postId) && comment.userId.toString() !== userId.toString()) {
-            return res.status(403).json({ message: "Unauthorized to delete this comment" });
+        console.log("post ", post);
+        const isPostOwner = post.createdBy.equals(userId);
+        const isCommentOwner = comment.userId.equals(userId);
+
+        if (!isPostOwner && !isCommentOwner) {
+            return res.status(403).json({ message: "Unauthorized" });
         }
-        // Remove comment reference from post
-        await User.updateOne(
-            { _id: userId },
-            { $pull: { comments: { _id: commentId } } }
+
+        // ✅ AGGREGATION: get comment + all nested replies
+        const result = await Comment.aggregate([
+            {
+                $match: { _id: comment._id }
+            },
+            {
+                $graphLookup: {
+                    from: "postcomments", // collection name (IMPORTANT)
+                    startWith: "$replies",
+                    connectFromField: "replies",
+                    connectToField: "_id",
+                    as: "allReplies"
+                }
+            },
+            {
+                $project: {
+                    idsToDelete: {
+                        $concatArrays: [
+                            ["$_id"],
+                            {
+                                $map: {
+                                    input: "$allReplies",
+                                    as: "r",
+                                    in: "$$r._id"
+                                }
+                            }
+                        ]
+                    }
+                }
+            }
+        ]);
+
+        const ids = result[0]?.idsToDelete || [];
+
+        // ✅ SOFT DELETE all in ONE update
+        await Comment.updateMany(
+            { _id: { $in: ids } },
+            { $set: { isDeleted: true } }
         );
 
+        return res.status(200).json({
+            message: "Comment and all nested replies soft deleted"
+        });
 
-        const confirmDeleteComment = await Comment.deleteOne({ _id: commentId });
-        if (!confirmDeleteComment) {
-            return res.status(500).json({ message: "Failed to delete comment" });
-        }
-        return res.status(200).json({ message: "Comment deleted successfully" });
-    }
-    catch (error) {
+    } catch (error) {
         console.error("Error deleting comment:", error);
-        return res.status(500).json({ message: "Server error", error });
+        return res.status(500).json({ message: "Server error" });
     }
+};
 
-}
 //get all public posts
 const getPublicPosts = async (req, res) => {
     try {
@@ -453,4 +522,25 @@ const getPublicPosts = async (req, res) => {
         return res.status(500).json({ message: "Server error", error });
     }
 }
-module.exports = { createUserPost, getUserPosts, likeUnlikePost, commentOnPost, deletePostComment, deleteUserPost, getUserPostComments, getUserPostLikes, getPublicPosts, LikeOnComment,replayOnComment };
+
+const getSinglePost = async (req, res) => {
+    try {
+        const { postId } = req.params;
+        const post = await UserPost.findById(postId);
+
+        if(post.isPublic===false){
+        console.log("post is not public",post.createdBy.toString(),req.user._id.toString());
+        if (post.createdBy.toString() !== req.user._id.toString()&&!user.connections.includes(post.createdBy)) {
+            return res.status(403).json({ message: "cannot view this post (not owner and its not public post )" });
+        }
+        }
+        if (!post || post.isDeleted) {
+            return res.status(404).json({ message: "Post not found" });
+        }
+        return res.status(200).json(post);
+    } catch (error) {
+        console.error("Error fetching single post:", error);
+        return res.status(500).json({ message: "Server error", error });
+    }
+}
+module.exports = { createUserPost,getUserPostImage, getUserPosts, likeUnlikePost, commentOnPost, deletePostComment, deleteUserPost, getUserPostComments, getUserPostLikes, getPublicPosts, LikeOnComment,replayOnComment ,getSinglePost};
