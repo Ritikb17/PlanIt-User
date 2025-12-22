@@ -60,6 +60,7 @@ require('./sockets/connectionHandler')(io);
 
 // Routes
 app.use('/api/picture', verifyToken, profilePictureRoutes);
+app.use('/api/messages', verifyToken, messageRoutes);
 app.use('/api/user-post', verifyToken, userPostRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", verifyToken, profileRoutes);

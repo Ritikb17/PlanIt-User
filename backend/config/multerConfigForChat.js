@@ -7,13 +7,14 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     try {
       const userId = req.user?._id || req.user?.id;
-      const pictureType = req.params.pictureType;
-
+      const chatId = req.params.chatId;
+      console.log("Multer destination userId:", userId, "chatId:", chatId);
+      
       if (!userId) return cb(new Error('User not authenticated'), null);
-      if (!pictureType) return cb(new Error('Missing picture type'), null);
+      // if (!pictureType) return cb(new Error('Missing picture type'), null);
 
       // Create user-specific folder path
-      const userFolder = path.resolve(__dirname, '../public', `chatFiles`, {chatId: req.body.chatId});
+      const userFolder = path.resolve(__dirname, '../public', `chatFiles`, String(chatId));
 
       // Create folder if it doesn't exist
       if (!fs.existsSync(userFolder)) {
