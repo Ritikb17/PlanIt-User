@@ -523,6 +523,7 @@ const getPublicPosts = async (req, res) => {
     }
 }
 
+//get single post
 const getSinglePost = async (req, res) => {
     try {
         const { postId } = req.params;

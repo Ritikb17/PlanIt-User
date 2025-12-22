@@ -6,6 +6,7 @@ const sendMessage = async (req, res) => {
     const _id = req.user._id;
     const rec_id = req.body.reciverId;
     const message = req.body.message; 
+    const file = req.file;
 
     try {
         const user = await User.findById(_id);

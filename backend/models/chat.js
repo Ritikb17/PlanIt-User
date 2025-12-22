@@ -7,10 +7,12 @@ const chatSchema = new Schema({
   sender: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   receiver: { type: Schema.Types.ObjectId, ref: 'User', required: true }, 
   message: { type: String},
+  file: { type: String },
   timestamp: { type: Date, default: Date.now },
   isSeen: { type: Boolean, default: false } ,
   isEdited: { type: Boolean, default: false } ,
   isDeleted: { type: Boolean, default: false } 
+
   
   
 
