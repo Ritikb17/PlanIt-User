@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import io from 'socket.io-client';
 import './ChatDialog.css';
-import recSound from '../assets/sounds/notification/recMessage.mp3'
-import sendSound from '../assets/sounds/notification/sendMessage.mp3'
+import recSound from '../assets/sounds/notification/recMessage.mp3';
+import sendSound from '../assets/sounds/notification/sendMessage.mp3';
 
 const socket = io('http://localhost:5000', {
   auth: {
@@ -11,228 +11,219 @@ const socket = io('http://localhost:5000', {
   transports: ['websocket'],
 });
 
-socket.on('connect', () => {
-  console.log('Socket connected:', socket.id);
-});
-
-socket.on('connect_error', (err) => {
-  console.error('Socket connection error:', err.message);
-});
-
-console.log("the token is ", localStorage.getItem('token'))
 const ChatDialog = ({ chat, onClose }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState('');
   const [chatId, setChatId] = useState('');
+
   const messagesEndRef = useRef(null);
+
+  const myId = JSON.parse(
+    atob(localStorage.getItem('token').split('.')[1])
+  ).id;
+
+  /* ------------------ Sounds ------------------ */
   const playSendSound = () => {
     const audio = new Audio(sendSound);
-    audio.play()
-      .catch(error => console.log("Audio play failed:", error));
+    audio.play().catch(() => {});
   };
-const playRecSound = () => {
+
+  const playRecSound = () => {
     const audio = new Audio(recSound);
-    audio.play()
-      .catch(error => console.log("Audio play failed:", error));
+    audio.play().catch(() => {});
   };
 
-
+  /* ------------------ Scroll ------------------ */
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  /* ------------------ Fetch Messages ------------------ */
   useEffect(() => {
     if (!chat?._id) return;
 
-    socket.emit('get-messages', chat._id, (response) => {
-      if (response.status === 'success') {
-        setMessages(response.messages);
-        setChatId(response.chat_id)
+    socket.emit('get-messages', chat._id, (res) => {
+      if (res.status === 'success') {
+        console.log('Fetched messages:', res.messages);
+        setMessages(res.messages);
+        setChatId(res.chat_id);
       }
     });
 
-    const handleReceiveMessage = (msg) => {
+    const receiveHandler = (msg) => {
       setMessages((prev) => [...prev, msg]);
-      console.log("playing sound ")
       playRecSound();
     };
 
-    const handleMessageDeleted = (deletedId) => {
-      socket.emit('get-messages', chat._id, (response) => {
-        if (response.status === 'success') {
-          setMessages(response.messages);
-          setChatId(response.chat_id)
-          console.log("RESPONSE IS", response)
-        }
-      });
-    };
-
-    const handleMessageEdited = () => {
-      socket.emit('get-messages', chat._id, (response) => {
-        if (response.status === 'success') {
-          setMessages(response.messages);
-          setChatId(response.chat_id)
-          console.log("RESPONSE IS", response)
-        }
-      });
-    };
-
-    socket.on('receive-message', handleReceiveMessage);
-    socket.on('edit-message', handleMessageEdited);
-    socket.on('message-deleted', handleMessageDeleted);
-    socket.on('message-edited', handleMessageEdited);
+    socket.on('receive-message', receiveHandler);
 
     return () => {
-      socket.off('receive-message', handleReceiveMessage);
-      socket.off('message-deleted', handleMessageDeleted);
-      socket.off('message-edited', handleMessageEdited);
+      socket.off('receive-message', receiveHandler);
     };
-  }, [chat._id]);
+  }, [chat?._id]);
 
+  /* ------------------ SEND MESSAGE WITH FILE ------------------ */
+  const sendMessageWithFile = async () => {
+    if (!input.trim() && !selectedFile) return;
+
+    playSendSound();
+
+    const formData = new FormData();
+    formData.append('message', input);
+    formData.append('reciverId', chat._id);
+    formData.append('file', selectedFile);
+
+    try {
+      const res = await fetch(
+        `http://localhost:5000/api/messages/send-chat-message-with-file/${chat._id}`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: formData,
+        }
+      );
+
+      const data = await res.json();
+
+      if (data.status === 'success') {
+        setMessages((prev) => [...prev, data.message]);
+        setInput('');
+        setSelectedFile(null);
+      }
+    } catch (err) {
+      console.error('File message error:', err);
+    }
+  };
+
+  /* ------------------ SEND TEXT MESSAGE ------------------ */
   const handleSend = () => {
-playSendSound();
-    if (input.trim()) {
-      const newMessage = {
-        _id: Date.now().toString(),
-        sender: myId,
-        message: input,
-        timestamp: new Date().toISOString(),
-      };
-
-      // Optimistically update UI
-      setMessages((prev) => [...prev, newMessage]);
-      setInput('');
-
-
-      // Send to server
-
-      socket.emit('send-message', {
-        receiverId: chat._id,
-        message: input
-      },
-        (response) => {
-          if (response.status === 'success') {
-          //   console.log("playing sound ")
-          //  playSound();
-            setMessages((prev) =>
-              prev.map((msg) =>
-                msg._id === newMessage._id ? response.message : msg
-              )
-            );
-
-
-
-          } else {
-            // Rollback if failed
-            setMessages((prev) => prev.filter((msg) => msg._id !== newMessage._id));
-          }
-        });
+    // FILE MESSAGE
+    if (selectedFile) {
+      sendMessageWithFile();
+      return;
     }
-  };
 
-  const handleEdit = (id, currentText) => {
-    setEditingId(id);
-    setEditText(currentText);
+    if (!input.trim()) return;
 
-  };
+    playSendSound();
 
-  const handleEditSubmit = (id) => {
+    const tempMsg = {
+      _id: Date.now().toString(),
+      sender: myId,
+      message: input,
+      timestamp: new Date().toISOString(),
+    };
 
-    if (editText.trim()) {
+    setMessages((prev) => [...prev, tempMsg]);
+    setInput('');
 
-      socket.emit('edit-message', { messageId: id, newMessage: editText, receiverId: chat._id, chatId: chatId }, (res) => {
+    socket.emit(
+      'send-message',
+      { receiverId: chat._id, message: input },
+      (res) => {
         if (res.status === 'success') {
-          setEditingId(null);
-          setEditText('');
+          setMessages((prev) =>
+            prev.map((m) => (m._id === tempMsg._id ? res.message : m))
+          );
+        } else {
+          setMessages((prev) => prev.filter((m) => m._id !== tempMsg._id));
         }
-      });
-      socket.emit('get-messages', chat._id, (response) => {
-        if (response.status === 'success') {
-          setMessages(response.messages);
-          setChatId(response.chat_id)
-          console.log("RESPONSE IS", response)
-        }
-      });
-    }
+      }
+    );
   };
 
+  /* ------------------ EDIT ------------------ */
+  const handleEditSubmit = (id) => {
+    if (!editText.trim()) return;
+
+    socket.emit(
+      'edit-message',
+      { messageId: id, newMessage: editText, receiverId: chat._id, chatId },
+      () => {
+        setEditingId(null);
+        setEditText('');
+      }
+    );
+  };
+
+  /* ------------------ DELETE ------------------ */
   const handleDelete = (id) => {
-    socket.emit('delete-message', { messageId: id, receiverId: chat._id, chatId: chatId }, (response) => {
-      if (response.status != 'success') {
-        console.log("fail to delete message ")
-      }
+    socket.emit('delete-message', {
+      messageId: id,
+      receiverId: chat._id,
+      chatId,
     });
-    socket.emit('get-messages', chat._id, (response) => {
-      if (response.status === 'success') {
-        setMessages(response.messages);
-        setChatId(response.chat_id)
-        console.log("RESPONSE IS", response)
-      }
-    });
-
-
   };
-
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') handleSend();
-  };
-
-  const myId = JSON.parse(atob(localStorage.getItem('token').split('.')[1])).id;
 
   return (
     <div className="chat-dialog-overlay">
       <div className="chat-dialog">
+        {/* HEADER */}
         <div className="chat-dialog-header">
-          <img src={chat.profilePicture} alt={chat.username} className="profile-picture" />
+          <img src={chat.profilePicture} alt="" />
           <h3>{chat.username}</h3>
-          <button className="close-button" onClick={onClose}>
-            <i className="fas fa-times"></i>
-          </button>
+          <button onClick={onClose}>✖</button>
         </div>
 
+        {/* BODY */}
         <div className="chat-dialog-body">
-          {messages.map((msg, idx) => {
+          {messages.map((msg) => {
             const isMine = msg.sender === myId;
 
             return (
-              <div key={msg._id || idx} className={`message-wrapper ${isMine ? 'own' : 'other'}`}>
-                <div className={`message-bubble ${isMine ? 'own' : 'other'}`}>
+              <div
+                key={msg._id}
+                className={`message-wrapper ${isMine ? 'own' : 'other'}`}
+              >
+                <div className="message-bubble">
                   {editingId === msg._id ? (
                     <input
                       value={editText}
                       onChange={(e) => setEditText(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleEditSubmit(msg._id)}
-                      className="edit-input"
+                      onKeyDown={(e) =>
+                        e.key === 'Enter' && handleEditSubmit(msg._id)
+                      }
                     />
                   ) : (
                     <>
-                      {msg.isDeleted ? (
-                        <p className="deleted-message">[This message has been deleted]</p>
-                      ) : (
-                        <>
-                          <p>{msg.message}</p>
-                          {isMine && (
-                            <div className="actions">
-                              <button onClick={() => handleEdit(msg._id, msg.message)}>Edit</button>
-                              <button onClick={() => handleDelete(msg._id)}>Delete</button>
-                            </div>
-                          )}
-                        </>
+                      <p>{msg.message}</p>
+
+                      {/* FILE */}
+                      {msg.fileUrl && (
+                        <a href={msg.fileUrl} target="_blank" rel="noreferrer">
+                          📎 View File
+                        </a>
+                      )}
+
+                      {isMine && (
+                        <div className="actions">
+                          <button
+                            onClick={() => {
+                              setEditingId(msg._id);
+                              setEditText(msg.message);
+                            }}
+                          >
+                            Edit
+                          </button>
+                          <button onClick={() => handleDelete(msg._id)}>
+                            Delete
+                          </button>
+                        </div>
                       )}
                     </>
                   )}
-                  {msg.timestamp && (
-                    <div className="timestamp">
-                      {new Date(msg.timestamp).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </div>
-                  )}
+
+                  <span className="timestamp">
+                    {new Date(msg.timestamp).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
                 </div>
               </div>
             );
@@ -240,18 +231,22 @@ playSendSound();
           <div ref={messagesEndRef} />
         </div>
 
+        {/* FOOTER */}
         <div className="chat-dialog-footer">
+          <input
+            type="file"
+            onChange={(e) => setSelectedFile(e.target.files[0])}
+          />
+
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
+            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             placeholder="Type a message..."
-            className="message-input"
           />
-          <button className="send-button" onClick={handleSend}>
-            <i className="fas fa-paper-plane"></i>
-          </button>
+
+          <button onClick={handleSend}>Send</button>
         </div>
       </div>
     </div>

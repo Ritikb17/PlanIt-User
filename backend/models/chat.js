@@ -11,7 +11,8 @@ const chatSchema = new Schema({
   timestamp: { type: Date, default: Date.now },
   isSeen: { type: Boolean, default: false } ,
   isEdited: { type: Boolean, default: false } ,
-  isDeleted: { type: Boolean, default: false } 
+  isDeleted: { type: Boolean, default: false } ,
+  chatId: { type: Schema.Types.ObjectId, ref: 'Chat'},
 
   
   
