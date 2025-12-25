@@ -18,8 +18,10 @@ const ChatDialog = ({ chat, onClose }) => {
   const [editingId, setEditingId] = useState(null);
   const [editText, setEditText] = useState('');
   const [chatId, setChatId] = useState('');
+  const [imagePreview, setImagePreview] = useState(null);
 
   const messagesEndRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const myId = JSON.parse(
     atob(localStorage.getItem('token').split('.')[1])
@@ -65,6 +67,34 @@ const ChatDialog = ({ chat, onClose }) => {
     };
   }, [chat?._id]);
 
+  /* ------------------ File Preview ------------------ */
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Check if it's an image
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setImagePreview(event.target.result);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setImagePreview(null);
+    }
+
+    setSelectedFile(file);
+  };
+
+  /* ------------------ Clear File Selection ------------------ */
+  const clearFileSelection = () => {
+    setSelectedFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   /* ------------------ SEND MESSAGE WITH FILE ------------------ */
   const sendMessageWithFile = async () => {
     if (!input.trim() && !selectedFile) return;
@@ -72,7 +102,9 @@ const ChatDialog = ({ chat, onClose }) => {
     playSendSound();
 
     const formData = new FormData();
-    formData.append('message', input);
+    if (input.trim()) {
+      formData.append('message', input);
+    }
     formData.append('reciverId', chat._id);
     formData.append('file', selectedFile);
 
@@ -93,7 +125,7 @@ const ChatDialog = ({ chat, onClose }) => {
       if (data.status === 'success') {
         setMessages((prev) => [...prev, data.message]);
         setInput('');
-        setSelectedFile(null);
+        clearFileSelection();
       }
     } catch (err) {
       console.error('File message error:', err);
@@ -137,6 +169,24 @@ const ChatDialog = ({ chat, onClose }) => {
     );
   };
 
+  /* ------------------ GET FILE URL WITH TOKEN ------------------ */
+  const getFileUrlWithToken = (fileURL) => {
+    if (!fileURL) return '';
+    
+    // Add the token to the URL if it's not already there
+    const token = localStorage.getItem('token');
+    const separator = fileURL.includes('?') ? '&' : '?';
+    return `${fileURL}${separator}token=${token}`;
+  };
+
+  /* ------------------ CHECK IF FILE IS IMAGE ------------------ */
+  const isImageFile = (fileName) => {
+    if (!fileName) return false;
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
+    const lowerFileName = fileName.toLowerCase();
+    return imageExtensions.some(ext => lowerFileName.includes(ext));
+  };
+
   /* ------------------ EDIT ------------------ */
   const handleEditSubmit = (id) => {
     if (!editText.trim()) return;
@@ -165,7 +215,7 @@ const ChatDialog = ({ chat, onClose }) => {
       <div className="chat-dialog">
         {/* HEADER */}
         <div className="chat-dialog-header">
-          <img src={chat.profilePicture} alt="" />
+          <img src={chat.profilePicture} alt={chat.username} />
           <h3>{chat.username}</h3>
           <button onClick={onClose}>✖</button>
         </div>
@@ -174,6 +224,8 @@ const ChatDialog = ({ chat, onClose }) => {
         <div className="chat-dialog-body">
           {messages.map((msg) => {
             const isMine = msg.sender === myId;
+            const hasImage = msg.file && isImageFile(msg.file);
+            const imageUrl = hasImage ? getFileUrlWithToken(msg.fileURL) : null;
 
             return (
               <div
@@ -188,25 +240,56 @@ const ChatDialog = ({ chat, onClose }) => {
                       onKeyDown={(e) =>
                         e.key === 'Enter' && handleEditSubmit(msg._id)
                       }
+                      autoFocus
                     />
                   ) : (
                     <>
-                      <p>{msg.message}</p>
-
-                      {/* FILE */}
-                      {msg.fileUrl && (
-                        <a href={msg.fileUrl} target="_blank" rel="noreferrer">
-                          📎 View File
-                        </a>
+                      {/* TEXT MESSAGE */}
+                      {msg.message && <p>{msg.message}</p>}
+                      
+                      {/* IMAGE DISPLAY */}
+                      {hasImage && imageUrl && (
+                        <div className="message-image-container">
+                          <img 
+                            src={imageUrl} 
+                            alt="Shared image" 
+                            className="message-image"
+                            onClick={() => window.open(imageUrl, '_blank')}
+                          />
+                          <a 
+                            href={imageUrl} 
+                            target="_blank" 
+                            rel="noreferrer" 
+                            className="image-download-link"
+                          >
+                            Download
+                          </a>
+                        </div>
+                      )}
+                      
+                      {/* NON-IMAGE FILE DISPLAY */}
+                      {msg.file && !hasImage && (
+                        <div className="file-container">
+                          <a 
+                            href={getFileUrlWithToken(msg.fileURL)} 
+                            target="_blank" 
+                            rel="noreferrer"
+                            className="file-link"
+                          >
+                            📎 {msg.file}
+                          </a>
+                        </div>
                       )}
 
+                      {/* ACTIONS FOR OWN MESSAGES */}
                       {isMine && (
                         <div className="actions">
                           <button
                             onClick={() => {
                               setEditingId(msg._id);
-                              setEditText(msg.message);
+                              setEditText(msg.message || '');
                             }}
+                            disabled={!msg.message} // Disable edit if no text message
                           >
                             Edit
                           </button>
@@ -223,6 +306,7 @@ const ChatDialog = ({ chat, onClose }) => {
                       hour: '2-digit',
                       minute: '2-digit',
                     })}
+                    {msg.isEdited && <span className="edited-label"> (edited)</span>}
                   </span>
                 </div>
               </div>
@@ -233,10 +317,43 @@ const ChatDialog = ({ chat, onClose }) => {
 
         {/* FOOTER */}
         <div className="chat-dialog-footer">
-          <input
-            type="file"
-            onChange={(e) => setSelectedFile(e.target.files[0])}
-          />
+          {/* FILE INPUT WITH PREVIEW */}
+          <div className="file-input-section">
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={handleFileChange}
+              accept="image/*"
+              style={{ display: 'none' }}
+            />
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className="file-button"
+            >
+              📎 Attach
+            </button>
+            
+            {/* FILE PREVIEW */}
+            {selectedFile && (
+              <div className="file-preview">
+                {imagePreview ? (
+                  <div className="image-preview">
+                    <img src={imagePreview} alt="Preview" />
+                    <button onClick={clearFileSelection} className="remove-file">
+                      ✖
+                    </button>
+                  </div>
+                ) : (
+                  <div className="file-info">
+                    <span>{selectedFile.name}</span>
+                    <button onClick={clearFileSelection} className="remove-file">
+                      ✖
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
           <input
             type="text"
@@ -244,9 +361,12 @@ const ChatDialog = ({ chat, onClose }) => {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             placeholder="Type a message..."
+            className="message-input"
           />
 
-          <button onClick={handleSend}>Send</button>
+          <button onClick={handleSend} className="send-button">
+            Send
+          </button>
         </div>
       </div>
     </div>

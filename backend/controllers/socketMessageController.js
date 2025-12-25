@@ -46,6 +46,7 @@ module.exports = {
         sender: _id,
         receiver: rec_id,
         message: message,
+      
         timestamp: new Date()
       };
 
@@ -75,83 +76,91 @@ module.exports = {
   },
 
   handleGetMessages: async (socket, data, callback) => {
-    try {
-      const _id = socket.user._id;
-      const rec_id = data;
+  try {
+    const _id = socket.user._id;
+    const rec_id = data;
 
-      console.log("user and reciver id s", rec_id);
-      console.log("selfID", _id);
-      const [user, rec] = await Promise.all([
-        User.findById(_id),
-        User.findById(rec_id)
-      ]);
+    const [user, rec] = await Promise.all([
+      User.findById(_id),
+      User.findById(rec_id)
+    ]);
 
-      if (!user || !rec) {
-        throw new Error("User or receiver not found");
-      }
-
-      const connectedToOtherUser = rec.connections.some(conn => conn.friend.equals(_id));
-      if (!connectedToOtherUser) {
-        throw new Error("You are not connected to the other user");
-      }
-
-      const connection = user.connections.find(conn => conn.friend.equals(rec._id));
-      const isBlocked = user.blockUsers.includes(rec_id);
-
-      if (isBlocked) {
-        throw new Error("You blocked the other user");
-      }
-
-      const Blocked = rec.blockUsers.includes(rec_id);
-      if (Blocked) {
-        throw new Error("You have been blocked");
-      }
-
-      const chatId = connection.chat;
-      if (!chatId) {
-        throw new Error("Chat ID not found");
-      }
-
-      const cid = new mongoose.Types.ObjectId(chatId);
-      const currentUserId = _id.toString()
-
-      const chat = await Chat.findById(cid).select('messages');
-      const updatedChat = await Chat.findOneAndUpdate(
-        {
-          _id: new mongoose.Types.ObjectId(cid) // Primary filter by chat ID
-        },
-        {
-          $set: {
-            "messages.$[elem].isSeen": true
-          }
-        },
-        {
-          new: true,
-          arrayFilters: [
-            {
-              "elem.isSeen": false,
-              "elem.receiver": new mongoose.Types.ObjectId(_id)
-            }
-          ]
-        }
-      );
-
-      console.log("Updated chat:", updatedChat);
-
-      callback({
-        status: 'success',
-        messages: chat.messages || [],
-        chat_id: cid
-      });
-
-    } catch (error) {
-      console.error("Error in getMessages:", error);
-      callback({
-        status: 'error',
-        message: error.message
-      });
+    if (!user || !rec) {
+      throw new Error("User or receiver not found");
     }
-  },
+
+    const connectedToOtherUser = rec.connections.some(conn =>
+      conn.friend.equals(_id)
+    );
+    if (!connectedToOtherUser) {
+      throw new Error("You are not connected to the other user");
+    }
+
+    const connection = user.connections.find(conn =>
+      conn.friend.equals(rec._id)
+    );
+
+    if (user.blockUsers.includes(rec_id)) {
+      throw new Error("You blocked the other user");
+    }
+
+    if (rec.blockUsers.includes(_id)) {
+      throw new Error("You have been blocked");
+    }
+
+    const chatId = connection.chat;
+    if (!chatId) {
+      throw new Error("Chat ID not found");
+    }
+
+    const cid = new mongoose.Types.ObjectId(chatId);
+
+    // 1️⃣ Get messages
+    const chat = await Chat.findById(cid).select("messages").lean();
+
+    // 2️⃣ Mark messages as seen
+    await Chat.findOneAndUpdate(
+      { _id: cid },
+      {
+        $set: {
+          "messages.$[elem].isSeen": true
+        }
+      },
+      {
+        arrayFilters: [
+          {
+            "elem.isSeen": false,
+            "elem.receiver": _id
+          }
+        ]
+      }
+    );
+
+    const BASE_URL = process.env.BASE_URL || "http://localhost:5000";
+
+    // 3️⃣ Attach file URLs safely
+    const messagesWithUrls = (chat.messages || []).map(msg => ({
+      ...msg,
+      fileURL: msg.file
+        ? `${BASE_URL}/api/messages/get-chat-message-file/${chatId}/${msg.file}`
+        : null
+    }));
+
+    callback({
+      status: "success",
+      messages: messagesWithUrls,
+      chat_id: cid
+    });
+
+  } catch (error) {
+    console.error("Error in getMessages:", error);
+    callback({
+      status: "error",
+      message: error.message
+    });
+  }
+},
+
 
   handleEditMessage: async (socket, users, io, { messageId, receiverId, newMessage, chatId }, callback) => {
     try {
