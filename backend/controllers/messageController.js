@@ -84,7 +84,7 @@ const getChatMessageFile = async (req, res) => {
                 if (fs.existsSync(imagePath)) {
                     return res.sendFile(imagePath);
                 } else {
-                    return res.status(404).json({ message: "Image not found" });
+                    return res.status(404).json({ message: "Image not found",imagePath:imagePath });
                 }
     } catch (error) {
         console.error("Error in getChatMessageWithFile:", error);

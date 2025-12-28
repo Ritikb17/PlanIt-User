@@ -19,6 +19,7 @@ const ChatDialog = ({ chat, onClose }) => {
   const [editText, setEditText] = useState('');
   const [chatId, setChatId] = useState('');
   const [imagePreview, setImagePreview] = useState(null);
+  const [imageBlobs, setImageBlobs] = useState({});
 
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -26,6 +27,17 @@ const ChatDialog = ({ chat, onClose }) => {
   const myId = JSON.parse(
     atob(localStorage.getItem('token').split('.')[1])
   ).id;
+
+  /* ------------------ Clean up blob URLs on unmount ------------------ */
+  useEffect(() => {
+    return () => {
+      Object.values(imageBlobs).forEach(url => {
+        if (url && url.startsWith('blob:')) {
+          URL.revokeObjectURL(url);
+        }
+      });
+    };
+  }, []);
 
   /* ------------------ Sounds ------------------ */
   const playSendSound = () => {
@@ -43,7 +55,7 @@ const ChatDialog = ({ chat, onClose }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  /* ------------------ Fetch Messages ------------------ */
+  /* ------------------ Fetch Messages and Images ------------------ */
   useEffect(() => {
     if (!chat?._id) return;
 
@@ -52,12 +64,24 @@ const ChatDialog = ({ chat, onClose }) => {
         console.log('Fetched messages:', res.messages);
         setMessages(res.messages);
         setChatId(res.chat_id);
+        
+        // Pre-fetch images for image messages
+        res.messages.forEach(msg => {
+          if (msg.file && isImageFile(msg.file) && msg.fileURL) {
+            fetchAndCacheImage(msg.fileURL, msg._id);
+          }
+        });
       }
     });
 
     const receiveHandler = (msg) => {
       setMessages((prev) => [...prev, msg]);
       playRecSound();
+      
+      // Fetch image for new message if it's an image
+      if (msg.file && isImageFile(msg.file) && msg.fileURL) {
+        fetchAndCacheImage(msg.fileURL, msg._id);
+      }
     };
 
     socket.on('receive-message', receiveHandler);
@@ -66,6 +90,40 @@ const ChatDialog = ({ chat, onClose }) => {
       socket.off('receive-message', receiveHandler);
     };
   }, [chat?._id]);
+
+  /* ------------------ Fetch and Cache Image with Auth ------------------ */
+  const fetchAndCacheImage = async (imageUrl, messageId) => {
+    if (!imageUrl || imageBlobs[messageId]) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(imageUrl, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        setImageBlobs(prev => ({ ...prev, [messageId]: blobUrl }));
+      }
+    } catch (err) {
+      console.error('Error fetching image:', err);
+    }
+  };
+
+  /* ------------------ GET FILE URL WITH TOKEN FOR DOWNLOADS ------------------ */
+  const getFileUrlWithToken = (fileURL) => {
+    if (!fileURL) return '';
+    
+    const token = localStorage.getItem('token');
+    if (!token) return fileURL;
+    
+    // Add token as query parameter for download links
+    const separator = fileURL.includes('?') ? '&' : '?';
+    return `${fileURL}${separator}token=${encodeURIComponent(token)}`;
+  };
 
   /* ------------------ File Preview ------------------ */
   const handleFileChange = (e) => {
@@ -107,10 +165,11 @@ const ChatDialog = ({ chat, onClose }) => {
     }
     formData.append('reciverId', chat._id);
     formData.append('file', selectedFile);
+    console.log("chat is ",chat )
 
     try {
       const res = await fetch(
-        `http://localhost:5000/api/messages/send-chat-message-with-file/${chat._id}`,
+        `http://localhost:5000/api/messages/send-chat-message-with-file/${chat.chatId}`,
         {
           method: 'POST',
           headers: {
@@ -124,6 +183,12 @@ const ChatDialog = ({ chat, onClose }) => {
 
       if (data.status === 'success') {
         setMessages((prev) => [...prev, data.message]);
+        
+        // Fetch and cache the image if it's an image file
+        if (data.message.file && isImageFile(data.message.file) && data.message.fileURL) {
+          fetchAndCacheImage(data.message.fileURL, data.message._id);
+        }
+        
         setInput('');
         clearFileSelection();
       }
@@ -169,22 +234,39 @@ const ChatDialog = ({ chat, onClose }) => {
     );
   };
 
-  /* ------------------ GET FILE URL WITH TOKEN ------------------ */
-  const getFileUrlWithToken = (fileURL) => {
-    if (!fileURL) return '';
-    
-    // Add the token to the URL if it's not already there
-    const token = localStorage.getItem('token');
-    const separator = fileURL.includes('?') ? '&' : '?';
-    return `${fileURL}${separator}token=${token}`;
-  };
-
   /* ------------------ CHECK IF FILE IS IMAGE ------------------ */
   const isImageFile = (fileName) => {
     if (!fileName) return false;
     const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
     const lowerFileName = fileName.toLowerCase();
     return imageExtensions.some(ext => lowerFileName.includes(ext));
+  };
+
+  /* ------------------ DOWNLOAD FILE WITH AUTH HEADER ------------------ */
+  const downloadFileWithAuth = async (fileURL, fileName) => {
+    try {
+      
+      const token = localStorage.getItem('token');
+      const response = await fetch(fileURL, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName || 'download';
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      }
+    } catch (err) {
+      console.error('Download error:', err);
+    }
   };
 
   /* ------------------ EDIT ------------------ */
@@ -225,7 +307,7 @@ const ChatDialog = ({ chat, onClose }) => {
           {messages.map((msg) => {
             const isMine = msg.sender === myId;
             const hasImage = msg.file && isImageFile(msg.file);
-            const imageUrl = hasImage ? getFileUrlWithToken(msg.fileURL) : null;
+            const imageBlobUrl = hasImage ? imageBlobs[msg._id] : null;
 
             return (
               <div
@@ -248,36 +330,41 @@ const ChatDialog = ({ chat, onClose }) => {
                       {msg.message && <p>{msg.message}</p>}
                       
                       {/* IMAGE DISPLAY */}
-                      {hasImage && imageUrl && (
+                      {hasImage && (
                         <div className="message-image-container">
-                          <img 
-                            src={imageUrl} 
-                            alt="Shared image" 
-                            className="message-image"
-                            onClick={() => window.open(imageUrl, '_blank')}
-                          />
-                          <a 
-                            href={imageUrl} 
-                            target="_blank" 
-                            rel="noreferrer" 
-                            className="image-download-link"
-                          >
-                            Download
-                          </a>
+                          {imageBlobUrl ? (
+                            <>
+                              <img 
+                                src={imageBlobUrl} 
+                                alt="Shared image" 
+                                className="message-image"
+                                onClick={() => window.open(msg.fileURL, '_blank')}
+                              />
+                              <button 
+                                onClick={() => downloadFileWithAuth(msg.fileURL, msg.file)}
+                                className="image-download-link"
+                              >
+                                Download
+                              </button>
+                            </>
+                          ) : (
+                            <div className="image-loading">
+                              <div className="loading-spinner"></div>
+                              <span>Loading image...</span>
+                            </div>
+                          )}
                         </div>
                       )}
                       
                       {/* NON-IMAGE FILE DISPLAY */}
                       {msg.file && !hasImage && (
                         <div className="file-container">
-                          <a 
-                            href={getFileUrlWithToken(msg.fileURL)} 
-                            target="_blank" 
-                            rel="noreferrer"
+                          <button 
+                            onClick={() => downloadFileWithAuth(msg.fileURL, msg.file)}
                             className="file-link"
                           >
                             📎 {msg.file}
-                          </a>
+                          </button>
                         </div>
                       )}
 
@@ -323,7 +410,7 @@ const ChatDialog = ({ chat, onClose }) => {
               ref={fileInputRef}
               type="file"
               onChange={handleFileChange}
-              accept="image/*"
+              accept="image/*, .pdf, .doc, .docx, .txt"
               style={{ display: 'none' }}
             />
             <button 

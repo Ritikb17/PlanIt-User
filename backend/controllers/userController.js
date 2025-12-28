@@ -576,7 +576,6 @@ const getConnections = async (req, res) => {
   const limit = parseInt(req.query.limit) || 10;
 
   try {
-
     if (!mongoose.Types.ObjectId.isValid(self_id)) {
       return res.status(400).json({ message: "Invalid user ID." });
     }
@@ -585,9 +584,16 @@ const getConnections = async (req, res) => {
     if (!currentUser) {
       return res.status(404).json({ message: "Current user not found." });
     }
-    const friendIds = currentUser.connections.filter((connection) => !connection.isBlocked).map((connection) => connection.friend);
+    
+    // Get all connections (unblocked)
+    const connections = currentUser.connections.filter((connection) => !connection.isBlocked);
+    
+    // Extract friend IDs
+    const friendIds = connections.map((connection) => connection.friend);
 
     const skip = (page - 1) * limit;
+    
+    // Find friends
     const friends = await User.find({
       _id: friendIds
     })
@@ -595,25 +601,38 @@ const getConnections = async (req, res) => {
       .skip(skip)
       .limit(limit);
 
+    // Add chatId to each friend object
+    const friendsWithChatId = friends.map(friend => {
+      // Find the connection for this friend
+      const connection = connections.find(
+        conn => conn.friend.toString() === friend._id.toString()
+      );
+      
+      // Convert to plain object and add chatId
+      const friendObj = friend.toObject();
+      if (connection && connection.chat) {
+        friendObj.chatId = connection.chat;
+      }
+      
+      return friendObj;
+    });
+
     const totalNonFriends = await User.countDocuments({
       _id: friendIds
     });
 
     const followRequestUsers = await User.findById(self_id);
-    const idsOfFollowRequestUsers = followRequestUsers.reciveFollowRequests
+    const idsOfFollowRequestUsers = followRequestUsers.reciveFollowRequests;
     const followRequest = await User.find({
       _id: idsOfFollowRequestUsers
     })
-      .select("username name")
-    //  console.log("FINAL FOLLOW REQUEST USERS", finalFollowRequestUsers);
-
-   
+      .select("username name");
 
     const totalPages = Math.ceil(totalNonFriends / limit);
 
     res.status(200).json({
-      message: "List of non-friends fetched successfully.",
-      friends,
+      message: "List of friends fetched successfully.",
+      friends: friendsWithChatId, // Now includes chatId
       followRequest,
       pagination: {
         currentPage: page,
