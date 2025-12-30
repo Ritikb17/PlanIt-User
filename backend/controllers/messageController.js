@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const sendMessage = async (req, res) => {
     const _id = req.user._id;
-    const rec_id = req.body.reciverId;
+    const rec_id = req.body.receiverId;
     const message = req.body.message; 
     // const file = req.file;
 
@@ -58,7 +58,7 @@ const sendMessage = async (req, res) => {
             { new: true }
         )
         console.log("message", sendMessage);
-        res.status(200).json({ message: "message is being send " });
+        res.status(200).json({ message: "message is being send " ,status:"success"});
 
     } catch (error) {
         console.error("Error in sendMessage:", error);

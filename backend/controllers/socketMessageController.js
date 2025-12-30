@@ -62,6 +62,7 @@ module.exports = {
       socket.emit('message-sent', {
         status: 'success'
       });
+      console.log("RECEIVER SOCKET ID IS  ", receiverSocketId);
 
       io.to(receiverSocketId).emit('receive-message', messageJson);
       return {
