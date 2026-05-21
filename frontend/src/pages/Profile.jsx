@@ -14,12 +14,22 @@ const Profile = () => {
     username: '',
     bio: '',
     email: '',
-    _id: ''
+    _id: '',
+    name: '',
+    isAccountPrivate: false
   });
   const [userNameMessage, setUsernameMessage] = useState('');
   const [isDisable, setIsDisable] = useState(false);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(2);
+  const [posts, setPosts] = useState([]);
+  const [postsLoading, setPostsLoading] = useState(false);
+  const [postsError, setPostsError] = useState('');
+  const [commentModalOpen, setCommentModalOpen] = useState(false);
+  const [selectedPost, setSelectedPost] = useState(null);
+  const [commentText, setCommentText] = useState('');
+  const [comments, setComments] = useState([]);
+  const [loadingComments, setLoadingComments] = useState(false);
 
   // ✅ Fetch main profile + actual images (as binary)
   useEffect(() => {
@@ -69,6 +79,8 @@ const Profile = () => {
           bio: data.bio,
           email: data.email,
           _id: data._id,
+          name: data.name || '',
+          isAccountPrivate: data.isAccountPrivate || false,
         });
       } catch (err) {
         console.error('Error fetching profile:', err);
@@ -76,6 +88,37 @@ const Profile = () => {
     };
 
     fetchProfileData();
+  }, []);
+
+  // ✅ Fetch user posts
+  useEffect(() => {
+    const fetchUserPosts = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      setPostsLoading(true);
+      setPostsError('');
+
+      try {
+        const response = await axios.get(
+          'http://localhost:5000/api/user-post/get-user-posts',
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        setPosts(response.data.posts || []);
+      } catch (err) {
+        console.error("Error fetching posts:", err);
+        setPostsError("Failed to fetch your posts");
+      } finally {
+        setPostsLoading(false);
+      }
+    };
+
+    fetchUserPosts();
   }, []);
 
   // Fetch suggestions
@@ -116,8 +159,99 @@ const Profile = () => {
     }
   };
 
+  // Handle like/unlike post
+  const handleLikePost = async (postId) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const response = await axios.put(
+        `http://localhost:5000/api/user-post/like-unlike-post/${postId}`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // Update posts state with new like status
+      setPosts(prevPosts =>
+        prevPosts.map(post =>
+          post._id === postId
+            ? { ...post, likes: response.data.likes }
+            : post
+        )
+      );
+    } catch (err) {
+      console.error("Error liking/unliking post:", err);
+      setError("Failed to update like status");
+    }
+  };
+
+  // Open comment modal
+  const handleOpenComments = async (post) => {
+    setSelectedPost(post);
+    setCommentModalOpen(true);
+    await fetchComments(post._id);
+  };
+
+  // Fetch comments for a post
+  const fetchComments = async (postId) => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    setLoadingComments(true);
+    try {
+      const response = await axios.get(
+        `http://localhost:5000/api/user-post/get-comments/${postId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setComments(response.data.comments || []);
+    } catch (err) {
+      console.error("Error fetching comments:", err);
+      setError("Failed to fetch comments");
+    } finally {
+      setLoadingComments(false);
+    }
+  };
+
+  // Add comment
+  const handleAddComment = async () => {
+    if (!commentText.trim()) return;
+
+    const token = localStorage.getItem("token");
+    if (!token || !selectedPost) return;
+
+    try {
+      const response = await axios.post(
+        `http://localhost:5000/api/user-post/comment-on-post/${selectedPost._id}`,
+        { comment: commentText },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // Update comments list
+      setComments([response.data.comment, ...comments]);
+      setCommentText('');
+
+      // Update post comment count
+      setPosts(prevPosts =>
+        prevPosts.map(post =>
+          post._id === selectedPost._id
+            ? { ...post, comments: [...post.comments, response.data.comment] }
+            : post
+        )
+      );
+    } catch (err) {
+      console.error("Error adding comment:", err);
+      setError("Failed to add comment");
+    }
+  };
+
   const handleEditProfile = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
+  const handleCloseCommentModal = () => {
+    setCommentModalOpen(false);
+    setSelectedPost(null);
+    setComments([]);
+    setCommentText('');
+  };
 
   // Username check
   const handleUsernameChange = async (event) => {
@@ -151,14 +285,14 @@ const Profile = () => {
   };
 
   // Handle other input fields
- const handleInputChange = (e) => {
-  const { name, type, checked, value } = e.target;
+  const handleInputChange = (e) => {
+    const { name, type, checked, value } = e.target;
 
-  setFormData({
-    ...formData,
-    [name]: type === "checkbox" ? checked : value,
-  });
-};
+    setFormData({
+      ...formData,
+      [name]: type === "checkbox" ? checked : value,
+    });
+  };
 
   // Handle profile picture upload
   const handleProfilePictureUpload = async (e) => {
@@ -172,7 +306,7 @@ const Profile = () => {
     formData.append('profilePicture', file);
 
     try {
-      const response = await axios.post(
+      await axios.post(
         'http://localhost:5000/api/picture/upload/profilePicture',
         formData,
         {
@@ -210,10 +344,10 @@ const Profile = () => {
     if (!token) return;
 
     const formData = new FormData();
-    formData.append('profilePicture', file); // Note: The API expects 'profilePicture' field name based on your curl example
+    formData.append('profilePicture', file);
 
     try {
-      const response = await axios.post(
+      await axios.post(
         'http://localhost:5000/api/picture/upload/coverPicture',
         formData,
         {
@@ -242,7 +376,7 @@ const Profile = () => {
     }
   };
 
-  // Update profile (only username and bio)
+  // Update profile
   const handleSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem("token");
@@ -265,12 +399,34 @@ const Profile = () => {
     }
   };
 
+  // Check if user liked a post
+  const isPostLiked = (post) => {
+    const token = localStorage.getItem("token");
+    if (!token) return false;
+    // You might need to decode the token to get user ID or check from API response
+    // For now, we'll check if the likes array contains the current user's ID
+    // You should implement this based on your API response structure
+    return post.likedByCurrentUser || false;
+  };
+
+  // Format date
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   return (
     <div>
       <Navbar />
 
       <div className="profile-page">
-        {/* ✅ Cover Picture Section with Edit Button */}
+        {/* Cover Picture Section */}
         <div className="cover-picture-container">
           <img
             src={coverPicture || 'https://via.placeholder.com/800x200?text=Add+Cover+Photo'}
@@ -315,12 +471,70 @@ const Profile = () => {
           <div className="user-details">
             <h1>{user.username}</h1>
             <p className="bio">{user.bio || 'Add bio'}</p>
+            {user.isAccountPrivate && (
+              <span className="private-badge">Private Account 🔒</span>
+            )}
           </div>
         </div>
 
         <button className="edit-profile-btn" onClick={handleEditProfile}>
           Edit Profile Info
         </button>
+
+        {/* Posts Section */}
+        <div className="posts-section">
+          <h2>Your Posts</h2>
+          {postsLoading && <p>Loading your posts...</p>}
+          {postsError && <p className="error-message">{postsError}</p>}
+          {!postsLoading && !postsError && posts.length === 0 && (
+            <p className="no-posts">No posts yet. Create your first post!</p>
+          )}
+          <div className="posts-grid">
+            {posts.map((post) => (
+              <div key={post._id} className="post-card">
+                <div className="post-header">
+                  <div className="post-info">
+                    <h3>{user.username}</h3>
+                    <span className="post-date">{formatDate(post.createdAt)}</span>
+                  </div>
+                  <span className={`post-privacy ${post.isPublic ? 'public' : 'private'}`}>
+                    {post.isPublic ? '🌍 Public' : '🔒 Private'}
+                  </span>
+                </div>
+                <p className="post-content">{post.content}</p>
+                {post.imageURLs && post.imageURLs.length > 0 && (
+                  <div className="post-images">
+                    {post.imageURLs.map((imageUrl, index) => (
+                      <img
+                        key={index}
+                        src={imageUrl}
+                        alt={`Post image ${index + 1}`}
+                        className="post-image"
+                        onError={(e) => {
+                          e.target.src = 'https://via.placeholder.com/300x200?text=Image+Not+Found';
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+                <div className="post-actions">
+                  <button 
+                    className={`action-btn like-btn ${isPostLiked(post) ? 'liked' : ''}`}
+                    onClick={() => handleLikePost(post._id)}
+                  >
+                    ❤️ {post.likes?.length || 0} Likes
+                  </button>
+                  <button 
+                    className="action-btn comment-btn"
+                    onClick={() => handleOpenComments(post)}
+                  >
+                    💬 {post.comments?.length || 0} Comments
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* Discover People */}
         <div className="discover-people">
@@ -339,7 +553,7 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* ✅ Edit Profile Modal (Only for username and bio) */}
+      {/* Edit Profile Modal */}
       {isModalOpen && (
         <div className="modal-overlay">
           <div className="modal">
@@ -363,28 +577,35 @@ const Profile = () => {
               </div>
 
               <div className="form-group">
-                <label>Name </label>
+                <label>Name</label>
                 <input 
                   type="text" 
                   name="name" 
                   value={formData.name} 
                   onChange={handleInputChange} 
                 />
+              </div>
+
+              <div className="form-group">
                 <label>Bio</label>
                 <textarea 
                   name="bio" 
                   value={formData.bio} 
-                  onChange={handleInputChange} 
-                />
-                <br />
-                <br />
-                <label>Private account</label>
-                <input
-                  type="checkbox"
-                  name="isAccountPrivate"
-                  checked={formData.isAccountPrivate}
                   onChange={handleInputChange}
+                  rows="3"
                 />
+              </div>
+
+              <div className="form-group checkbox-group">
+                <label>
+                  <input
+                    type="checkbox"
+                    name="isAccountPrivate"
+                    checked={formData.isAccountPrivate}
+                    onChange={handleInputChange}
+                  />
+                  Private account
+                </label>
               </div>
 
               <div className="modal-buttons">
@@ -392,6 +613,62 @@ const Profile = () => {
                 <button type="submit" disabled={isDisable}>Save</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Comment Modal */}
+      {commentModalOpen && selectedPost && (
+        <div className="modal-overlay">
+          <div className="modal comment-modal">
+            <h2>Comments</h2>
+            <div className="comment-modal-content">
+              <div className="original-post">
+                <p className="post-content-preview">{selectedPost.content}</p>
+                {selectedPost.imageURLs && selectedPost.imageURLs.length > 0 && (
+                  <img 
+                    src={selectedPost.imageURLs[0]} 
+                    alt="Post preview" 
+                    className="post-preview-image"
+                  />
+                )}
+              </div>
+              
+              <div className="comments-section">
+                <div className="add-comment">
+                  <textarea
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    placeholder="Write a comment..."
+                    rows="3"
+                  />
+                  <button onClick={handleAddComment} className="post-comment-btn">
+                    Post Comment
+                  </button>
+                </div>
+
+                <div className="comments-list">
+                  {loadingComments && <p>Loading comments...</p>}
+                  {!loadingComments && comments.length === 0 && (
+                    <p className="no-comments">No comments yet. Be the first to comment!</p>
+                  )}
+                  {comments.map((comment, index) => (
+                    <div key={index} className="comment-item">
+                      <div className="comment-header">
+                        <strong>{comment.user?.username || 'User'}</strong>
+                        <span className="comment-date">
+                          {comment.createdAt && formatDate(comment.createdAt)}
+                        </span>
+                      </div>
+                      <p className="comment-text">{comment.text}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="modal-buttons">
+              <button onClick={handleCloseCommentModal}>Close</button>
+            </div>
           </div>
         </div>
       )}

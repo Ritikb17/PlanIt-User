@@ -1,5 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const {searchUser} = require('../controllers/otherController')
+const {searchUser,getEventDetails} = require('../controllers/otherController')
 router.get('/search-user/:search', searchUser);
+// get event details by event id
+router.get('/get-event-details/:eventId', getEventDetails);
+
 module.exports = router;

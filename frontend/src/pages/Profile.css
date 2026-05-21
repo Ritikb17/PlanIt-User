@@ -502,3 +502,180 @@
     text-align: center;
   }
 }
+
+/* Add these styles to your Profile.css file */
+
+/* Post Actions */
+.post-actions {
+  display: flex;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+  margin-top: 0.5rem;
+}
+
+.action-btn {
+  background: none;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.like-btn {
+  color: #666;
+}
+
+.like-btn.liked {
+  color: #e91e63;
+  background: #fce4ec;
+}
+
+.comment-btn {
+  color: #666;
+}
+
+.action-btn:hover {
+  background: #f5f5f5;
+  transform: scale(1.05);
+}
+
+/* Comment Modal */
+.comment-modal {
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.comment-modal-content {
+  margin: 1rem 0;
+}
+
+.original-post {
+  background: #f5f5f5;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.post-content-preview {
+  margin-bottom: 0.5rem;
+  color: #666;
+}
+
+.post-preview-image {
+  max-width: 100%;
+  max-height: 150px;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-top: 0.5rem;
+}
+
+.comments-section {
+  margin-top: 1rem;
+}
+
+.add-comment {
+  margin-bottom: 1.5rem;
+}
+
+.add-comment textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  resize: vertical;
+  margin-bottom: 0.5rem;
+}
+
+.add-comment textarea:focus {
+  outline: none;
+  border-color: #1877f2;
+}
+
+.post-comment-btn {
+  background: #1877f2;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background 0.2s;
+}
+
+.post-comment-btn:hover {
+  background: #166fe5;
+}
+
+.comments-list {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.comment-item {
+  padding: 0.75rem;
+  border-bottom: 1px solid #eee;
+}
+
+.comment-item:last-child {
+  border-bottom: none;
+}
+
+.comment-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.comment-header strong {
+  color: #333;
+}
+
+.comment-date {
+  color: #999;
+  font-size: 0.75rem;
+}
+
+.comment-text {
+  color: #555;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.no-comments {
+  text-align: center;
+  color: #999;
+  padding: 2rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .post-actions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .action-btn {
+    justify-content: center;
+  }
+  
+  .comment-modal {
+    width: 95%;
+    max-height: 90vh;
+  }
+  
+  .comment-header {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+}
